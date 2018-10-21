@@ -27,15 +27,19 @@ Not suitable if people want to simulate actual time.
 
 Possible approaches:
 
-    * Track time drift per Task. Add/subtract whenever we have a full resolution offset.
+Tracked Time
+    Track time drift per Task. Add/subtract whenever we have a full resolution offset.
 
-    * Separate Sleep (time, exact) and Delay (steps, resolution) commands.
+Separate Interfaces
+    Separate Sleep (time, exact) and Delay (steps, resolution) commands.
 
-    * Single Sleep command with ``strict: bool`` flag.
+Strictness Flags
+    Single Sleep command with ``strict: bool`` flag.
 
-    * Explicit "on average X second sleep" loop or context.
+Drift Scope
+    Explicit "on average X second sleep" loop or context.
 
-        .. code:: python
+    .. code:: python
 
-            async for now in every(10):
-                print(now, 'should be roughly 10s later')
+        async for now in every(10):
+            print(now, 'should be roughly 10s later')
