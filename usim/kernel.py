@@ -1,10 +1,8 @@
-import time
 import math
-import sys
 from collections import deque
 
-from usim.waitq import WaitQueue
-from usim.utility import __repr__
+from .waitq import WaitQueue
+from .utility import __repr__
 
 
 class Kernel(object):
@@ -76,44 +74,3 @@ class Now(object):
         return (yield self)
 
     __repr__ = __repr__
-
-
-def multitask():
-    async def sleeper(who: str, interval=1.5, count=10):
-        for repetition in range(count):
-            print('step %d at %s [%s] @ %.4f' % (repetition, await Now(), who, time.time()))
-            await Sleep(interval)
-
-    kernel = Kernel()
-    stime = time.time()
-    cycles, steps = kernel.run(sleeper('alice'), sleeper('micky'), sleeper('daisy'))
-    etime = time.time()
-    elapsed = etime - stime
-    print('ran %d cycles, %d steps in %.4fs' % (cycles, steps, elapsed))
-    print('%.1fc/s, %.1fs/s' % (cycles / elapsed, steps / elapsed))
-
-
-def multifork():
-    async def forker(depth=0, children=2):
-        if depth <= 0:
-            return
-        for _ in range(children):
-            await Schedule(forker(depth-1, children=children))
-
-    kernel = Kernel()
-    stime = time.time()
-    cycles, steps = kernel.run(forker(20))
-    etime = time.time()
-    elapsed = etime - stime
-    print('ran %d cycles, %d steps in %.4fs' % (cycles, steps, elapsed))
-    print('%.1fc/s, %.1fs/s' % (cycles / elapsed, steps / elapsed))
-
-
-if __name__ == "__main__":
-    try:
-        task = sys.argv[1]
-    except IndexError:
-        task = 'multifork'
-
-    handles = {func.__name__: func for func in (multifork, multitask)}
-    handles[task]()
