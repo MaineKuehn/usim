@@ -1,10 +1,15 @@
 import time
-import sys
 
 import click
 
 
 from usim.kernel import Now, Schedule, Kernel, Sleep
+
+
+def report(cycles, steps, elapsed):
+    print('duration %.4fs' % elapsed)
+    print('cycles %d [%.1f/s]' % (cycles, cycles / elapsed))
+    print('steps  %d [%.1f/s]' % (steps, steps / elapsed))
 
 
 @click.group()
@@ -24,14 +29,13 @@ def multitask():
     cycles, steps = kernel.run(sleeper('alice'), sleeper('micky'), sleeper('daisy'))
     etime = time.time()
     elapsed = etime - stime
-    print('ran %d cycles, %d steps in %.4fs' % (cycles, steps, elapsed))
-    print('%.1fc/s, %.1fs/s' % (cycles / elapsed, steps / elapsed))
+    report(cycles, steps, elapsed)
 
 
 @cli.command()
-@click.option('--depth', default=10)
-@click.option('--degree', default=2)
-def multifork(depth, degree):
+@click.option('-h', '--height', default=10)
+@click.option('-d', '--degree', default=2)
+def multifork(height, degree):
     async def forker(depth=0, children=2):
         if depth <= 0:
             return
@@ -40,11 +44,10 @@ def multifork(depth, degree):
 
     kernel = Kernel()
     stime = time.time()
-    cycles, steps = kernel.run(forker(depth, degree))
+    cycles, steps = kernel.run(forker(height, degree))
     etime = time.time()
     elapsed = etime - stime
-    print('ran %d cycles, %d steps in %.4fs' % (cycles, steps, elapsed))
-    print('%.1fc/s, %.1fs/s' % (cycles / elapsed, steps / elapsed))
+    report(cycles, steps, elapsed)
 
 
 if __name__ == "__main__":
