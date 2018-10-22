@@ -33,6 +33,10 @@ class Kernel(object):
                             tasks.append(command.coroutine)
                         else:
                             sleep_queue.push(math.ceil((now + command.delay) / resolution), command.coroutine)
+                    elif isinstance(command, Reschedule):
+                        tasks.append(task)
+                    else:
+                        raise ValueError('unknown command %r' % command)
         return cycles, steps
 
 
@@ -46,12 +50,20 @@ def advance(coroutine, now):
             return
         if isinstance(result, Now):
             message = now
+        elif isinstance(result, Stack):
+            message = coroutine
+        elif isinstance(result, Lock):
+            # the Lock owns the coroutine now
+            break
         elif isinstance(result, Sleep):
             if result.duration <= 0:
                 message = None
             else:
                 yield result
                 break
+        elif isinstance(result, Reschedule):
+            yield result
+            break
         else:
             message = yield result
 
@@ -62,6 +74,14 @@ class Schedule(object):
         self.coroutine = coroutine
         self.delay = delay
 
+    def __await__(self):
+        yield self
+
+    __repr__ = __repr__
+
+
+class Reschedule(object):
+    """Reschedule the current coroutine in the same timestep"""
     def __await__(self):
         yield self
 
@@ -86,3 +106,43 @@ class Now(object):
         return (yield self)
 
     __repr__ = __repr__
+
+
+class Stack(object):
+    """Get the current coroutine stack"""
+    def __await__(self):
+        return (yield self)
+
+    __repr__ = __repr__
+
+
+class Lock(object):
+    def __await__(self):
+        yield self
+
+
+class FifoLock(Lock):
+    def __init__(self):
+        self.held = False
+        self._waiters = deque()
+
+    async def __aenter__(self):
+        # uncontested - just take it
+        if not self.held:
+            self.held = True
+            return
+        # contested - store THIS STACK for resumption
+        stack = await Stack()
+        self._waiters.append(stack)
+        await self  # break point - we are resumed when we own the lock
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        try:
+            waiter = self._waiters.popleft()
+        except IndexError:
+            # no one to inherit the lock - release it
+            self.held = False
+        else:
+            await Schedule(waiter)
+        # pass on any errors
+        return False

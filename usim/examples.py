@@ -3,7 +3,7 @@ import time
 import click
 
 
-from usim.kernel import Now, Schedule, Kernel, Sleep
+from usim.kernel import Now, Schedule, Kernel, Sleep, FifoLock
 
 
 def report(cycles, steps, elapsed):
@@ -45,6 +45,26 @@ def multifork(height, degree):
     kernel = Kernel()
     stime = time.time()
     cycles, steps = kernel.run(forker(height, degree))
+    etime = time.time()
+    elapsed = etime - stime
+    report(cycles, steps, elapsed)
+
+
+@cli.command()
+@click.option('-c', '--congestion', default=3)
+@click.option('-a', '--acquires', default=3)
+# @click.option('-t', '--type', 'flavour', default='fifo', type=click.Choice(['fifo', 'rand']))
+def multilock(congestion=3, acquires=3):
+    async def locker(idx, lock, count):
+        for repetition in range(count):
+            async with lock:
+                print(idx, '=>', repetition, '@', await Now())
+                await Sleep(1)
+
+    kernel = Kernel()
+    stime = time.time()
+    lock = FifoLock()
+    cycles, steps = kernel.run(*(locker(i, lock, acquires) for i in range(congestion)))
     etime = time.time()
     elapsed = etime - stime
     report(cycles, steps, elapsed)
