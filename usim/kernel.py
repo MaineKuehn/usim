@@ -33,8 +33,6 @@ class Kernel(object):
                             tasks.append(command.coroutine)
                         else:
                             sleep_queue.push(math.ceil((now + command.delay) / resolution), command.coroutine)
-                    elif isinstance(command, Reschedule):
-                        tasks.append(task)
                     else:
                         raise ValueError('unknown command %r' % command)
         return cycles, steps
@@ -61,9 +59,6 @@ def advance(coroutine, now):
             else:
                 yield result
                 break
-        elif isinstance(result, Reschedule):
-            yield result
-            break
         else:
             message = yield result
 
@@ -74,14 +69,6 @@ class Schedule(object):
         self.coroutine = coroutine
         self.delay = delay
 
-    def __await__(self):
-        yield self
-
-    __repr__ = __repr__
-
-
-class Reschedule(object):
-    """Reschedule the current coroutine in the same timestep"""
     def __await__(self):
         yield self
 
