@@ -18,19 +18,19 @@ class Kernel(object):
             sleep_queue.push(now, coroutine)
         while sleep_queue:
             cycles += 1
-            self.now, _ = now, tasks = sleep_queue.pop()
+            self.now, _ = now, coroutines = sleep_queue.pop()
             now *= resolution
-            tasks = deque(tasks)
-            while tasks:
+            coroutines = deque(coroutines)
+            while coroutines:
                 steps += 1
-                task = tasks.popleft()
-                for command in advance(task, now):
+                coroutine = coroutines.popleft()
+                for command in advance(coroutine, now):
                     if isinstance(command, Sleep):
                         assert command.duration > 0
-                        sleep_queue.push(math.ceil((now + command.duration) / resolution), task)
+                        sleep_queue.push(math.ceil((now + command.duration) / resolution), coroutine)
                     elif isinstance(command, Schedule):
                         if command.delay <= 0:
-                            tasks.append(command.coroutine)
+                            coroutines.append(command.coroutine)
                         else:
                             sleep_queue.push(math.ceil((now + command.delay) / resolution), command.coroutine)
                     else:
