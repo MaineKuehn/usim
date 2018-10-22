@@ -50,7 +50,7 @@ def advance(coroutine, now):
             return
         if isinstance(result, Now):
             message = now
-        elif isinstance(result, Stack):
+        elif isinstance(result, __Stack__):
             message = coroutine
         elif isinstance(result, Lock):
             # the Lock owns the coroutine now
@@ -108,7 +108,7 @@ class Now(object):
     __repr__ = __repr__
 
 
-class Stack(object):
+class __Stack__(object):
     """Get the current coroutine stack"""
     def __await__(self):
         return (yield self)
@@ -132,7 +132,7 @@ class FifoLock(Lock):
             self.held = True
             return
         # contested - store THIS STACK for resumption
-        stack = await Stack()
+        stack = await __Stack__()
         self._waiters.append(stack)
         await self  # break point - we are resumed when we own the lock
 
