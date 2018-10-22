@@ -9,11 +9,11 @@ class WaitQueue:
     def __bool__(self):
         return bool(self._keys)
 
-    def push(self, key, item):
+    def push(self, key, *items):
         try:
-            self._data[key].append(item)
+            self._data[key].extend(items)
         except KeyError:
-            self._data[key] = [item]
+            self._data[key] = list(items)
             heappush(self._keys, key)
 
     def pop(self):

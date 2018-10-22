@@ -30,9 +30,9 @@ class Kernel(object):
                         sleep_queue.push(math.ceil((now + command.duration) / resolution), coroutine)
                     elif isinstance(command, Schedule):
                         if command.delay <= 0:
-                            coroutines.append(command.coroutine)
+                            coroutines.extend(command.coroutines)
                         else:
-                            sleep_queue.push(math.ceil((now + command.delay) / resolution), command.coroutine)
+                            sleep_queue.push(math.ceil((now + command.delay) / resolution), *command.coroutines)
                     else:
                         raise ValueError('unknown command %r' % command)
         return cycles, steps
@@ -65,8 +65,8 @@ def advance(coroutine, now):
 
 class Schedule(object):
     """Schedule another coroutine for execution and resume"""
-    def __init__(self, coroutine, *, delay=0):
-        self.coroutine = coroutine
+    def __init__(self, *coroutines, delay=0):
+        self.coroutines = coroutines
         self.delay = delay
 
     def __await__(self):
