@@ -43,3 +43,21 @@ Drift Scope
 
         async for now in every(10):
             print(now, 'should be roughly 10s later')
+
+Re-Scheduling Priority
+++++++++++++++++++++++
+
+Several actions communicate with the event loop but may resume afterwards:
+``await schedule(child)`` finishes immediately, while the point of ``await now`` is to resume.
+The question is how to re-schedule after an infinitesimal interruption, when other routines must be scheduled as well.
+
+Random Order (``trio``)
+    Resume an arbitrary routine from the waiting area.
+    This is motivated (``trio``) by not picking a scheme to prevent reliance on it and thus risk feature lock-in.
+
+Resume First
+    Resume the routine that has interrupted.
+    Best turnaround (switching can be handled outside the event loop) but not truly async.
+
+Resume Last
+    Resume the routine that has waited the longest.
