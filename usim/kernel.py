@@ -15,33 +15,50 @@ class Kernel(object):
         cycles, steps = 0, 0
         sleep_queue, now, resolution = self._sleep_queue, self.now, self.resolution
         for coroutine in coroutines:
-            sleep_queue.push(now, coroutine)
+            sleep_queue.push(now, TaskRoot(coroutine))
         while sleep_queue:
             cycles += 1
-            self.now, _ = now, coroutines = sleep_queue.pop()
+            self.now, _ = now, tasks = sleep_queue.pop()
             now *= resolution
-            coroutines = deque((coro, None) for coro in coroutines)
-            while coroutines:
+            tasks = deque(tasks)
+            while tasks:
                 steps += 1
-                coroutine, message = coroutines.popleft()
-                try:
-                    command = coroutine.send(message)
-                except StopIteration:
-                    continue
-                if isinstance(command, Sleep):
-                    if command.duration <= 0:
-                        coroutines.append((coroutine, None))
-                    else:
-                        sleep_queue.push(math.ceil((now + command.duration) / resolution), coroutine)
-                elif isinstance(command, Schedule):
-                    if command.delay <= 0:
-                        coroutines.append((command.coroutine, None))
-                    else:
-                        sleep_queue.push(math.ceil((now + command.delay) / resolution), command.coroutine)
-                    coroutines.append((coroutine, None))
-                elif isinstance(command, Now):
-                    coroutines.appendleft((coroutine, now))
+                task = tasks.popleft()  # type: TaskRoot
+                for command in task.advance(now):
+                    if isinstance(command, Sleep):
+                        assert command.duration > 0
+                        sleep_queue.push(math.ceil((now + command.duration) / resolution), task)
+                    elif isinstance(command, Schedule):
+                        if command.delay <= 0:
+                            tasks.append(TaskRoot(command.coroutine))
+                        else:
+                            sleep_queue.push(math.ceil((now + command.delay) / resolution), TaskRoot(command.coroutine))
         return cycles, steps
+
+
+class TaskRoot(object):
+    """Root of an asynchronous execution tree"""
+    def __init__(self, coroutine):
+        self.coroutine = coroutine
+
+    def advance(self, now):
+        """Advance this task for the current time step"""
+        message = None
+        while True:
+            try:
+                result = self.coroutine.send(message)
+            except StopIteration:
+                return
+            if isinstance(result, Now):
+                message = now
+            elif isinstance(result, Sleep):
+                if result.duration <= 0:
+                    message = None
+                else:
+                    yield result
+                    break
+            else:
+                message = yield result
 
 
 class Schedule(object):
