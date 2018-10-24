@@ -50,8 +50,8 @@ def advance(coroutine, now):
             message = now
         elif isinstance(result, __Stack__):
             message = coroutine
-        elif isinstance(result, Lock):
-            # the Lock owns the coroutine now
+        elif isinstance(result, (Lock, Event)):
+            # the Lock/Event owns the coroutine now
             break
         elif isinstance(result, Sleep):
             if result.duration <= 0:
@@ -109,6 +109,7 @@ class Lock(object):
 
 
 class FifoLock(Lock):
+    """Lock owned by only one execution"""
     def __init__(self):
         self.held = False
         self._waiters = deque()
@@ -133,3 +134,30 @@ class FifoLock(Lock):
             await Schedule(waiter)
         # pass on any errors
         return False
+
+
+class Event(object):
+    def __init__(self):
+        self._value = False
+        self._waiters = []
+
+    def __bool__(self):
+        return self._value
+
+    def __await__(self):
+        """Await that this Event is set"""
+        if self._value:
+            return
+        # unset - store THIS STACK for resumption
+        stack = yield from __Stack__().__await__()
+        self._waiters.append(stack)
+        yield self  # break point - we are resumed when the event is set
+
+    async def set(self):
+        self._value = True
+        if self._waiters:
+            await Schedule(*self._waiters)
+            self._waiters.clear()
+
+    async def clear(self):
+        self._value = False

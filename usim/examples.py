@@ -1,9 +1,10 @@
 import time
+import random
 
 import click
 
 
-from usim.kernel import Now, Schedule, Kernel, Sleep, FifoLock
+from usim.kernel import Now, Schedule, Kernel, Sleep, FifoLock, Event
 
 
 def report(cycles, steps, elapsed):
@@ -65,6 +66,30 @@ def multilock(congestion=3, acquires=3):
     stime = time.time()
     lock = FifoLock()
     cycles, steps = kernel.run(*(locker(i, lock, acquires) for i in range(congestion)))
+    etime = time.time()
+    elapsed = etime - stime
+    report(cycles, steps, elapsed)
+
+
+@cli.command()
+def multievent(waiters=100, toggle=0.5):
+    async def reset(event, after):
+        await event.clear()
+        await Sleep(after)
+        await event.set()
+
+    async def waiter(idx, event, chance):
+        while not event:
+            await event
+        if random.random() < chance:
+            await event.clear()
+            await Schedule(reset(event, 10))
+        print(idx, 'done at', await Now())
+
+    kernel = Kernel()
+    stime = time.time()
+    event = Event()
+    cycles, steps = kernel.run(reset(event, 10), *(waiter(i, event, toggle) for i in range(waiters)))
     etime = time.time()
     elapsed = etime - stime
     report(cycles, steps, elapsed)
