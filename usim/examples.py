@@ -1,16 +1,45 @@
-import time
+import time as real_time
 import random
 
 import click
 
 
-from usim.kernel import Now, Schedule, Kernel, Sleep, FifoLock, Event
+from usim.api import time, run, spawn, FifoLock, FifoEvent
 
 
-def report(cycles, steps, elapsed):
-    print('duration %.4fs' % elapsed)
-    print('cycles %d [%.1f/s]' % (cycles, cycles / elapsed))
-    print('steps  %d [%.1f/s]' % (steps, steps / elapsed))
+class Timed(object):
+    def __init__(self):
+        self._start = None
+        self._stop = None
+
+    @property
+    def duration(self):
+        if self._start is None or self._stop is None:
+            raise RuntimeError('duration only available after use')
+        return self._stop - self._start
+
+    def __enter__(self):
+        assert self._start is None
+        self._start = real_time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        assert self._start is not None and self._stop is None
+        self._stop = real_time.time()
+        return False
+
+    def __str__(self):
+        if self._start is None:
+            return '<untimed>'
+        elif self._stop is None:
+            return '<timing>'
+        else:
+            return '%.3fs' % self.duration
+
+
+def report(duration, operations):
+    print('total: %.3f' % duration)
+    print('ops/s: %.3f' % (operations / duration))
 
 
 @click.group()
@@ -22,60 +51,49 @@ def cli():
 def multitask():
     async def sleeper(who: str, interval=1.5, count=10):
         for repetition in range(count):
-            print('step %d at %s [%s] @ %.4f' % (repetition, await Now(), who, time.time()))
-            await Sleep(interval)
+            print('step %d at simtime %s [%s] @ %.3f' % (repetition, await time(after=interval), who, real_time.time()))
 
-    kernel = Kernel()
-    stime = time.time()
-    cycles, steps = kernel.run(sleeper('alice'), sleeper('micky'), sleeper('daisy'))
-    etime = time.time()
-    elapsed = etime - stime
-    report(cycles, steps, elapsed)
+    with Timed() as duration:
+        run(sleeper('alice'), sleeper('micky'), sleeper('daisy'))
+    report(duration.duration, 3 * 10)
 
 
 @cli.command()
 @click.option('-h', '--height', default=10)
 @click.option('-d', '--degree', default=2)
 def multifork(height, degree):
-    async def forker(depth=0, children=2):
+    async def forker(depth=0, children=2, *, child_idx=0):
         if depth <= 0:
             return
-        for _ in range(children):
-            await Schedule(forker(depth-1, children=children))
+        for idx in range(children):
+            await spawn(forker(depth-1, children=children, child_idx=idx + child_idx))
+        if child_idx == 0:
+            print('depth %3d done @ %.3fs' % (depth, real_time.time()))
 
-    kernel = Kernel()
-    stime = time.time()
-    cycles, steps = kernel.run(forker(height, degree))
-    etime = time.time()
-    elapsed = etime - stime
-    report(cycles, steps, elapsed)
+    with Timed() as duration:
+        run(forker(height, degree))
+    report(duration.duration, (degree ** height) * 2 - 1)
 
 
 @cli.command()
 @click.option('-c', '--congestion', default=3)
 @click.option('-a', '--acquires', default=3)
-# @click.option('-t', '--type', 'flavour', default='fifo', type=click.Choice(['fifo', 'rand']))
 def multilock(congestion=3, acquires=3):
     async def locker(idx, lock, count):
         for repetition in range(count):
             async with lock:
-                print(idx, '=>', repetition, '@', await Now())
-                await Sleep(1)
+                print('task', idx, '=> got', repetition, 'at simtime', await time(1))
 
-    kernel = Kernel()
-    stime = time.time()
     lock = FifoLock()
-    cycles, steps = kernel.run(*(locker(i, lock, acquires) for i in range(congestion)))
-    etime = time.time()
-    elapsed = etime - stime
-    report(cycles, steps, elapsed)
+    with Timed() as duration:
+        run(*(locker(i, lock, acquires) for i in range(congestion)))
+    report(duration.duration, congestion * acquires)
 
 
 @cli.command()
 def multievent(waiters=100, toggle=0.5):
-    async def reset(event, after):
+    async def reset(event):
         await event.clear()
-        await Sleep(after)
         await event.set()
 
     async def waiter(idx, event, chance):
@@ -83,16 +101,13 @@ def multievent(waiters=100, toggle=0.5):
             await event
         if random.random() < chance:
             await event.clear()
-            await Schedule(reset(event, 10))
-        print(idx, 'done at', await Now())
+            await spawn(reset(event), after=10)
+        print(idx, 'done at', await time())
 
-    kernel = Kernel()
-    stime = time.time()
-    event = Event()
-    cycles, steps = kernel.run(reset(event, 10), *(waiter(i, event, toggle) for i in range(waiters)))
-    etime = time.time()
-    elapsed = etime - stime
-    report(cycles, steps, elapsed)
+    event = FifoEvent()
+    with Timed() as duration:
+        run(spawn(reset(event), 10), *(waiter(i, event, toggle) for i in range(waiters)))
+    report(duration.duration, waiters * 1 / toggle)
 
 
 if __name__ == "__main__":
