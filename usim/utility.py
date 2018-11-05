@@ -1,8 +1,5 @@
-def __repr__(self):
-    return '%s(%s)' % (
-        self.__class__.__name__,
-        ', '.join(
-            '%s=%s' % (key, value)
-            for key, value in self.__dict__
-        )
-    )
+def name(obj):
+    try:
+        return obj.__qualname__
+    except AttributeError:
+        return obj.__class__.__name__
