@@ -6,6 +6,13 @@ This is a draft for a mikro simulation framework.
 It builds on a kernel that runs several coroutines.
 The passing of time and interaction between coroutines is purely simulated.
 
+Selling Points
+##############
+
+* clear ``await`` and ``async def`` syntax
+    * allows using ``async with`` and ``async for`` blocks
+* automatic Environment handling
+
 Notes
 #####
 
@@ -61,3 +68,8 @@ Resume First
 
 Resume Last
     Resume the routine that has waited the longest.
+
+API/Implementation
+++++++++++++++++++
+
+Probably a good idea to separate API and Loop implementation.
