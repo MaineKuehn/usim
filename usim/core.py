@@ -85,12 +85,14 @@ class Task(object):
 
     def _complete(self, signal):
         self._done = True
-        if isinstance(signal, StopIteration):
+        if isinstance(signal, Interrupt):
+            raise RuntimeError('Unhandled interrupt %s' % signal)
+        elif isinstance(signal, StopIteration):
             self._result = signal.value, None
         else:
             self._result = None, signal
 
-    def __await__(self) -> RT:
+    def __await__(self) -> Awaitable[RT]:
         if not self._done:
             waiter = yield from GetTask().__await__()  # type: Task
             self._waiters.append(waiter)
@@ -116,6 +118,12 @@ def collect(*tasks: Task):
         raise MultiError(*errors)
     else:
         return results
+
+
+class Interrupt(Exception):
+    def __init__(self, token):
+        self.token = token
+        Exception.__init__(self, token)
 
 
 class Resumption(object):
@@ -155,7 +163,7 @@ class Schedule(object):
         self.signal = signal
         self.delay = delay
 
-    def __await__(self) -> Resumption:
+    def __await__(self) -> Awaitable[Resumption]:
         return (yield self)
 
 
