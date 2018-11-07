@@ -1,8 +1,9 @@
 import collections
-from typing import Coroutine, Tuple, Any, List, TypeVar
+from typing import Coroutine, Tuple, Any, List, TypeVar, Awaitable
 
 from .waitq import WaitQueue
 from .utility import name
+from .multi_error import MultiError
 
 
 # Coroutine Return Type
@@ -14,8 +15,9 @@ INFINITY = float('inf')
 def run(*coroutines: Coroutine, start: float = 0):
     now = start
     interrupt_queue = WaitQueue()
-    for coroutine in coroutines:
-        interrupt_queue.push(now, Resumption(Task(coroutine), deadline=now))
+    tasks = [Task(coroutine) for coroutine in coroutines]
+    for task in tasks:
+        interrupt_queue.push(now, Resumption(task, deadline=now))
     while interrupt_queue:
         now, current_interrupts = interrupt_queue.pop()
         current_interrupts = collections.deque(current_interrupts)
@@ -25,6 +27,7 @@ def run(*coroutines: Coroutine, start: float = 0):
                 delayed, immediate = interrupt.target.resume(now, interrupt.signal)
                 current_interrupts.extend(immediate)
                 interrupt_queue.update(delayed)
+    return collect(*tasks)
 
 
 class Task(object):
@@ -33,6 +36,16 @@ class Task(object):
         self._done = False
         self._waiters = []  # type: List[Task]
         self._result = None  # type: Tuple[Any, Exception]
+
+    @property
+    def result(self):
+        if not self._done:
+            raise RuntimeError('%s did not complete')
+        result, error = self._result
+        if error is not None:
+            raise error
+        else:
+            return result
 
     def resume(self, now, signal=None):
         """Advance coroutine for the current time step"""
@@ -90,6 +103,19 @@ class Task(object):
 
     def __repr__(self):
         return '<Task %s>' % name(self.coroutine)
+
+
+def collect(*tasks: Task):
+    results, errors = [], []
+    for task in tasks:
+        try:
+            results.append(task.result)
+        except Exception as err:
+            errors.append(err)
+    if errors:
+        raise MultiError(*errors)
+    else:
+        return results
 
 
 class Resumption(object):
