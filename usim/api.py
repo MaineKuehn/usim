@@ -1,7 +1,7 @@
 import collections
 from typing import Coroutine, Awaitable, TypeVar
 
-from .core import run, Schedule, Hibernate, GetTime, GetTask, Task
+from .core import run, Schedule, Hibernate, GetTime, GetTask, Task, Interrupt, Resumption
 
 
 __all__ = ['run', 'time', 'spawn', 'FifoLock', 'FifoEvent']
@@ -51,21 +51,54 @@ async def time(after: float = None, *, at: float = None) -> Awaitable[float]:
         return await GetTime()
     assert after is None or at is None, "only one of 'after' or 'at' may be used"
     if after is not None:
-        await Schedule(delay=after)
+        wakeup = await Schedule(delay=after)
     else:
-        await Schedule(delay=(at - await GetTime()))
-    await Hibernate()
-    return await GetTime()
+        wakeup = await Schedule(delay=(at - await GetTime()))
+    try:
+        await Hibernate()
+    except Interrupt:
+        wakeup.cancel()
+        raise
+    else:
+        return await GetTime()
 
 
 async def spawn(coroutine: Coroutine[YT, ST, RT], after: float = None, at: float = None) -> Awaitable[RT]:
     if after is at is None:
-        return await Schedule(Task(coroutine))
-    assert after is None or at is None, "only one of 'after' or 'at' may be used"
-    if after is not None:
-        return await Schedule(Task(coroutine), delay=after)
+        schedule = await Schedule(Task(coroutine))
+    elif after is not None:
+        assert after is None or at is None, "only one of 'after' or 'at' may be used"
+        schedule = await Schedule(Task(coroutine), delay=after)
     else:
-        return await Schedule(Task(coroutine), delay=(at - await GetTime()))
+        schedule = await Schedule(Task(coroutine), delay=(at - await GetTime()))
+    return schedule.target
+
+
+class Timeout(object):
+    """
+    Scoped timeout that aborts outstanding operations
+
+    .. code:: python
+
+        async with Timeout(after=120):
+            while True:
+                print('It is', await time(after=10), 'after the simulation started')
+    """
+    def __init__(self, after: float = None, *, at: float = None):
+        self.after = after
+        self.at = at
+        self._interrupt = None  # type: Resumption
+
+    async def __aenter__(self):
+        assert self._interrupt is None, '%s is not re-entrant' % self.__class__.__name__
+        delay = self.after if self.after is not None else (self.at - await GetTime())
+        self._interrupt = await Schedule(signal=Interrupt('<timeout %s>' % id(self)), delay=delay)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is Interrupt and exc_val is self._interrupt.signal:
+            return True
+        self._interrupt.cancel()
+        return False
 
 
 class FifoLock(object):
@@ -88,7 +121,11 @@ class FifoLock(object):
             return
         # contested - store THIS STACK for resumption
         self._waiters.append(await GetTask())
-        await Hibernate()  # break point - we are resumed when we own the lock
+        try:
+            await Hibernate()  # break point - we are resumed when we own the lock
+        except Interrupt:
+            self._waiters.remove(await GetTask())
+            raise
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # pass on lock state to next waiter
@@ -124,7 +161,11 @@ class FifoEvent(object):
         # unset - store THIS STACK for resumption
         stack = yield from GetTask().__await__()
         self._waiters.append(stack)
-        yield Hibernate().__await__()  # break point - we are resumed when the event is set
+        try:
+            yield Hibernate().__await__()  # break point - we are resumed when the event is set
+        except Interrupt:
+            self._waiters.remove(stack)
+            raise
 
     async def set(self):
         self._value = True
@@ -141,4 +182,3 @@ class FifoEvent(object):
 
     def __repr__(self):
         return '<%s, set=%s, waiters=%d>' % (self.__class__.__name__, self._value, len(self._waiters))
-
