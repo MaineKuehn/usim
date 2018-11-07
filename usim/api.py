@@ -63,7 +63,7 @@ async def time(after: float = None, *, at: float = None) -> Awaitable[float]:
         return await GetTime()
 
 
-async def spawn(coroutine: Coroutine[YT, ST, RT], after: float = None, at: float = None) -> Awaitable[RT]:
+async def spawn(coroutine: Coroutine[YT, ST, RT], after: float = None, *, at: float = None) -> Awaitable[RT]:
     if after is at is None:
         schedule = await Schedule(Task(coroutine))
     elif after is not None:
