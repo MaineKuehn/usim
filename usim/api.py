@@ -57,7 +57,7 @@ async def time(after: float = None, *, at: float = None) -> Awaitable[float]:
     try:
         await Hibernate()
     except Interrupt:
-        wakeup.cancel()
+        await wakeup.cancel()
         raise
     else:
         return await GetTime()
@@ -97,7 +97,7 @@ class Timeout(object):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if exc_type is Interrupt and exc_val is self._interrupt.signal:
             return True
-        self._interrupt.cancel()
+        await self._interrupt.cancel()
         return False
 
 

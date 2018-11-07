@@ -51,6 +51,8 @@ class Task(object):
         """Advance coroutine for the current time step"""
         enqueue = []  # type: List[Tuple[float, Resumption]]
         resume = []  # type: List[Resumption]
+        if self._done:
+            return enqueue, resume
         coroutine, message = self.coroutine, None
         try:
             while True:
@@ -78,6 +80,8 @@ class Task(object):
                     break
                 else:
                     raise ValueError('result %r is not an %s command' % (command, self.__class__.__name__))
+        except RuntimeError:
+            raise
         except Exception as exit_signal:
             resume.extend([Resumption(task, now) for task in self._waiters])
             self._complete(exit_signal)
@@ -91,6 +95,13 @@ class Task(object):
             self._result = signal.value, None
         else:
             self._result = None, signal
+
+    async def cancel(self):
+        if not self._done:
+            self.coroutine.close()
+            self._complete(Cancelled())
+            for task in self._waiters:
+                await Schedule(task)
 
     def __await__(self) -> Awaitable[RT]:
         if not self._done:
@@ -121,9 +132,15 @@ def collect(*tasks: Task):
 
 
 class Interrupt(Exception):
+    """Internal Interrupt signal for operations"""
     def __init__(self, token):
         self.token = token
         Exception.__init__(self, token)
+
+
+class Cancelled(Exception):
+    """A Task has been cancelled"""
+    pass
 
 
 class Resumption(object):
@@ -136,7 +153,7 @@ class Resumption(object):
     def __bool__(self) -> bool:
         return not self._canceled
 
-    def cancel(self):
+    async def cancel(self):
         self._canceled = True
 
     def __repr__(self):
