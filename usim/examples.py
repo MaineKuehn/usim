@@ -4,7 +4,7 @@ import random
 import click
 
 
-from usim.api import time, run, spawn, FifoLock, FifoEvent
+from usim.api import time, run, spawn, FifoLock, FifoEvent, Timeout
 
 
 class Timed(object):
@@ -108,6 +108,36 @@ def multievent(waiters=100, toggle=0.5):
     with Timed() as duration:
         run(spawn(reset(event), 10), *(waiter(i, event, toggle) for i in range(waiters)))
     report(duration.duration, waiters * 1 / toggle)
+
+
+@cli.command()
+def multitime(players=10, timeout=90):
+    async def player(identifier, ball: FifoLock, fumbles=0.1):
+        while True:
+            async with ball:  # unconditionally wait for the ball to be available
+                if random.random() > 1 / players:  # chance that someone else got the ball
+                    continue
+                print(identifier, 'got the ball at', await time())
+                await time(after=1)
+                while random.random() < fumbles:
+                    await time(after=1)
+
+    async def game(participants, duration):
+        ball = FifoLock()
+        async with Timeout(after=duration):
+            players = []
+            for idx in range(participants):
+                players.append(await spawn(player(idx, ball)))
+            await players[0]
+
+    with Timed() as duration:
+        run(game(participants=players, duration=timeout))
+    report(
+        duration.duration,
+        players * (1 + (
+            0 if players <= 1 else (1 / (players - 1)) ** players)
+        )
+    )
 
 
 if __name__ == "__main__":

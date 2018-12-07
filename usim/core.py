@@ -186,11 +186,11 @@ class Schedule(object):
 
 class GetTime(object):
     """Get the current time"""
-    def __await__(self) -> float:
+    def __await__(self) -> Awaitable[float]:
         return (yield self)
 
 
 class GetTask(object):
     """Get the current Task"""
-    def __await__(self) -> Task:
+    def __await__(self) -> Awaitable[Task]:
         return (yield self)

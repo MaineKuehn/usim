@@ -73,3 +73,30 @@ API/Implementation
 ++++++++++++++++++
 
 Probably a good idea to separate API and Loop implementation.
+
+Primitives
+----------
+
+Toggle Event
+++++++++++++
+
+Allow Events to react to toggling either way. I.e. something like
+
+.. code:: python
+
+    await event
+    await event.true
+    await event.false
+
+Context meaning
++++++++++++++++
+
+Have a consistent meaning of contexts? E.g. "set", "if set" (lock), "exclusive set" (lock)
+
+.. code:: python
+
+    with lock:  # acquire lock, proceed if set succeeds
+        ...
+
+    with event:  # set event?
+        ...

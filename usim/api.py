@@ -89,6 +89,9 @@ class Timeout(object):
         self.at = at
         self._interrupt = None  # type: Resumption
 
+    def __enter__(self):
+        raise RuntimeError("%s must be used in 'async with'" % self.__class__.__name__)
+
     async def __aenter__(self):
         assert self._interrupt is None, '%s is not re-entrant' % self.__class__.__name__
         delay = self.after if self.after is not None else (self.at - await GetTime())
@@ -113,6 +116,9 @@ class FifoLock(object):
     def __init__(self):
         self.held = False
         self._waiters = collections.deque()
+
+    def __enter__(self):
+        raise RuntimeError("%s must be used in 'async with'" % self.__class__.__name__)
 
     async def __aenter__(self):
         # uncontested - just take it
