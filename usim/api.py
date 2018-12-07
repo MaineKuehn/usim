@@ -22,7 +22,7 @@ async def _chain(*coroutines):
     return result
 
 
-async def time(after: float = None, *, at: float = None) -> Awaitable[float]:
+async def time(after: float = None, *, at: float = None) -> float:
     """
     Wait until an absolute or relative point in time
 
