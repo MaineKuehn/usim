@@ -26,7 +26,10 @@ class CancelScope(object):
         self._task = None  # type: Task
 
     def __enter__(self):
-        raise RuntimeError("%s must be used in 'async with'" % self.__class__.__name__)
+        raise TypeError("%s must be used in 'async with'" % self.__class__.__name__)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        raise TypeError("%s must be used in 'async with'" % self.__class__.__name__)
 
     async def fork(self, coroutine: Coroutine[YT, ST, RT], after: float = None, *, at: float = None) -> Awaitable[RT]:
         if after is at is None:

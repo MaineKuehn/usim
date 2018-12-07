@@ -5,6 +5,7 @@ import click
 
 
 from usim.api import time, run, spawn, FifoLock, FifoEvent, Timeout
+from usim.scope import CancelScope
 
 
 class Timed(object):
@@ -125,10 +126,11 @@ def multitime(players=10, timeout=90):
     async def game(participants, duration):
         ball = FifoLock()
         async with Timeout(after=duration):
-            players = []
-            for idx in range(participants):
-                players.append(await spawn(player(idx, ball)))
-            await players[0]
+            async with CancelScope() as scope:
+                players = []
+                for idx in range(participants):
+                    players.append(await scope.fork(player(idx, ball)))
+                await players[0]
 
     with Timed() as duration:
         run(game(participants=players, duration=timeout))
