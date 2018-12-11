@@ -77,6 +77,20 @@ Probably a good idea to separate API and Loop implementation.
 Primitives
 ----------
 
+Non-Events?
++++++++++++
+
+Is there a need for a "raw" event? I.e. just `await` API?
+Non-bare events would support composition and interrupts:
+
+.. code:: python
+
+    # primitive wait
+    event = time(20)              # primitive event
+    await event
+    event = time(20) & proc.done  # composed event
+    await event
+
 Toggle Event
 ++++++++++++
 
@@ -84,14 +98,15 @@ Allow Events to react to toggling either way. I.e. something like
 
 .. code:: python
 
-    await event
-    await event.true
-    await event.false
+    await event         # resume if True
+    await event.true    # resume if True
+    await event.false   # resume if False
+    await invert(event) # resume if False
 
 Context meaning
 +++++++++++++++
 
-Have a consistent meaning of contexts? E.g. "set", "if set" (lock), "exclusive set" (lock)
+Have a consistent meaning of contexts? E.g. "set", "if set" (event), "exclusive set" (lock)
 
 .. code:: python
 
@@ -100,3 +115,32 @@ Have a consistent meaning of contexts? E.g. "set", "if set" (lock), "exclusive s
 
     with event:  # set event?
         ...
+
+`await` for events, `async with` for interrupts?
+
+.. code:: python
+
+    await event        # resume if True
+
+    async with event:  # interrupt if False
+        ...
+
+Channels
+++++++++
+
+Unbuffered message passing - every `await channel.send(message)` wakes up all `message = await channel` waiters.
+Can also be used as async iterator:
+
+.. code:: python
+
+    # await gives next message
+    message = await channel
+    message = await anext(channel)
+
+    # async for gives all messages
+    async for message in channel:
+        ...
+
+Should it be `await channel.send` (Queue) or `await channel.asend` (async generator, PEP0525)?
+How about `await channel.broadcast`, `await channel.push`, `await channel.put`?
+Separate one-to-one and one-to-many per Channel types?
