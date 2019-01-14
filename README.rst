@@ -11,6 +11,7 @@ Selling Points
 
 * clear ``await`` and ``async def`` syntax
     * allows using ``async with`` and ``async for`` blocks
+* Fully event-driven API to intuitively express flow of time and relations
 * automatic Environment handling
 
 Notes
@@ -34,7 +35,7 @@ Not suitable if people want to simulate actual time.
 
 Possible approaches:
 
-Tracked Time
+Tracked Deadline
     Track time drift per Task. Add/subtract whenever we have a full resolution offset.
 
 Separate Interfaces
@@ -102,6 +103,7 @@ Allow Events to react to toggling either way. I.e. something like
     await event.true    # resume if True
     await event.false   # resume if False
     await invert(event) # resume if False
+    await ~event        # resume if False
 
 Context meaning
 +++++++++++++++
@@ -125,6 +127,14 @@ Have a consistent meaning of contexts? E.g. "set", "if set" (event), "exclusive 
     async with event:  # interrupt if False
         ...
 
+Separate context to mark kind of signal?
+
+    async with lock:   # regular "get this resource" context
+        ...
+
+    async with until(lock):  # explicit "interrupt when triggered" context
+        ...
+
 Channels
 ++++++++
 
@@ -144,3 +154,14 @@ Can also be used as async iterator:
 Should it be `await channel.send` (Queue) or `await channel.asend` (async generator, PEP0525)?
 How about `await channel.broadcast`, `await channel.push`, `await channel.put`?
 Separate one-to-one and one-to-many per Channel types?
+
+Locks
++++++
+
+Can we detect deadlocks? Something like tracking the stack of Locks, and raising an error on conflicts?
+
+Say we have activity A try and acquire Locks `x->y->z` and B Locks `x->z->y`, and both have the first two.
+When A queues for `z`, it just suspends. But when B now queues for `y`, it detects:
+- the owner will not release `y` before acquiring `z`
+- I will not release `z` before acquiring `y`
+- Deadlock

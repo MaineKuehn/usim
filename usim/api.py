@@ -1,7 +1,8 @@
+# no longer used, just here for reference
 import collections
 from typing import Coroutine, Awaitable, TypeVar
 
-from .core import run, Schedule, Hibernate, GetTime, GetTask, Task, Interrupt, Resumption
+from .core import run, Schedule, Hibernate, GetTime, GetTask, Task, Interrupt, Activation
 
 
 __all__ = ['run', 'time', 'spawn', 'FifoLock', 'FifoEvent']
@@ -87,7 +88,7 @@ class Timeout(object):
     def __init__(self, after: float = None, *, at: float = None):
         self.after = after
         self.at = at
-        self._interrupt = None  # type: Resumption
+        self._interrupt = None  # type: Activation
 
     def __enter__(self):
         raise RuntimeError("%s must be used in 'async with'" % self.__class__.__name__)
