@@ -75,6 +75,28 @@ API/Implementation
 
 Probably a good idea to separate API and Loop implementation.
 
+API Design
+----------
+
+Non-Await Communication
++++++++++++++++++++++++
+
+Using only `await` to communicate with the event loop has some ugly side-effects for *non-async* operations.
+For example, querying the time or coroutine *look* like they postpone execution, but don't.
+
+.. code:: python
+
+    now = await time        # query time
+    await (time + 20)       # postpone
+    now = await (time + 20) # postpone and query
+
+This is doubly confusing when we do a query somewhere deep in an API which is otherwise sync.
+There we need `await` only for communication, but the operation is not truly async.
+That also means delayed interrupts (`async with until(...):`) *may or may not* fire at an `await`.
+
+Ideally, we use `await` (`async with`, ...) *only* for true break points, i.e. whenever an interrupt can occur.
+Otherwise, communicate via a side-channel, such as global/thread-local loop reference.
+
 Primitives
 ----------
 
