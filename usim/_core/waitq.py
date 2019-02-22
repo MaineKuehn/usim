@@ -9,6 +9,9 @@ class WaitQueue:
     def __bool__(self):
         return bool(self._keys)
 
+    def __len__(self):
+        return sum(len(item) for item in self._data.values())
+
     def update(self, key_items):
         for key, item in key_items:
             self.push(key, item)

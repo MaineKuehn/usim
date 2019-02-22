@@ -25,28 +25,28 @@ Similarly, producers can send individual or several messages at once:
 
 Note that channels exist *exclusively* for message passing,
 and do not serve as :py:class:`Notification`\ s.
-A channel cannot be used in an ``async with until`` statement.
+A channel cannot be used in an ``async with until(...):`` statement.
 """
 from collections import deque
 
-from typing import Generic, TypeVar, Dict, List, Coroutine, Awaitable, Union, Deque
+from typing import Generic, TypeVar, Dict, List, Coroutine, Awaitable, Union, Deque, AsyncIterable, AsyncIterator
 
-from ..core import GetTask, Interrupt as CoreInterrupt
-from .notification import postpone, Hibernate, Notification
-from .locks import Lock
+from .._core.loop import __LOOP_STATE__
+from .._primitives.notification import postpone, Notification, NoSubscribers
+from .._primitives.locks import Lock
 
 
 #: Type of channel content
 ST = TypeVar('ST')
 
 
-class Closed(Exception):
+class StreamClosed(Exception):
     def __init__(self, stream):
         self.stream = stream
         super().__init__('%r is closed and cannot provide more messages' % stream)
 
 
-class Channel(Generic[ST]):
+class Channel(AsyncIterable, Generic[ST]):
     """
     Unbuffered stream that broadcasts every message to all consumers
     """
@@ -56,38 +56,38 @@ class Channel(Generic[ST]):
 
     def __init__(self):
         super().__init__()
-        self._consumer_buffers = {}  # type: Dict[Union[Coroutine, ChannelStream], List[ST]]
+        self._consumer_buffers = {}  # type: Dict[Union[Coroutine, ChannelAsyncIterator], List[ST]]
         self._notification = Notification()
         self._closed = False
 
     async def close(self):
         self._closed = True
-        await self._notification.__awake_all__()
+        self._notification.__awake_all__()
 
     def __await__(self) -> Awaitable[ST]:
         if self._closed:
-            raise Closed(self)
-        task = await GetTask()
-        self._consumer_buffers[task] = buffer = []
+            raise StreamClosed(self)
+        activity = __LOOP_STATE__.LOOP.activity
+        self._consumer_buffers[activity] = buffer = []  # type: List[ST]
         try:
             yield from self._notification.__await__()
         finally:
-            self._consumer_buffers.pop(task)
+            self._consumer_buffers.pop(activity)
         if not buffer and self._closed:
-            raise Closed(self)
+            raise StreamClosed(self)
         return buffer[0]
 
     def __aiter__(self):
-        return ChannelStream(self)
+        return ChannelAsyncIterator(self)
 
     async def put(self, item: ST):
         for buffer in self._consumer_buffers.values():
             buffer.append(item)
-        await self._notification.__awake_all__()
+        self._notification.__awake_all__()
         await postpone()
 
 
-class ChannelStream(Generic[ST]):
+class ChannelAsyncIterator(AsyncIterator, Generic[ST]):
     def __init__(self, channel: Channel[ST]):
         self._channel = channel
         self._buffer = channel._consumer_buffers[self] = []  # type: List[ST]
@@ -103,7 +103,7 @@ class ChannelStream(Generic[ST]):
         return self
 
 
-class Queue(Generic[ST]):
+class Queue(AsyncIterable, Generic[ST]):
     """
     Buffered stream that anycasts messages to individual consumers
     """
@@ -115,15 +115,16 @@ class Queue(Generic[ST]):
         super().__init__()
         self._buffer = deque()  # type: Deque[ST]
         self._notification = Notification()
+        # mutex to ensure readers are ordered
         self._read_mutex = Lock()
         self._closed = False
 
-    async def close(self):
+    def close(self):
         self._closed = True
-        await self._notification.__awake_all__()
+        self._notification.__awake_all__()
 
     def __await__(self) -> Awaitable[ST]:
-        yield from self._await_message()
+        return (yield from self._await_message().__await__())
 
     async def _await_message(self):
         async with self._read_mutex:
@@ -132,27 +133,37 @@ class Queue(Generic[ST]):
             except IndexError:
                 pass
             if self._closed:
-                raise Closed(self)
+                raise StreamClosed(self)
             await self._notification
             if not self._buffer and self._closed:
-                raise Closed(self)
+                raise StreamClosed(self)
             return self._buffer.popleft()
+
+    def __aiter__(self):
+        return QueueAsyncIterator(self)
 
     async def put(self, item: ST):
         self._buffer.append(item)
-        await self._notification.__awake_next__()
+        try:
+            self._notification.__awake_next__()
+        except NoSubscribers:
+            pass
         await postpone()
 
 
-class QueueStream(Generic[ST]):
+class QueueAsyncIterator(AsyncIterator, Generic[ST]):
     def __init__(self, queue: Queue[ST]):
         self._queue = queue
 
     async def __anext__(self) -> ST:
         try:
             return await self._queue
-        except Closed:
+        except StreamClosed:
             raise StopAsyncIteration
 
     def __aiter__(self):
         return self
+
+
+Stream = Union[Channel, Queue]
+StreamAsyncIterator = Union[ChannelAsyncIterator, QueueAsyncIterator]

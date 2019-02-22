@@ -1,13 +1,19 @@
 import operator
 
-from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine
+from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine, Awaitable
 
-from ..core import Interrupt as CoreInterrupt
-from .notification import Broadcast, postpone
-from .condition import Condition
+from .._core.loop import Interrupt as CoreInterrupt
+from .._primitives.notification import postpone
+from .._primitives.condition import Condition
 
 
-class BoolExpression(Condition, Broadcast):
+#: Type of a (tracked) value
+V = TypeVar('V')
+#: Right Hand Side type of an operation
+RHS = TypeVar('RHS')
+
+
+class BoolExpression(Condition):
     """
     A boolean condition on a Tracked value
     """
@@ -63,15 +69,15 @@ class BoolExpression(Condition, Broadcast):
                     source.__del_listener__(self)
         self._subscribed = False
 
-    def __await__(self):
+    def __await__(self) -> Awaitable[bool]:
         self._start_listening()
         result = (yield from super().__await__())
         self._stop_listening()
         return result
 
-    async def __subscribe__(self, interrupt: CoreInterrupt = None, task: Coroutine = None):
+    async def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
         self._start_listening()
-        await super().__subscribe__(interrupt, task)
+        await super().__subscribe__(waiter, interrupt)
 
     async def __trigger__(self):
         await super().__trigger__()
@@ -83,9 +89,6 @@ class BoolExpression(Condition, Broadcast):
 
     def __repr__(self):
         return '%s %s %s' % (self._left, self._operator_symbol[self._condition], self._right)
-
-
-V = TypeVar('V')
 
 
 class Tracked(Generic[V]):
@@ -100,29 +103,30 @@ class Tracked(Generic[V]):
         async def refill(coffee: Tracked[float]):
             while True:
                 # boolean expression providing an event to wait for
-                await (coffee < 0.5)
-                print('Let me refill that for you!')
-                # arithmetic expression providing a trigger for waiters
-                await (coffee + 0.5)
-
-    :note: A :py:class:`Tracked` object cannot be used in hash-based collections,
-           such as keys of a :py:class:`dict` or elements of a :py:class:`set`.
+                await (coffee < 0.1)
+                print('Coffee is low! Initiating emergency refill!')
+                # arithmetic expression triggering waiting activities
+                await (coffee + 0.9)
+                print('Coffee refilled! Emergency resolved!')
     """
     @property
     def value(self) -> V:
         return self._value
 
-    def __add_listener__(self, listener: BoolExpression):
-        self._listeners.append(listener)
-
-    def __del_listener__(self, listener: BoolExpression):
-        self._listeners.remove(listener)
-
     def __init__(self, value: V):
         self._value = value
         self._listeners = []  # type: List[BoolExpression]
 
+    def __add_listener__(self, listener: BoolExpression):
+        """Add a new listener for changes"""
+        self._listeners.append(listener)
+
+    def __del_listener__(self, listener: BoolExpression):
+        """Remove an existing listener for changes"""
+        self._listeners.remove(listener)
+
     async def set(self, to: V):
+        """Set the value"""
         self._value = to
         for listener in self._listeners:
             await listener.__on_changed__()
@@ -131,6 +135,9 @@ class Tracked(Generic[V]):
     async def __set_expression__(self, to: V):
         await self.set(to)
         return self
+
+    def _async_operation(self, op: Callable[[V, RHS], V], rhs: RHS) -> 'TrackedOperation[V]':
+        return TrackedOperation(self, Operation(op, rhs))
 
     # boolean operations producing a BoolExpression
     def __lt__(self, other):
@@ -193,7 +200,7 @@ class Tracked(Generic[V]):
 
     def __radd__(self, other):
         raise TypeError("tracked object does not support reflected operators\n"
-                        "Use 'await (tracked + 4)' instead")
+                        "Use 'await (tracked + 4)' instead of 'await (4 + tracked)'")
 
     __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__ = __rdivmod__ = __rpow__ = __rlshift__ \
         = __rrshift__ = __rand__ = __rxor__ = __ror__ = __radd__
@@ -220,46 +227,105 @@ class Tracked(Generic[V]):
         return '%s(%s)' % (self.__class__.__name__, self._value)
 
 
-class TrackedExpression:
-    """expression to set a tracked value"""
-    def __init__(self, value: Tracked[V], to, representation: Callable[[], str] = None):
-        self.value = value
-        self.to = to
-        self._run = False
-        self._repr = representation if representation is not None else lambda: '%s.set(%s)' % (value, to)
+class Operation(Generic[V, RHS]):
+    __slots__ = ('operator', 'rhs')
+    _operator_symbol = {
+        operator.add: '+',
+        operator.sub: '-',
+        operator.mul: '*',
+        operator.matmul: '@',
+        operator.truediv: '/',
+        operator.floordiv: '//',
+        operator.mod: '%',
+        operator.pow: '**',
+        operator.lshift: '<<',
+        operator.rshift: '>>',
+        operator.and_: '&',
+        operator.or_: '|'
+    }
 
-    def __await__(self):
-        if self._run:
-            raise RuntimeError("%r cannot be awaited multiple times" % self)
-        self._run = True
-        yield from self.value.set(self.to).__await__()
+    def __init__(self, op: Callable[[V, RHS], V], rhs: RHS):
+        self.operator = op
+        self.rhs = rhs
+
+    def __str__(self):
+        return '%s %s' % (self._operator_symbol[self.operator], self.rhs)
 
     def __repr__(self):
-        return self._repr()
+        return '%s(%s, %r)' % (self.__class__.__name__, self.operator, self.rhs)
 
 
-if __name__ == "__main__":
-    from usim.core import run
-    from .notification import until
+class TrackedOperation(Generic[V]):
+    __slots__ = ('_tracked', '_operations')
 
-    async def drink(coffee: Tracked[int]):
-        for _ in range(14):
-            if coffee >= 5:
-                print('*sip*')
-                await (coffee - 1)
-            else:
-                print('only %s sips left :(' % coffee.value)
-                await (coffee >= 5)
-        print('Enough! Back to work!')
-        await (coffee - coffee.value)
+    def __init__(self, value: Tracked[V], *operations: Operation):
+        self._tracked = value
+        self._operations = operations
 
-    async def refill(coffee: Tracked[int]):
-        async with until(coffee <= 0):
-            async with until(coffee <= 0):
-                while True:
-                    await (coffee <= 5)
-                    print('Let me refill that for you...')
-                    await (coffee + 5)
+    def __await__(self) -> Tracked[V]:
+        tracked = self._tracked
+        for operation in self._operations:
+            yield from tracked.set(operation.operator(tracked.value, operation.rhs))
+        return tracked
 
-    cff = Tracked(10)
-    run(drink(cff), refill(cff))
+    def __extend__(self, op: Callable[[V, RHS], V], rhs: RHS) -> 'TrackedOperation[V]':
+        return TrackedOperation(self._tracked, *self._operations, Operation(op, rhs))
+
+    # modifying operators
+    def __add__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.add, other)
+
+    def __sub__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.sub, other)
+
+    def __mul__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.mul, other)
+
+    def __matmul__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.matmul, other)
+
+    def __truediv__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.truediv, other)
+
+    def __floordiv__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.floordiv, other)
+
+    def __mod__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.mod, other)
+
+    def __pow__(self, other: RHS, modulo=None) -> 'TrackedOperation[V]':
+        if modulo is not None:
+            raise TypeError("%s does not support the 'modulo' parameter for 'pow'" % self.__class__.__name__)
+        return self.__extend__(operator.pow, other)
+
+    def __lshift__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.lshift, other)
+
+    def __rshift__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.rshift, other)
+
+    def __and__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.and_, other)
+
+    def __or__(self, other: RHS) -> 'TrackedOperation[V]':
+        return self.__extend__(operator.or_, other)
+
+    def __radd__(self, other):
+        raise TypeError("tracked object does not support reflected operators\n"
+                        "Use 'await (tracked + 4 + 5)' instead of 'await (4 + tracked + 5)'")
+
+    __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__ = __rdivmod__ = __rpow__ = __rlshift__ \
+        = __rrshift__ = __rand__ = __rxor__ = __ror__ = __radd__
+
+    def __str__(self):
+        return '%s %s %s)' % (
+            '(' * len(self._operations),
+            self._tracked,
+            ') '.join(str(op) for op in self._operations)
+        )
+
+    def __repr__(self):
+        return '%s(%s)' % (
+            self.__class__.__name__,
+            str(self._operations)[1:-1]
+        )

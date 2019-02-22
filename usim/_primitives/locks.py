@@ -1,6 +1,6 @@
 from typing import Coroutine
 
-from ..core import GetTask
+from .._core.loop import __LOOP_STATE__
 from .notification import Notification, NoSubscribers
 
 
@@ -21,25 +21,27 @@ class Lock:
     an Activity can acquire the same lock multiple times.
     This allows using Locks safely in recursive calls.
     """
+    __slots__ = ('_notification', '_owner', '_depth')
+
     def __init__(self):
         self._notification = Notification()
         self._owner = None  # type: Coroutine
         self._depth = 0
 
     @property
-    async def peek(self):
+    def available(self):
         """
         Check whether the current Activity can acquire this lock
         """
         if self._owner is None:
             return True
-        elif self._owner is await GetTask():
+        elif self._owner is __LOOP_STATE__.LOOP.activity:
             return True
         else:
             return False
 
     async def __aenter__(self):
-        current_activity = await GetTask()
+        current_activity = __LOOP_STATE__.LOOP.activity
         if self._owner is None:
             self._owner = current_activity
         elif self._owner is not current_activity:
@@ -48,16 +50,18 @@ class Lock:
             except BaseException:
                 # we are the designated owner, pass on ownership
                 if self._owner == current_activity:
-                    await self.__release__()
+                    self.__release__()
                 raise
         self._depth += 1
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        assert self._owner == await GetTask()
+        if exc_type is GeneratorExit:
+            return False
+        assert self._owner == __LOOP_STATE__.LOOP.activity
         self._depth -= 1
         if self._depth == 0:
-            await self.__release__()
+            self.__release__()
         return False
 
     def __block__(self, by):
@@ -65,7 +69,7 @@ class Lock:
         assert self._owner is None or self._owner is by, 'cannot block an owned lock'
         self._owner = by
 
-    async def __release__(self):
+    def __release__(self):
         try:
             candidate, signal = self._notification.__awake_next__()
         except NoSubscribers:
