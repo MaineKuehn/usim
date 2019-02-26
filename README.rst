@@ -52,6 +52,17 @@ Drift Scope
         async for now in every(10):
             print(now, 'should be roughly 10s later')
 
+Conclusion
+~~~~~~~~~~
+
+Dropped time resolution entirely, in favour of an arbitrary precision clock.
+Time semantics have been improved, making it simple to do time-scoped actions.
+
+.. code:: python
+
+    async for now in each(interval=20):
+        ...
+
 Re-Scheduling Priority
 ++++++++++++++++++++++
 
@@ -70,10 +81,27 @@ Resume First
 Resume Last
     Resume the routine that has waited the longest.
 
+Conclusion
+~~~~~~~~~~
+
+Using FIFO and a time -> turn based schedule.
+All primitives requeue for the current time step in ``await`` expressions.
+
+The current time uses a turn queue separate from the time schedule.
+Re-queuing puts a task at the end of the turn queue.
+The loop runs tighter around the turn-queue, avoiding time and schedule overhead.
+
 API/Implementation
 ++++++++++++++++++
 
 Probably a good idea to separate API and Loop implementation.
+
+Conclusion
+~~~~~~~~~~
+
+Using a low-level (loop), intermediate-level (notifications) and high-level (api) layer.
+The notification and api layer are somewhat intertwined for implementation simplicity;
+notifications are abstract and exposed as type hints for users.
 
 API Design
 ----------
@@ -97,6 +125,15 @@ That also means delayed interrupts (`async with until(...):`) *may or may not* f
 Ideally, we use `await` (`async with`, ...) *only* for true break points, i.e. whenever an interrupt can occur.
 Otherwise, communicate via a side-channel, such as global/thread-local loop reference.
 
+Conclusion
+~~~~~~~~~~
+
+Split ``await`` and loop commands into separate category.
+An ``await`` is only needed for actions that suspend the current coroutine.
+
+An ``await`` always causes postponement, even if it is just in the same time step.
+Many actions, such as scheduling, are no longer ``await`` to compensate this.
+
 Primitives
 ----------
 
@@ -114,6 +151,12 @@ Non-bare events would support composition and interrupts:
     event = time(20) & proc.done  # composed event
     await event
 
+Conclusion
+~~~~~~~~~~
+
+All "conditional" events follow the ``Condition`` API, which allows composition.
+This includes time.
+
 Toggle Event
 ++++++++++++
 
@@ -126,6 +169,11 @@ Allow Events to react to toggling either way. I.e. something like
     await event.false   # resume if False
     await invert(event) # resume if False
     await ~event        # resume if False
+
+Conclusion
+~~~~~~~~~~
+
+All "conditional" events follow the ``Condition`` API, which allows inversion.
 
 Context meaning
 +++++++++++++++
@@ -157,6 +205,12 @@ Separate context to mark kind of signal?
     async with until(lock):  # explicit "interrupt when triggered" context
         ...
 
+Conclusion
+~~~~~~~~~~
+
+Bare ``async with`` is for acquiring resources (locks).
+Others use explicit calls, as in ``until(notification)``.
+
 Channels
 ++++++++
 
@@ -176,6 +230,12 @@ Can also be used as async iterator:
 Should it be `await channel.send` (Queue) or `await channel.asend` (async generator, PEP0525)?
 How about `await channel.broadcast`, `await channel.push`, `await channel.put`?
 Separate one-to-one and one-to-many per Channel types?
+
+Conclusion
+~~~~~~~~~~
+
+Streams are separated into broadcast and anycast by type.
+Sending is always via `await channel.put`.
 
 Locks
 +++++
