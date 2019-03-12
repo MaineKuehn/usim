@@ -9,9 +9,13 @@ The passing of time and interaction between coroutines is purely simulated.
 Selling Points
 ##############
 
+* lean and user-friendly API
 * clear ``await`` and ``async def`` syntax
-    * allows using ``async with`` and ``async for`` blocks
+    * consistent ``await``-means-interrupt story
+    * powerful ``async with`` and ``async for`` blocks
 * Fully event-driven API to intuitively express flow of time and relations
+    * intuitively create, await and trigger events
+    * easily synchronise on actions, conditions and constraints
 * automatic Environment handling
 
 Notes
@@ -20,7 +24,7 @@ Notes
 Performance
 -----------
 
-PyPy is ~3 times faster for large (~5000 steps) repetitions.
+PyPy is currently ~3 times faster for large (~5000 steps) repetitions.
 
 Usage
 -----
