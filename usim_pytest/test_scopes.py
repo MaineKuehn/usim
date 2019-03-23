@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time, eternity, ActivityCancelled
+from usim import Scope, time, eternity, VolatileActivityExit
 from usim._primitives.activity import ActivityState
 
 from .utility import via_usim
@@ -68,7 +68,7 @@ async def test_volatile():
 
     async with Scope() as scope:
         activity = scope.do(payload(), volatile=True)
-    with pytest.raises(ActivityCancelled):
+    with pytest.raises(VolatileActivityExit):
         assert await activity.result
     assert activity.status == ActivityState.FAILED
 
