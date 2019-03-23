@@ -5,13 +5,13 @@ from ._primitives.timing import Time, Eternity, Instant, each
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
 from ._primitives.context import until, Scope, VolatileActivityExit
-from ._primitives.activity import ActivityCancelled
+from ._primitives.activity import ActivityCancelled, ActivityState
 
 
 __all__ = [
     'run',
     'time', 'eternity', 'instant', 'each',
-    'until', 'Scope', 'ActivityCancelled', 'VolatileActivityExit',
+    'until', 'Scope', 'ActivityCancelled', 'VolatileActivityExit', 'ActivityState',
     'Flag', 'Lock',
 ]
 

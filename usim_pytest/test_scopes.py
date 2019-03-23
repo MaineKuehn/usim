@@ -1,7 +1,6 @@
 import pytest
 
-from usim import Scope, time, eternity, VolatileActivityExit
-from usim._primitives.activity import ActivityState
+from usim import Scope, time, eternity, VolatileActivityExit, ActivityState
 
 from .utility import via_usim
 
