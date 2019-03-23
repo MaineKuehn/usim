@@ -3,10 +3,14 @@ from typing import Coroutine, List, TypeVar, Any
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification
 from .flag import Flag
-from .activity import Activity
+from .activity import Activity, ActivityExit
 
 
 RT = TypeVar('RT')
+
+
+class VolatileActivityExit(ActivityExit):
+    ...
 
 
 class Scope:
@@ -82,8 +86,9 @@ class Scope:
             child.cancel(self)
 
     async def _close_volatile(self):
+        reason = VolatileActivityExit("closed at end of scope '%s'" % self)
         for child in self._volatile_children:
-            child.__close__()
+            child.__close__(reason=reason)
 
     async def __aenter__(self):
         if self._activity is not None:

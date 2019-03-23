@@ -4,11 +4,11 @@ from ._core.loop import Loop as _Loop
 from ._primitives.timing import Time, Eternity, Instant, each
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
-from ._primitives.context import until, Scope
+from ._primitives.context import until, Scope, VolatileActivityExit
 from ._primitives.activity import ActivityCancelled
 
 
-__all__ = ['run', 'time', 'eternity', 'instant', 'each', 'until', 'Scope', 'Flag', 'Lock', 'ActivityCancelled']
+__all__ = ['run', 'time', 'eternity', 'instant', 'each', 'until', 'Scope', 'Flag', 'Lock', 'ActivityCancelled', 'VolatileActivityExit']
 
 
 # User entry point
