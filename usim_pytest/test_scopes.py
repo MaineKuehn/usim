@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time, Eternity, ActivityCancelled
+from usim import Scope, time, eternity, ActivityCancelled
 from usim._primitives.activity import ActivityState
 
 from .utility import via_usim
@@ -61,7 +61,7 @@ async def test_at():
 @via_usim
 async def test_volatile():
     async def payload():
-        await Eternity()
+        await eternity
         return 2
 
     async with Scope() as scope:
