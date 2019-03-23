@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time, eternity, VolatileActivityExit, ActivityState
+from usim import Scope, time, eternity, VolatileActivityExit, ActivityState, ActivityCancelled, until
 
 from .utility import via_usim
 
@@ -80,3 +80,22 @@ async def test_after_and_at():
     async with Scope() as scope:
         with pytest.raises(ValueError):
             scope.do(payload(), after=1, at=1)
+
+
+@via_usim
+async def test_until():
+    async def scheduler():
+        async with Scope() as scope:
+            while True:
+                scope.do(run_job())
+                await (time + 500)
+
+    async def run_job():
+        await (time + 1000)
+
+    async with until(time == 500) as running:
+        activity = running.do(scheduler())
+
+    assert time.now == 500
+    with pytest.raises(ActivityCancelled):
+        await activity.result
