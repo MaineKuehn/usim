@@ -1,4 +1,5 @@
 from typing import List, Tuple, Coroutine
+from contextlib import contextmanager
 
 from .._core.loop import Hibernate, Interrupt, __LOOP_STATE__
 
@@ -28,6 +29,21 @@ async def postpone():
             raise
     finally:
         wake_up.revoke()
+
+
+@contextmanager
+def subscribe(notification: 'Notification'):
+    task = __LOOP_STATE__.LOOP.activity
+    wake_up = Interrupt(notification, task)
+    notification.__subscribe__(task, wake_up)
+    try:
+        yield
+    except Interrupt as err:
+        if err is not wake_up:
+            assert task is __LOOP_STATE__.LOOP.activity, 'Break points cannot be passed to other coroutines'
+            raise
+    finally:
+        notification.__unsubscribe__(task, wake_up)
 
 
 class Notification:
@@ -90,6 +106,20 @@ class Notification:
             interrupt.revoke()
         else:
             self._waiting.remove((waiter, interrupt))
+
+    @contextmanager
+    def __subscription__(self):
+        task = __LOOP_STATE__.LOOP.activity
+        wake_up = Interrupt(self, task)
+        self.__subscribe__(task, wake_up)
+        try:
+            yield
+        except Interrupt as err:
+            if err is not wake_up:
+                assert task is __LOOP_STATE__.LOOP.activity, 'Break points cannot be passed to other coroutines'
+                raise
+        finally:
+            self.__unsubscribe__(task, wake_up)
 
     def __del__(self):
         if self._waiting:
