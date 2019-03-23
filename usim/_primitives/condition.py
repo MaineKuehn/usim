@@ -1,4 +1,4 @@
-from contextlib import AsyncExitStack
+from contextlib import ExitStack
 
 from typing import Coroutine, Awaitable
 
@@ -73,9 +73,9 @@ class Connective(Condition):
     async def __await_children__(self):
         await postpone()
         while not self:
-            async with AsyncExitStack() as stack:
+            with ExitStack() as stack:
                 for child in self._children:
-                    await stack.enter_async_context(child)
+                    stack.enter_context(child.__subscription__())
                 await Hibernate()  # hibernate until a child condition triggers
         return True
 
