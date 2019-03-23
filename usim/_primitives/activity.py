@@ -44,6 +44,10 @@ class Activity(Condition, Generic[RT]):
     def __init__(self, payload: Coroutine[Any, Any, RT]):
         @wraps(payload)
         async def payload_wrapper():
+            # check for a pre-run cancellation
+            if self._result is not None:
+                self.payload.close()
+                return
             try:
                 result = await self.payload
             except ActivityCancelled as err:
@@ -107,7 +111,6 @@ class Activity(Condition, Generic[RT]):
         if self._result is None:
             cancellation = ActivityCancelled('cancel activity', id(self), 'for', *token)
             if self.status is ActivityState.CREATED:
-                self._execution.close()
                 self._result = None, cancellation
                 self.__trigger__()
             else:
