@@ -65,3 +65,13 @@ async def test_volatile():
         activity = scope.do(payload(), volatile=True)
     with pytest.raises(ActivityCancelled):
         assert await activity.result
+
+
+@via_usim
+async def test_after_and_at():
+    async def payload():
+        return 2
+
+    async with Scope() as scope:
+        with pytest.raises(ValueError):
+            scope.do(payload(), after=1, at=1)
