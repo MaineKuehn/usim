@@ -44,15 +44,12 @@ class Activity(Condition, Generic[RT]):
     def __init__(self, payload: Coroutine[Any, Any, RT]):
         @wraps(payload)
         async def payload_wrapper():
-            if self._cancellations:
-                self._result = None, self._cancellations[0]
+            try:
+                result = await self.payload
+            except ActivityCancelled as err:
+                self._result = None, err
             else:
-                try:
-                    result = await self.payload
-                except ActivityCancelled as err:
-                    self._result = None, err
-                else:
-                    self._result = result, None
+                self._result = result, None
             for cancellation in self._cancellations:
                 cancellation.revoke()
             self.__trigger__()
@@ -109,9 +106,14 @@ class Activity(Condition, Generic[RT]):
         """Cancel this activity during the current time step"""
         if self._result is None:
             cancellation = ActivityCancelled('cancel activity', id(self), 'for', *token)
-            self._cancellations.append(cancellation)
-            cancellation.scheduled = True
-            __LOOP_STATE__.LOOP.schedule(self._execution, signal=cancellation)
+            if self.status is ActivityState.CREATED:
+                self._execution.close()
+                self._result = None, cancellation
+                self.__trigger__()
+            else:
+                self._cancellations.append(cancellation)
+                cancellation.scheduled = True
+                __LOOP_STATE__.LOOP.schedule(self._execution, signal=cancellation)
 
     def __repr__(self):
         return '<%s of %s (%s)>' % (
