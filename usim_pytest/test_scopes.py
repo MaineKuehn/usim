@@ -39,6 +39,8 @@ async def test_after():
         assert activity.status == ActivityState.CREATED
         await (time + 4)
         assert activity.status == ActivityState.CREATED
+        await (time + 3)
+        assert activity.status == ActivityState.RUNNING
         await activity.result
         assert time.now == 15
         assert activity.status == ActivityState.SUCCESS
