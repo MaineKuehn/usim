@@ -18,9 +18,9 @@ class Activity(Condition, Generic[RT]):
 
     :note: Simulation code should never instantiate this class directly.
     """
-    __slots__ = ('payload', 'context', '_result', '_execution', '_cancellations')
+    __slots__ = ('payload', '_result', '_execution', '_cancellations')
 
-    def __init__(self, payload: Coroutine[Any, Any, RT], context):
+    def __init__(self, payload: Coroutine[Any, Any, RT]):
         @wraps(payload)
         async def payload_wrapper():
             if self._cancellations:
@@ -39,7 +39,6 @@ class Activity(Condition, Generic[RT]):
         self._cancellations = []  # type: List[CancelActivity]
         self._result = None  # type: Optional[Tuple[RT, BaseException]]
         self.payload = payload
-        self.context = context
         self._execution = payload_wrapper()
 
     @property
@@ -81,9 +80,8 @@ class Activity(Condition, Generic[RT]):
             __LOOP_STATE__.LOOP.schedule(self._execution, signal=cancellation)
 
     def __repr__(self):
-        return '<%s of %s [%s] (%s)>' % (
+        return '<%s of %s (%s)>' % (
             self.__class__.__name__, self.payload,
-            self.context,
             'outstanding' if not self else (
                 'result={!r}'.format(self._result[0])
                 if self._result[1] is None

@@ -62,7 +62,7 @@ class Scope:
         """
         if after is not None and at is not None:
             raise ValueError("only one of 'after' and 'at' can be used at once")
-        child_activity = Activity(payload, context=self)
+        child_activity = Activity(payload)
         __LOOP_STATE__.LOOP.schedule(
             child_activity.__runner__(),
             delay=after, at=at
