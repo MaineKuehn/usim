@@ -236,10 +236,10 @@ class Time:
         """The current simulation time"""
         return __LOOP_STATE__.LOOP.time
 
-    def __add__(self, other: float):
+    def __add__(self, other: float) -> Delay:
         return Delay(other)
 
-    def __ge__(self, other: float):
+    def __ge__(self, other: float) -> Condition:
         if other is inf:
             return Eternity()
         return After(other)
