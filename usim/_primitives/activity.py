@@ -20,9 +20,9 @@ class ActivityState(enum.Flag):
     #: finished due to an unhandled exception
     FAILED = enum.auto()
     #: finished normally
-    COMPLETED = enum.auto()
+    SUCCESS = enum.auto()
     #: finished by any means
-    FINISHED = CANCELLED | FAILED | COMPLETED
+    FINISHED = CANCELLED | FAILED | SUCCESS
 
 
 class ActivityCancelled(Interrupt):
@@ -80,7 +80,7 @@ class Activity(Condition, Generic[RT]):
             result, error = self._result
             if error is not None:
                 return ActivityState.CANCELLED if isinstance(error, ActivityCancelled) else ActivityState.FAILED
-            return ActivityState.COMPLETED
+            return ActivityState.SUCCESS
         # a stripped-down version of `inspect.getcoroutinestate`
         if self._execution.cr_running:
             return  ActivityState.RUNNING
