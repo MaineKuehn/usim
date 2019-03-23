@@ -86,9 +86,9 @@ class Activity(Condition, Generic[RT]):
                 return ActivityState.CANCELLED if isinstance(error, ActivityCancelled) else ActivityState.FAILED
             return ActivityState.SUCCESS
         # a stripped-down version of `inspect.getcoroutinestate`
-        if self._execution.cr_running:
-            return  ActivityState.RUNNING
-        return ActivityState.CREATED
+        if self._execution.cr_frame.f_lasti == -1:
+            return ActivityState.CREATED
+        return  ActivityState.RUNNING
 
     def __bool__(self):
         return self._result is not None
