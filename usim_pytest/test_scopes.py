@@ -1,6 +1,7 @@
 import pytest
 
 from usim import Scope, time, Eternity, ActivityCancelled
+from usim._primitives.activity import ActivityState
 
 from .utility import via_usim
 
@@ -35,10 +36,12 @@ async def test_after():
 
     async with Scope() as scope:
         activity = scope.do(payload(), after=5)
+        assert activity.status == ActivityState.CREATED
         await (time + 4)
-        # TODO: check that activity is not running
+        assert activity.status == ActivityState.CREATED
         await activity.result
         assert time.now == 15
+        assert activity.status == ActivityState.SUCCESS
 
 
 @via_usim
@@ -65,6 +68,7 @@ async def test_volatile():
         activity = scope.do(payload(), volatile=True)
     with pytest.raises(ActivityCancelled):
         assert await activity.result
+    assert activity.status == ActivityState.FAILED
 
 
 @via_usim
