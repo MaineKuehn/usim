@@ -19,5 +19,6 @@ def via_usim(test_case: Callable[..., Coroutine]):
     """
     @wraps(test_case)
     def run_test():
+        __tracebackhide__ = True
         return run(test_case())
     return run_test
