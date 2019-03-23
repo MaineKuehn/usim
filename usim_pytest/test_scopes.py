@@ -55,7 +55,7 @@ async def test_at():
         activity_two = scope.do(payload(15), at=5)
         await (activity_one | activity_two)
         assert time.now == 15
-        await (activity_one | activity_two)
+        await (activity_one & activity_two)
         assert time.now == 20
 
 

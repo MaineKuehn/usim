@@ -75,6 +75,10 @@ class Connective(Condition):
         while not self:
             with ExitStack() as stack:
                 for child in self._children:
+                    # we only need to wait for children which
+                    # are not True yet
+                    if child:
+                        continue
                     stack.enter_context(child.__subscription__())
                 await Hibernate()  # hibernate until a child condition triggers
         return True
