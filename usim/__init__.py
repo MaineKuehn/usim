@@ -5,10 +5,10 @@ from ._primitives.timing import Time, Eternity, Instant, each
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
 from ._primitives.context import until, Scope
-from ._primitives.activity import CancelActivity
+from ._primitives.activity import ActivityCancelled
 
 
-__all__ = ['run', 'time', 'eternity', 'instant', 'each', 'until', 'Scope', 'Flag', 'Lock', 'CancelActivity']
+__all__ = ['run', 'time', 'eternity', 'instant', 'each', 'until', 'Scope', 'Flag', 'Lock', 'ActivityCancelled']
 
 
 # User entry point

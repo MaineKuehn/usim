@@ -8,7 +8,7 @@ from .condition import Condition
 RT = TypeVar('RT')
 
 
-class CancelActivity(Interrupt):
+class ActivityCancelled(Interrupt):
     ...
 
 
@@ -28,7 +28,7 @@ class Activity(Condition, Generic[RT]):
             else:
                 try:
                     result = await self.payload
-                except CancelActivity as err:
+                except ActivityCancelled as err:
                     self._result = None, err
                 else:
                     self._result = result, None
@@ -36,7 +36,7 @@ class Activity(Condition, Generic[RT]):
                 cancellation.revoke()
             self.__trigger__()
         super().__init__()
-        self._cancellations = []  # type: List[CancelActivity]
+        self._cancellations = []  # type: List[ActivityCancelled]
         self._result = None  # type: Optional[Tuple[RT, BaseException]]
         self.payload = payload
         self._execution = payload_wrapper()
@@ -74,7 +74,7 @@ class Activity(Condition, Generic[RT]):
     def cancel(self, *token) -> None:
         """Cancel this activity during the current time step"""
         if self._result is None:
-            cancellation = CancelActivity('cancel activity', id(self), 'for', *token)
+            cancellation = ActivityCancelled('cancel activity', id(self), 'for', *token)
             self._cancellations.append(cancellation)
             cancellation.scheduled = True
             __LOOP_STATE__.LOOP.schedule(self._execution, signal=cancellation)
