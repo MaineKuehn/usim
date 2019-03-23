@@ -104,8 +104,22 @@ class Scope:
         assert self._activity is __LOOP_STATE__.LOOP.activity,\
             "Instances of %s cannot be shared between activities" % self.__class__.__name__
         await self._done.set()
+        if exc_type is None:
+            try:
+                await self._await_children()
+                await self._close_volatile()
+            except BaseException as err:
+                exc_type, exc_val = type(err), err
+            else:
+                return True
+        # there was an exception, we have to abandon the scope
+        # reap all children now
+        await self._cancel_children()
         await self._await_children()
         await self._close_volatile()
+        return self._suppress_exception(exc_val)
+
+    def _suppress_exception(self, exc_val) -> bool:
         return False
 
 
@@ -127,31 +141,9 @@ class InterruptScope(Scope):
         self._notification.__subscribe__(self._activity, self._interrupt)
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        # there was no exception, we simply reached end of scope
-        # wait for children to die by themselves
-        if exc_type is None:
-            try:
-                await super().__aexit__(exc_type, exc_val, exc_tb)
-            except BaseException as err:
-                exc_type, exc_val = type(err), err
-            else:
-                self._notification.__unsubscribe__(self._activity, self._interrupt)
-                return True
-        # GeneratorExit might have been thrown in super().__aexit__ as well
-        if exc_type is GeneratorExit:
-            for child in self._children + self._volatile_children:
-                child.__close__()
-            return False
-        # there was an exception, we have to abandon the scope
-        # reap all children now
-        await self._cancel_children()
-        if exc_val is self._interrupt:
-            await super().__aexit__(exc_type, exc_val, exc_tb)
-            return True
+    def _suppress_exception(self, exc_val) -> bool:
         self._notification.__unsubscribe__(self._activity, self._interrupt)
-        await super().__aexit__(exc_type, exc_val, exc_tb)
-        return False
+        return exc_val is self._interrupt
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self._notification)
