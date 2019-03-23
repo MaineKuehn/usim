@@ -1,4 +1,5 @@
 from functools import wraps
+import enum
 from typing import Coroutine, TypeVar, Generic, Optional, Tuple, Any, List
 
 from .._core.loop import __LOOP_STATE__, Interrupt
@@ -6,6 +7,22 @@ from .condition import Condition
 
 
 RT = TypeVar('RT')
+
+
+class ActivityState(enum.Flag):
+    """State of a :py:class:`~.Activity`"""
+    #: created but not running yet
+    CREATED = enum.auto()
+    #: being executed at the moment
+    RUNNING = enum.auto()
+    #: finished due to cancellation
+    CANCELLED = enum.auto()
+    #: finished due to an unhandled exception
+    FAILED = enum.auto()
+    #: finished normally
+    COMPLETED = enum.auto()
+    #: finished by any means
+    FINISHED = CANCELLED | FAILED | COMPLETED
 
 
 class ActivityCancelled(Interrupt):
@@ -55,6 +72,19 @@ class Activity(Condition, Generic[RT]):
             raise error
         else:
             return result
+
+    @property
+    def status(self) -> ActivityState:
+        """The current status of this activity"""
+        if self._result is not None:
+            result, error = self._result
+            if error is not None:
+                return ActivityState.CANCELLED if isinstance(error, ActivityCancelled) else ActivityState.FAILED
+            return ActivityState.COMPLETED
+        # a stripped-down version of `inspect.getcoroutinestate`
+        if self._execution.cr_running:
+            return  ActivityState.RUNNING
+        return ActivityState.CREATED
 
     def __bool__(self):
         return self._result is not None
