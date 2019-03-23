@@ -29,6 +29,10 @@ class ActivityCancelled(Interrupt):
     ...
 
 
+class ActivityExit(BaseException):
+    ...
+
+
 class Activity(Condition, Generic[RT]):
     """
     Active coroutine that allows others to listen for its completion
@@ -95,11 +99,11 @@ class Activity(Condition, Generic[RT]):
     def __runner__(self):
         return self._execution
 
-    def __close__(self):
+    def __close__(self, reason=ActivityExit('activity closed')):
         """Close the underlying coroutine"""
         if self._result is None:
             self._execution.close()
-            self._result = None, GeneratorExit()
+            self._result = None, reason
 
     def cancel(self, *token) -> None:
         """Cancel this activity during the current time step"""
