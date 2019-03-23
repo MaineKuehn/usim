@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time
+from usim import Scope, time, Eternity, ActivityCancelled
 
 from .utility import via_usim
 
@@ -53,3 +53,15 @@ async def test_at():
         assert time.now == 15
         await (activity_one | activity_two)
         assert time.now == 20
+
+
+@via_usim
+async def test_volatile():
+    async def payload():
+        await Eternity()
+        return 2
+
+    async with Scope() as scope:
+        activity = scope.do(payload(), volatile=True)
+    with pytest.raises(ActivityCancelled):
+        assert await activity.result
