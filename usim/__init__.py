@@ -8,7 +8,12 @@ from ._primitives.context import until, Scope, VolatileActivityExit
 from ._primitives.activity import ActivityCancelled
 
 
-__all__ = ['run', 'time', 'eternity', 'instant', 'each', 'until', 'Scope', 'Flag', 'Lock', 'ActivityCancelled', 'VolatileActivityExit']
+__all__ = [
+    'run',
+    'time', 'eternity', 'instant', 'each',
+    'until', 'Scope', 'ActivityCancelled', 'VolatileActivityExit',
+    'Flag', 'Lock',
+]
 
 
 # User entry point
