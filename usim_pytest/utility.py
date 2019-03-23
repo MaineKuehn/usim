@@ -5,6 +5,18 @@ from usim import run
 
 
 def via_usim(test_case: Callable[..., Coroutine]):
+    """
+    Mark an ``async def`` test case to be run via ``usim.run``
+
+    .. code:: python3
+
+        @via_usim
+        async def test_sleep():
+            before = time.now
+            await (time + 20)
+            after = time.now
+            assert after - before == 20
+    """
     @wraps(test_case)
     def run_test():
         return run(test_case())
