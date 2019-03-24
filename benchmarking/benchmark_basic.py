@@ -12,4 +12,10 @@ async def car(end: float):
             trip_duration = 2
             await (time + trip_duration)
 
-run(car(1000000))
+
+def perform(end: float = 1000000):
+    run(car(end))
+
+
+if __name__ == '__main__':
+    perform()
