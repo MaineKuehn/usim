@@ -20,7 +20,7 @@ from .condition import Condition
 
 
 class After(Condition):
-    """
+    r"""
     The time range at and after a certain point in time
 
     :param target: point in time after which this condition is :py:const:`True`
@@ -71,7 +71,7 @@ class After(Condition):
 
 
 class Before(Condition):
-    """
+    r"""
     The time range before a certain point in time
 
     :param target: point in time before which this condition is :py:const:`True`
@@ -105,7 +105,7 @@ class Before(Condition):
 
 
 class Moment(Condition):
-    """
+    r"""
     A certain point in time
 
     :param target: point in time during which this condition is :py:const:`True`
@@ -147,7 +147,7 @@ class Moment(Condition):
 
 
 class Eternity(Condition):
-    """
+    r"""
     A future point in time infinitely far into the future
 
     .. code:: python
@@ -167,7 +167,7 @@ class Eternity(Condition):
 
 
 class Instant(Condition):
-    """
+    r"""
     A future point in time indistinguishable from the current time
 
     .. code:: python
@@ -188,7 +188,7 @@ class Instant(Condition):
 
 
 class Delay(Notification):
-    """
+    r"""
     A relative delay from the current time
     """
     __slots__ = ('duration',)
@@ -212,7 +212,7 @@ class Delay(Notification):
 
 
 class Time:
-    """
+    r"""
     Representation of ongoing simulation time
 
     .. code:: python

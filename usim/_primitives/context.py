@@ -14,7 +14,7 @@ class VolatileActivityExit(ActivityExit):
 
 
 class Scope:
-    """
+    r"""
     Synchronisation range for new and existing activities
 
     .. code:: python
@@ -34,7 +34,7 @@ class Scope:
         yield from self._done.__await__()
 
     def do(self, payload: Coroutine[Any, Any, RT], *, after: float = None, at: float = None, volatile: bool = False) -> Activity[RT]:
-        """
+        r"""
         Concurrently perform an activity in this scope
 
         :param payload: the activity to perform
@@ -129,12 +129,12 @@ class Scope:
         return self._handle_exception(exc_val)
 
     def _handle_exception(self, exc_val) -> bool:
-        """Handle the exception of :py:mod:`~.__aexit__` and signal completion"""
+        r"""Handle the exception of :py:mod:`~.__aexit__` and signal completion"""
         return False
 
 
 class InterruptScope(Scope):
-    """
+    r"""
     Scope that is closed on notification
 
     :see: :py:func:`~.until`
@@ -160,7 +160,7 @@ class InterruptScope(Scope):
 
 
 def until(notification: Notification):
-    """
+    r"""
     :py:class:`Scope` that is interrupted on notification
 
     An asynchronous `until`-scope listens for a notification *without* stopping execution.
