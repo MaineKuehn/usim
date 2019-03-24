@@ -1,10 +1,16 @@
+from typing import Deque, Generic, TypeVar, Tuple, Dict, List
 from heapq import heappush, heappop
+from collections import deque
 
 
-class WaitQueue:
+K = TypeVar('K')
+V = TypeVar('V')
+
+
+class WaitQueue(Generic[K, V]):
     def __init__(self):
-        self._data = {}
-        self._keys = []
+        self._data = {}  # type: Dict[K, Deque[V]]
+        self._keys = []  # type: List[K]
 
     def __bool__(self):
         return bool(self._keys)
@@ -12,14 +18,14 @@ class WaitQueue:
     def __len__(self):
         return sum(len(item) for item in self._data.values())
 
-    def push(self, key, item):
+    def push(self, key: K, item: V):
         try:
             self._data[key].append(item)
         except KeyError:
-            self._data[key] = [item]
+            self._data[key] = deque([item])
             heappush(self._keys, key)
 
-    def pop(self):
+    def pop(self) -> Tuple[K, Deque[V]]:
         key = heappop(self._keys)
         return key, self._data.pop(key)
 

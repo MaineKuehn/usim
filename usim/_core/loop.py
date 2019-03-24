@@ -112,7 +112,7 @@ class Loop:
     def __init__(self, *coroutines: Coroutine, start: float = 0):
         self.time = start
         self.turn = 0
-        self._activations = WaitQueue()
+        self._activations = WaitQueue()  # type: WaitQueue[float, Activation]
         self.activity = None  # type: Coroutine
         for coroutine in coroutines:
             self._activations.push(self.time, Activation(coroutine))
@@ -143,7 +143,7 @@ class Loop:
             now, pending = activations.pop()
             self.time = now
             self.turn = 0
-            self._pending = pending = collections.deque(pending)
+            self._pending = pending
             while pending:
                 activation = pending.popleft()
                 if activation:
