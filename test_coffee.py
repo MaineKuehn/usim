@@ -73,4 +73,5 @@ def make_order(customer: str, *orders: str):
     return served, serve_order
 
 
-run(coffee_house())
+if __name__ == '__main__':
+    run(coffee_house())
