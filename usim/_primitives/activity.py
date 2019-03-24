@@ -25,12 +25,28 @@ class ActivityState(enum.Flag):
     FINISHED = CANCELLED | FAILED | SUCCESS
 
 
-class ActivityCancelled(Interrupt):
+class ActivityCancelled(Exception):
+    """An Activity has been cancelled"""
     __slots__ = ('subject',)
 
     def __init__(self, subject: 'Activity', *token):
         super().__init__(*token)
         self.subject = subject
+
+
+class CancelActivity(Interrupt):
+    """An Activity is being cancelled"""
+    __slots__ = ('subject',)
+
+    def __init__(self, subject: 'Activity', *token):
+        super().__init__(*token)
+        self.subject = subject
+
+    @property
+    def __transcript__(self) -> ActivityCancelled:
+        result = ActivityCancelled(self.subject, *self.token)
+        result.__cause__ = self
+        return result
 
 
 class ActivityExit(BaseException):
@@ -54,19 +70,16 @@ class Activity(Condition, Generic[RT]):
                 return
             try:
                 result = await self.payload
-            except ActivityCancelled as err:
-                if err.subject is not self:
-                    raise RuntimeError(
-                        "activity %r failed to handle cancellation of %r" % (self, err.subject)
-                    ) from err
-                self._result = None, err
+            except CancelActivity as err:
+                assert err.subject is self, "activity %r received cancellation of %r" % (self, err.subject)
+                self._result = None, err.__transcript__
             else:
                 self._result = result, None
             for cancellation in self._cancellations:
                 cancellation.revoke()
             self.__trigger__()
         super().__init__()
-        self._cancellations = []  # type: List[ActivityCancelled]
+        self._cancellations = []  # type: List[CancelActivity]
         self._result = None  # type: Optional[Tuple[RT, BaseException]]
         self.payload = payload
         self._execution = payload_wrapper()
@@ -117,12 +130,11 @@ class Activity(Condition, Generic[RT]):
     def cancel(self, *token) -> None:
         """Cancel this activity during the current time step"""
         if self._result is None:
-            cancellation = ActivityCancelled(self, 'cancel activity', id(self)) \
-                if not token else ActivityCancelled(self, *token)
             if self.status is ActivityState.CREATED:
-                self._result = None, cancellation
+                self._result = None, ActivityCancelled(self, *token)
                 self.__trigger__()
             else:
+                cancellation = CancelActivity(self, *token)
                 self._cancellations.append(cancellation)
                 cancellation.scheduled = True
                 __LOOP_STATE__.LOOP.schedule(self._execution, signal=cancellation)

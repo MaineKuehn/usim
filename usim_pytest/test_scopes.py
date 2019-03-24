@@ -158,7 +158,7 @@ async def test_until():
 
 
 @via_usim
-@pytest.mark.xfail(raises=RuntimeError, strict=True)
+@pytest.mark.xfail(raises=ActivityCancelled, strict=True)
 async def test_result():
     async def make_job():
         async with Scope() as scope:
