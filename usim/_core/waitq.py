@@ -27,7 +27,8 @@ class WaitQueue(Generic[K, V]):
         try:
             self._data[key].append(item)
         except KeyError:
-            self._data[key] = deque([item])
+            self._data[key] = elements = deque()
+            elements.append(item)
             heappush(self._keys, key)
 
     def pop(self) -> Tuple[K, Deque[V]]:
