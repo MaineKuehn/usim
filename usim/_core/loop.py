@@ -1,4 +1,4 @@
-"""
+r"""
 event handling core facilities
 
 This is the core scheduling/synchronization implementation.
@@ -14,7 +14,7 @@ from .waitq import WaitQueue
 
 # Errors
 class ActivityError(RuntimeError):
-    """An activity failed to catch an exception"""
+    r"""An activity failed to handle an exception"""
     def __init__(self, activity: Coroutine, signal: Optional[BaseException]):
         self.activity = activity
         self.signal = signal
@@ -24,7 +24,7 @@ class ActivityError(RuntimeError):
 
 
 class ActivityLeak(RuntimeError):
-    """An activity failed to catch a result"""
+    r"""An activity failed to contain output"""
     def __init__(self, activity: Coroutine, signal: Optional[BaseException], result):
         self.activity = activity
         self.signal = signal
@@ -44,7 +44,7 @@ __LOOP_STATE__.LOOP = None  # type: Loop
 
 # Commands
 class Hibernate(object):
-    """Pause current execution indefinitely"""
+    r"""Pause current execution indefinitely"""
     __slots__ = ()
 
     def __await__(self) -> Awaitable:
@@ -56,7 +56,7 @@ HIBERNATE = Hibernate
 
 
 class Loop:
-    """
+    r"""
     Interrupt based event loop with side-channel control using simulated time
 
     :param coroutines: the initial payloads to run
@@ -128,7 +128,7 @@ class Loop:
         )
 
     def run(self):
-        """Run the event loop in the current thread"""
+        r"""Run the event loop in the current thread"""
         outer_loop = __LOOP_STATE__.LOOP
         __LOOP_STATE__.LOOP = self
         try:
@@ -137,7 +137,7 @@ class Loop:
             __LOOP_STATE__.LOOP = outer_loop
 
     def _run_events(self):
-        """event loop core, processing all scheduled coroutines"""
+        r"""event loop core, processing all scheduled coroutines"""
         activations = self._activations
         while activations:
             now, pending = activations.pop()
@@ -153,7 +153,7 @@ class Loop:
                     self.activity = None
 
     def _run_coroutine(self, target: Coroutine, signal: BaseException = None):
-        """event loop kernel, processing a single coroutine"""
+        r"""event loop kernel, processing a single coroutine"""
         try:
             if signal is not None:
                 reply = target.throw(signal)
@@ -169,7 +169,7 @@ class Loop:
             raise ActivityError(target, signal=signal) from err
 
     def schedule(self, target: Coroutine, signal: 'Interrupt' = None, *, delay: float = None, at: float = None):
-        """
+        r"""
         Schedule the execution of a coroutine
 
         :param target: the coroutine to execute
@@ -194,7 +194,7 @@ class Loop:
 
 
 class Interrupt(BaseException):
-    """Internal Interrupt signal for operations"""
+    r"""Internal Interrupt signal for operations"""
     __slots__ = ('token', 'scheduled', '_revoked')
 
     def __init__(self, *token):
@@ -207,7 +207,7 @@ class Interrupt(BaseException):
         return not self._revoked
 
     def revoke(self):
-        """Revoke the interrupt, cancelling any pending activation with it"""
+        r"""Revoke the interrupt, cancelling any pending activation with it"""
         self._revoked = True
 
     def __repr__(self):
@@ -220,7 +220,7 @@ class Interrupt(BaseException):
 
 
 class Activation(object):
-    """Scheduled activation of a coroutine with a given signal"""
+    r"""Scheduled activation of a coroutine with a given signal"""
     __slots__ = ('target', 'signal')
 
     def __init__(self, target: Coroutine, signal: Interrupt = None):
