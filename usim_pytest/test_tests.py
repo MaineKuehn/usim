@@ -18,7 +18,7 @@ class TestTests:
         """Test failure in a top-level activity"""
         assert False
 
-    @pytest.mark.xfail(raises=IndexError, strict=True)
+    @pytest.mark.xfail(raises=KeyError, strict=True)
     @via_usim
     async def test_scoped(self):
         async with Scope() as scope:
