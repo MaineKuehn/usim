@@ -81,11 +81,11 @@ class Scope:
         for child in self._children:
             await child
 
-    async def _cancel_children(self):
+    def _cancel_children(self):
         for child in self._children:
             child.cancel(self)
 
-    async def _close_volatile(self):
+    def _close_volatile(self):
         reason = VolatileActivityExit("closed at end of scope '%s'" % self)
         for child in self._volatile_children:
             child.__close__(reason=reason)
@@ -97,26 +97,37 @@ class Scope:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        # receiving GeneratorExit means our coroutine is .closed'd
+        # This is forceful, and we are not allowed to await anything
+        # since it can happen on any await, we check multiple times
         if exc_type is GeneratorExit:
-            for child in self._children + self._volatile_children:
-                child.__close__()
-            return self._handle_exception(exc_val)
+            return self._handle_close(exc_val)
         assert self._activity is __LOOP_STATE__.LOOP.activity,\
             "Instances of %s cannot be shared between activities" % self.__class__.__name__
         await self._done.set()
         if exc_type is None:
             try:
                 await self._await_children()
-                await self._close_volatile()
             except BaseException as err:
                 exc_type, exc_val = type(err), err
             else:
+                self._close_volatile()
                 return self._handle_exception(exc_val)
         # there was an exception, we have to abandon the scope
+        if exc_type is GeneratorExit:
+            return self._handle_close(exc_val)
         # reap all children now
-        await self._cancel_children()
+        self._cancel_children()
         await self._await_children()
-        await self._close_volatile()
+        if exc_type is GeneratorExit:
+            return self._handle_close(exc_val)
+        self._close_volatile()
+        return self._handle_exception(exc_val)
+
+    def _handle_close(self, exc_val: GeneratorExit) -> bool:
+        assert isinstance(exc_val, GeneratorExit)
+        for child in self._children + self._volatile_children:
+            child.__close__()
         return self._handle_exception(exc_val)
 
     def _handle_exception(self, exc_val) -> bool:
