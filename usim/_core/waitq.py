@@ -10,7 +10,7 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-class WaitQueue(Generic[K, V]):
+class HQWaitQueue(Generic[K, V]):
     __slots__ = ('_data', '_keys')
 
     def __init__(self):
@@ -73,3 +73,5 @@ class SDWaitQueue(Generic[K, V]):
 
 if os.environ.get('USIM_SDWAITQUEUE'):
     WaitQueue = SDWaitQueue
+else:
+    WaitQueue = HQWaitQueue
