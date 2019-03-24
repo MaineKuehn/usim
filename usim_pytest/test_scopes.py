@@ -197,3 +197,17 @@ async def test_order():
         for i in range(5):
             scope.do(add_char(i, result))
     assert "".join(result) == "abcde"
+
+
+@via_usim
+async def test_order_with_cancel():
+    async def add_char(position: int, target: list):
+        target.append(chr(ord('a') + position))
+
+    result = []
+    async with Scope() as scope:
+        for i in range(7):
+            activity = scope.do(add_char(i, result))
+            if i % 2 == 0:
+                activity.cancel()
+    assert "".join(result) == "bdf"
