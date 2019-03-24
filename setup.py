@@ -1,6 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
-import sys
 from setuptools import setup, find_packages
 
 repo_base_dir = os.path.abspath(os.path.dirname(__file__))
