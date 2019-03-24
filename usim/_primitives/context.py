@@ -64,8 +64,6 @@ class Scope:
         :py:class:`GeneratorExit` is raised in the activity,
         and must exit without `await`\ ing or `yield`\ ing anything.
         """
-        if after is not None and at is not None:
-            raise ValueError("only one of 'after' and 'at' can be used at once")
         child_activity = Activity(payload)
         __LOOP_STATE__.LOOP.schedule(
             child_activity.__runner__(),
