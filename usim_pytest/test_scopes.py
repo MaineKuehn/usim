@@ -185,3 +185,15 @@ async def test_reuse():
     async with until(time == 500) as running:
         activity = running.do(make_job())
     await activity
+
+
+@via_usim
+async def test_order():
+    async def add_char(position: int, target: list):
+        target.append(chr(ord('a') + position))
+
+    result = []
+    async with Scope() as scope:
+        for i in range(5):
+            scope.do(add_char(i, result))
+    assert "".join(result) == "abcde"
