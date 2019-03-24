@@ -109,7 +109,8 @@ class Activity(Condition, Generic[RT]):
     def cancel(self, *token) -> None:
         """Cancel this activity during the current time step"""
         if self._result is None:
-            cancellation = ActivityCancelled('cancel activity', id(self), 'for', *token)
+            cancellation = ActivityCancelled('cancel activity', id(self)) \
+                if not token else ActivityCancelled(*token)
             if self.status is ActivityState.CREATED:
                 self._result = None, cancellation
                 self.__trigger__()
