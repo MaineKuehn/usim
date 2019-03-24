@@ -138,6 +138,15 @@ class Activity(Condition, Generic[RT]):
             ),
         )
 
+    def __del__(self):
+        # Since an Activity is only meant for use in a controlled
+        # fashion, going out of scope unexpectedly means there is
+        # a bug/error somewhere. This should be accompanied by an
+        # error message or traceback.
+        # In order not to detract with auxiliary, useless resource
+        # warnings, we clean up silently to hide our abstraction.
+        self._execution.close()
+
 
 class NotDone(Condition):
     def __init__(self, activity: Activity):
