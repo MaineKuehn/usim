@@ -154,14 +154,13 @@ async def test_until():
 
 
 @via_usim
-@pytest.mark.xfail(raises=IndexError, strict=True)
+@pytest.mark.xfail(raises=RuntimeError, strict=True)
 async def test_result():
     async def make_job():
         async with Scope() as scope:
             running_job = scope.do(run_job())
             running_job.cancel()
             await running_job.result
-            raise IndexError
 
     async def run_job():
         await (time + 100)

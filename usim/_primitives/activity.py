@@ -55,6 +55,10 @@ class Activity(Condition, Generic[RT]):
             try:
                 result = await self.payload
             except ActivityCancelled as err:
+                if err.subject is not self:
+                    raise RuntimeError(
+                        "activity %r failed to handle cancellation of %r" % (self, err.subject)
+                    ) from err
                 self._result = None, err
             else:
                 self._result = result, None
