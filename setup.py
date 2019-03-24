@@ -20,6 +20,9 @@ if __name__ == '__main__':
         author_email=package_about['__email__'],
         url=package_about['__url__'],
         packages=find_packages(),
+        install_requires=[
+            'sortedcontainers',
+        ],
         # metadata for package search
         license='MIT',
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
