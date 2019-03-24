@@ -29,6 +29,8 @@ class After(Condition):
     If `await`\ ed before `target`, :py:class:`After` proceeds in the :py:class:`Moment` of `target`.
     Otherwise, it proceeds in an :py:class:`Instant`.
     """
+    __slots__ = ('target', '_scheduled')
+
     def __init__(self, target: float):
         super().__init__()
         self.target = target
@@ -76,6 +78,8 @@ class Before(Condition):
 
     The time range is *exclusive* of the time at `target`.
     """
+    __slots__ = ('target',)
+
     def __init__(self, target: float):
         super().__init__()
         self.target = target
@@ -106,6 +110,8 @@ class Moment(Condition):
 
     :param target: point in time during which this condition is :py:const:`True`
     """
+    __slots__ = ('target', '_transition')
+
     def __init__(self, target: float):
         super().__init__()
         self.target = target
@@ -231,6 +237,8 @@ class Time:
     To avoid accidental mixing of ``await``\ able and non-\ ``await``\ able
     comparisons, :py:class:`Time` does not support the later.
     """
+    __slots__ = ()
+
     @property
     def now(self) -> float:
         """The current simulation time"""
@@ -255,6 +263,8 @@ time = Time()
 
 
 class IntervalIter:
+    __slots__ = ('interval', '_last')
+
     def __init__(self, interval: float):
         self.interval = interval
         self._last = None
@@ -270,6 +280,8 @@ class IntervalIter:
 
 
 class DurationIter:
+    __slots__ = ('delay',)
+
     def __init__(self, delay: float):
         self.delay = delay
 
