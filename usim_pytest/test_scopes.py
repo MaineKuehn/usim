@@ -79,6 +79,61 @@ class TestDo:
                 scope.do(payload(), after=1, at=1)
 
 
+class TestNested:
+    """Test nested scopes"""
+    @via_usim
+    async def test_joint_exit(self):
+        """Multiple scopes done at the same time"""
+        async with Scope() as scope1:
+            scope1.do(time + 10)
+            async with Scope() as scope2:
+                scope2.do(time + 10)
+                async with Scope() as scope3:
+                    scope3.do(time + 10)
+                assert time.now == 10
+            assert time.now == 10
+        assert time.now == 10
+
+    @via_usim
+    async def test_outer_exit(self):
+        """Outer scopes done last"""
+        async with Scope() as scope1:
+            scope1.do(time + 10)
+            async with Scope() as scope2:
+                scope2.do(time + 7)
+                async with Scope() as scope3:
+                    scope3.do(time + 5)
+                assert time.now == 5
+            assert time.now == 7
+        assert time.now == 10
+
+    @via_usim
+    async def test_inner_exit(self):
+        """Inner scopes done last"""
+        async with Scope() as scope1:
+            scope1.do(time + 5)
+            async with Scope() as scope2:
+                scope2.do(time + 7)
+                async with Scope() as scope3:
+                    scope3.do(time + 10)
+                assert time.now == 10
+            assert time.now == 10
+        assert time.now == 10
+
+    @via_usim
+    async def test_inner_exit(self):
+        """Intermediate scopes done last"""
+        async with Scope() as scope1:
+            scope1.do(time + 7)
+            async with Scope() as scope2:
+                scope2.do(time + 10)
+                async with Scope() as scope3:
+                    scope3.do(time + 5)
+                assert time.now == 5
+            assert time.now == 10
+        assert time.now == 10
+
+
 @via_usim
 async def test_until():
     async def scheduler():
