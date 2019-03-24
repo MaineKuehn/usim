@@ -100,7 +100,7 @@ class Scope:
         if exc_type is GeneratorExit:
             for child in self._children + self._volatile_children:
                 child.__close__()
-            return False
+            return self._handle_exception(exc_val)
         assert self._activity is __LOOP_STATE__.LOOP.activity,\
             "Instances of %s cannot be shared between activities" % self.__class__.__name__
         await self._done.set()
@@ -111,15 +111,16 @@ class Scope:
             except BaseException as err:
                 exc_type, exc_val = type(err), err
             else:
-                return True
+                return self._handle_exception(exc_val)
         # there was an exception, we have to abandon the scope
         # reap all children now
         await self._cancel_children()
         await self._await_children()
         await self._close_volatile()
-        return self._suppress_exception(exc_val)
+        return self._handle_exception(exc_val)
 
-    def _suppress_exception(self, exc_val) -> bool:
+    def _handle_exception(self, exc_val) -> bool:
+        """Handle the exception of :py:mod:`~.__aexit__` and signal completion"""
         return False
 
 
@@ -141,7 +142,7 @@ class InterruptScope(Scope):
         self._notification.__subscribe__(self._activity, self._interrupt)
         return self
 
-    def _suppress_exception(self, exc_val) -> bool:
+    def _handle_exception(self, exc_val) -> bool:
         self._notification.__unsubscribe__(self._activity, self._interrupt)
         return exc_val is self._interrupt
 
