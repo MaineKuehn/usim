@@ -71,7 +71,15 @@ class SDWaitQueue(Generic[K, V]):
         )
 
 
-if os.environ.get('USIM_SDWAITQUEUE'):
+QUEUETYPE_KEY = 'USIM_WAITQUEUE'
+if os.environ.get(QUEUETYPE_KEY, '').upper() == 'WD':
     WaitQueue = SDWaitQueue
-else:
+elif os.environ.get(QUEUETYPE_KEY, '').upper() == 'CY':
+    import pyximport
+    pyximport.install()
+    from ._waitq import CyWaitQueue
+    WaitQueue = CyWaitQueue
+elif os.environ.get(QUEUETYPE_KEY, '').upper() == '':
     WaitQueue = HQWaitQueue
+else:
+    raise EnvironmentError('Invalid %r: %r' % (QUEUETYPE_KEY, os.environ.get(QUEUETYPE_KEY)))
