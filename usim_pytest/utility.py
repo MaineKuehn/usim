@@ -18,7 +18,7 @@ def via_usim(test_case: Callable[..., Coroutine]):
             assert after - before == 20
     """
     @wraps(test_case)
-    def run_test():
+    def run_test(*args, **kwargs):
         __tracebackhide__ = True
-        return run(test_case())
+        return run(test_case(*args, **kwargs))
     return run_test
