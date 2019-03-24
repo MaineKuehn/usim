@@ -228,7 +228,7 @@ class Activation(object):
         self.signal = signal
 
     def __bool__(self) -> bool:
-        return self.signal is None or bool(self.signal)
+        return self.signal is None or not self.signal._revoked
 
     def __repr__(self):
         return '<%s of %s%s%s>' % (
