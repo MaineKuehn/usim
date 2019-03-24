@@ -23,10 +23,12 @@ class TestDo:
             return 2
 
         async with Scope() as scope:
+            _payload = payload()
             with pytest.raises(AssertionError):
-                scope.do(payload(), after=-1)
+                scope.do(_payload, after=-1)
             with pytest.raises(AssertionError):
-                scope.do(payload(), at=-1)
+                scope.do(_payload, at=-1)
+        _payload.close()
 
     @via_usim
     async def test_after(self):
@@ -75,8 +77,10 @@ class TestDo:
             return 2
 
         async with Scope() as scope:
+            _payload = payload()
             with pytest.raises(ValueError):
-                scope.do(payload(), after=1, at=1)
+                scope.do(_payload, after=1, at=1)
+        _payload.close()
 
 
 class TestNested:
