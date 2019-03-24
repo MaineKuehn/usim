@@ -78,7 +78,7 @@ class TestDo:
 
         async with Scope() as scope:
             _payload = payload()
-            with pytest.raises(ValueError):
+            with pytest.raises(AssertionError):
                 scope.do(_payload, after=1, at=1)
         _payload.close()
 
