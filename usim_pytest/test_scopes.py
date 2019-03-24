@@ -151,3 +151,37 @@ async def test_until():
     assert time.now == 500
     with pytest.raises(ActivityCancelled):
         await activity.result
+
+
+@via_usim
+@pytest.mark.xfail(raises=IndexError, strict=True)
+async def test_result():
+    async def make_job():
+        async with Scope() as scope:
+            running_job = scope.do(run_job())
+            running_job.cancel()
+            await running_job.result
+            raise IndexError
+
+    async def run_job():
+        await (time + 100)
+
+    async with Scope() as running:
+        activity = running.do(make_job())
+    await activity
+
+
+@via_usim
+async def test_reuse():
+    async def make_job():
+        async with Scope() as scope:
+            running_job = scope.do(run_job())
+            running_job.cancel()
+            await running_job
+
+    async def run_job():
+        await (time + 100)
+
+    async with until(time == 500) as running:
+        activity = running.do(make_job())
+    await activity
