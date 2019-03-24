@@ -89,7 +89,7 @@ class Activity(Condition, Generic[RT]):
         # a stripped-down version of `inspect.getcoroutinestate`
         if self._execution.cr_frame.f_lasti == -1:
             return ActivityState.CREATED
-        return  ActivityState.RUNNING
+        return ActivityState.RUNNING
 
     def __bool__(self):
         return self._result is not None
