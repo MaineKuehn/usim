@@ -180,8 +180,7 @@ class Loop:
         Coroutines are executed using `target.send(None)` unless `signal` is provided,
         in which case `target.throw(signal)` is used instead.
         """
-        if delay is not None and at is not None:
-            raise ValueError("schedule date must be either absolute or relative")
+        assert delay is None or at is None, "schedule date must be either absolute or relative"
         if delay is None and at is None:
             self._pending.append(Activation(target, signal))
         elif delay is not None:
