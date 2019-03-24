@@ -26,7 +26,11 @@ class ActivityState(enum.Flag):
 
 
 class ActivityCancelled(Interrupt):
-    ...
+    __slots__ = ('subject',)
+
+    def __init__(self, subject: 'Activity', *token):
+        super().__init__(*token)
+        self.subject = subject
 
 
 class ActivityExit(BaseException):
@@ -109,8 +113,8 @@ class Activity(Condition, Generic[RT]):
     def cancel(self, *token) -> None:
         """Cancel this activity during the current time step"""
         if self._result is None:
-            cancellation = ActivityCancelled('cancel activity', id(self)) \
-                if not token else ActivityCancelled(*token)
+            cancellation = ActivityCancelled(self, 'cancel activity', id(self)) \
+                if not token else ActivityCancelled(self, *token)
             if self.status is ActivityState.CREATED:
                 self._result = None, cancellation
                 self.__trigger__()
