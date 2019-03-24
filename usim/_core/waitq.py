@@ -11,6 +11,8 @@ V = TypeVar('V')
 
 
 class WaitQueue(Generic[K, V]):
+    __slots__ = ('_data', '_keys')
+
     def __init__(self):
         self._data = {}  # type: Dict[K, Deque[V]]
         self._keys = []  # type: List[K]
@@ -40,6 +42,8 @@ class WaitQueue(Generic[K, V]):
 
 
 class SDWaitQueue(Generic[K, V]):
+    __slots__ = ('_data',)
+
     def __init__(self):
         self._data = SortedDict()  # type: SortedDict[K, Deque[V]]
 
