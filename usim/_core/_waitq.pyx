@@ -15,7 +15,10 @@ cdef class CyWaitQueue:
         return bool(self._keys)
 
     def __len__(self):
-        return sum(len(item) for item in self._data.values())
+        cdef Py_ssize_t length = 0
+        for item in self._data.values():
+            length += len(item)
+        return length
 
     cpdef push(self, key, item):
         try:
