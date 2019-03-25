@@ -267,7 +267,8 @@ class IntervalIter:
         if self._last is None:
             self._last = __LOOP_STATE__.LOOP.time - self.interval
         await (time == self._last + self.interval)
-        return time.now
+        self._last = time.now
+        return self._last
 
     def __aiter__(self):
         return self
