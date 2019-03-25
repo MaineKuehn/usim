@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time, eternity, VolatileActivityExit, ActivityState, ActivityCancelled, until
+from usim import Scope, time, eternity, VolatileActivityExit, ActivityState, ActivityCancelled, until, each
 
 from .utility import via_usim
 
@@ -214,3 +214,11 @@ async def test_order_with_cancel():
             if i % 2 == 0:
                 activity.cancel()
     assert "".join(result) == "bdf"
+
+
+@pytest.mark.timeout(2)
+@via_usim
+async def test_for_interval():
+    async with until(time == 60):
+        async for _ in each(interval=5):
+            assert time.now % 5 == 0

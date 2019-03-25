@@ -40,5 +40,5 @@ if __name__ == '__main__':
         # unit tests
         test_suite='usim_pytest',
         setup_requires=['pytest-runner'],
-        tests_require=['pytest'],
+        tests_require=['pytest', 'pytest-timeout'],
     )
