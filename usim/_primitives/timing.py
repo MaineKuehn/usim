@@ -197,12 +197,6 @@ class Delay(Notification):
         super().__init__()
         self.duration = duration
 
-    def __await__(self):
-        activity = __LOOP_STATE__.LOOP.activity
-        interrupt = CoreInterrupt(self, activity)
-        __LOOP_STATE__.LOOP.schedule(activity, interrupt, delay=self.duration)
-        yield from self.__await_notification__(interrupt).__await__()
-
     def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
         interrupt.scheduled = True
         __LOOP_STATE__.LOOP.schedule(waiter, interrupt, delay=self.duration)
