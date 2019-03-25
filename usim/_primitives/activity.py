@@ -9,18 +9,19 @@ from .condition import Condition
 RT = TypeVar('RT')
 
 
-class ActivityState(enum.Flag):
+# enum.Flag is Py3.6+
+class ActivityState(enum.Flag if hasattr(enum, 'Flag') else enum.IntEnum):
     """State of a :py:class:`~.Activity`"""
     #: created but not running yet
-    CREATED = enum.auto()
+    CREATED = 2 ** 0
     #: being executed at the moment
-    RUNNING = enum.auto()
+    RUNNING = 2 ** 1
     #: finished due to cancellation
-    CANCELLED = enum.auto()
+    CANCELLED = 2 ** 2
     #: finished due to an unhandled exception
-    FAILED = enum.auto()
+    FAILED = 2 ** 3
     #: finished normally
-    SUCCESS = enum.auto()
+    SUCCESS = 2 ** 4
     #: finished by any means
     FINISHED = CANCELLED | FAILED | SUCCESS
 
