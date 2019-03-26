@@ -7,7 +7,7 @@ The entirety of this module is for internal use only, and should not be used by 
 """
 import collections
 import threading
-from typing import Coroutine, TypeVar, Awaitable, Deque, Optional
+from typing import Coroutine, TypeVar, Awaitable, Optional
 
 from .waitq import WaitQueue
 
@@ -116,7 +116,7 @@ class Loop:
         self.activity = None  # type: Coroutine
         for coroutine in coroutines:
             self._activations.push(self.time, Activation(coroutine))
-        self._pending = None  # type: Deque[Activation]
+        self._pending = None  # type: collections.deque[Activation]
 
     def __repr__(self):
         return '<%s @ %s:%s, %d pending, %d queued>' % (

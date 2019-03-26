@@ -29,7 +29,7 @@ A channel cannot be used in an ``async with until(...):`` statement.
 """
 from collections import deque
 
-from typing import Generic, TypeVar, Dict, List, Coroutine, Awaitable, Union, Deque, AsyncIterable, AsyncIterator
+from typing import Generic, TypeVar, Dict, List, Coroutine, Awaitable, Union, AsyncIterable, AsyncIterator
 
 from .._core.loop import __LOOP_STATE__
 from .._primitives.notification import postpone, Notification, NoSubscribers
@@ -113,7 +113,7 @@ class Queue(AsyncIterable, Generic[ST]):
 
     def __init__(self):
         super().__init__()
-        self._buffer = deque()  # type: Deque[ST]
+        self._buffer = deque()  # type: deque[ST]
         self._notification = Notification()
         # mutex to ensure readers are ordered
         self._read_mutex = Lock()
