@@ -31,7 +31,7 @@ class HQWaitQueue(Generic[K, V]):
             elements.append(item)
             heappush(self._keys, key)
 
-    def pop(self) -> Tuple[K, deque[V]]:
+    def pop(self) -> 'Tuple[K, deque[V]]':
         key = heappop(self._keys)
         return key, self._data.pop(key)
 
@@ -61,7 +61,7 @@ class SDWaitQueue(Generic[K, V]):
             self._data[key] = elements = deque()
             elements.append(item)
 
-    def pop(self) -> Tuple[K, deque[V]]:
+    def pop(self) -> 'Tuple[K, deque[V]]':
         return self._data.popitem(0)
 
     def __repr__(self):
