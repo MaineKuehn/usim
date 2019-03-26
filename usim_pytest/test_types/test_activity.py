@@ -5,6 +5,7 @@ from ..utility import via_usim
 
 async def sleep(duration):
     await (time + duration)
+    return duration
 
 
 class TestExecution:
@@ -18,6 +19,19 @@ class TestExecution:
             assert time.now == 20
         # await outside scope
         await activity
+        assert time.now == 20
+
+    @via_usim
+    async def test_result(self):
+        async with Scope() as scope:
+            activity = scope.do(sleep(20))
+            assert time.now == 0
+            # await result inside scope
+            assert await activity.result == 20
+            # await result delayed us
+            assert time.now == 20
+        # await outside scope
+        assert await activity.result == 20
         assert time.now == 20
 
     @via_usim
