@@ -196,3 +196,17 @@ intersphinx_mapping = {
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+# -- Custom Extensions -------------------------------------------------------
+
+
+def run_apidoc(_):
+    """Run the `apidoc` tool to generate `autodoc` documentation for all modules"""
+    from sphinx.apidoc import main
+    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'source', 'api'))
+    source_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', __about__.__title__))
+    main(['--module-first', '--separate', '--output-dir=' + output_dir, source_dir, '--force'])
+
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
