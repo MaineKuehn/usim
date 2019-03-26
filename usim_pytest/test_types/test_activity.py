@@ -72,3 +72,23 @@ class TestExecution:
             await activity
             assert activity.status == ActivityState.CANCELLED
             assert activity.status & ActivityState.FINISHED
+
+    @via_usim
+    async def test_condition(self):
+        async with Scope() as scope:
+            activity = scope.do(sleep(20))
+            assert bool(activity) is False
+            assert bool(~activity) is True
+            # waiting for inverted, unfinished activity does not delay
+            assert await (~activity) is True
+            assert time.now == 0
+            await (time + 10)
+            assert bool(activity) is False
+            assert bool(~activity) is True
+            assert await (~activity) is True
+            assert time.now == 10
+            await (time + 10)
+            assert bool(activity) is True
+            assert bool(~activity) is False
+            assert await activity is True
+            assert time.now == 20
