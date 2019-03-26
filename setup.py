@@ -23,6 +23,9 @@ if __name__ == '__main__':
         install_requires=[
             'sortedcontainers',
         ],
+        extras_require={
+            'docs': ["sphinx", "sphinx_rtd_theme"],
+        },
         # metadata for package search
         license='MIT',
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
