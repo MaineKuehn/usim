@@ -1,5 +1,5 @@
 import os
-from typing import Deque, Generic, TypeVar, Tuple, Dict, List
+from typing import Generic, TypeVar, Tuple, Dict, List
 from heapq import heappush, heappop
 from collections import deque
 
@@ -14,7 +14,7 @@ class HQWaitQueue(Generic[K, V]):
     __slots__ = ('_data', '_keys')
 
     def __init__(self):
-        self._data = {}  # type: Dict[K, Deque[V]]
+        self._data = {}  # type: Dict[K, deque[V]]
         self._keys = []  # type: List[K]
 
     def __bool__(self):
@@ -31,7 +31,7 @@ class HQWaitQueue(Generic[K, V]):
             elements.append(item)
             heappush(self._keys, key)
 
-    def pop(self) -> Tuple[K, Deque[V]]:
+    def pop(self) -> Tuple[K, deque[V]]:
         key = heappop(self._keys)
         return key, self._data.pop(key)
 
@@ -46,7 +46,7 @@ class SDWaitQueue(Generic[K, V]):
     __slots__ = ('_data',)
 
     def __init__(self):
-        self._data = SortedDict()  # type: SortedDict[K, Deque[V]]
+        self._data = SortedDict()  # type: SortedDict[K, deque[V]]
 
     def __bool__(self):
         return bool(self._data)
@@ -61,7 +61,7 @@ class SDWaitQueue(Generic[K, V]):
             self._data[key] = elements = deque()
             elements.append(item)
 
-    def pop(self) -> Tuple[K, Deque[V]]:
+    def pop(self) -> Tuple[K, deque[V]]:
         return self._data.popitem(0)
 
     def __repr__(self):
