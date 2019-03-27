@@ -3,14 +3,62 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to usim's documentation!
-================================
+μSim - Simulations for Humans
+=============================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+μSim offers a lightweight and expressive user interface,
+built on top of a powerful and robust simulation framework.
+Using the ``async``/``await`` capabilities of Python3,
+μSim allows you to both quickly and reliably build even complex simulations.
 
+.. code:: python3
+
+   >>> from usim import each, run
+   >>>
+   >>> async def metronome(period: float, sound: str):
+   ...   async for now in each(delay=period):
+   ...      print(sound, '@', now)
+   ...
+   >>> run(metronome(period=1, sound='tick'), metronome(period=2, sound='TOCK'), till=5)
+   tick @ 1
+   TOCK @ 2
+   tick @ 2
+   tick @ 3
+   TOCK @ 4
+   tick @ 4
+   tick @ 5
+
+Simple User Interface
+---------------------
+
+Writing simulations with μSim should burden users with as little technical jargon as possible.
+We want you to focus on your simulation, not on our implementation.
+You can do most things with regular operations and expressions.
+Using ``await`` and ``async`` is only needed to synchronise activities.
+
+.. code:: python3
+
+   # *wait* for 20 time units
+   await (time + 20)
+
+   # *wait* for a point in time
+   await (time == 1999)
+
+   # *check* if a point in time is met already
+   if time < 2001:
+      ...
+
+Powerful Foundation
+-------------------
+
+Under the hood, μSim implements a fully-featured, interrupt-based coroutine scheduler.
+Its inner working and principles are inspired by modern multi-tasking libraries
+such as :py:mod:`asyncio`, :py:mod:`trio` and others.
+By focusing solely on simulation, μSim achieves lightweight and high-performing event handling.
 
 Indices and tables
 ==================
