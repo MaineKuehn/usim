@@ -7,8 +7,10 @@
 =============================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
+
+   source/tutorial/overview
 
 μSim offers a lightweight and expressive user interface,
 built on top of a powerful and robust simulation framework.
