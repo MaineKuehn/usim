@@ -20,8 +20,8 @@ Using the ``async``/``await`` capabilities of Python3,
    >>> from usim import each, run
    >>>
    >>> async def metronome(period: float, sound: str):
-   ...   async for now in each(delay=period):
-   ...      print(sound, '@', now)
+   ...     async for now in each(delay=period):
+   ...         print(sound, '@', now)
    ...
    >>> run(metronome(period=1, sound='tick'), metronome(period=2, sound='TOCK'), till=5)
    tick @ 1
@@ -51,6 +51,18 @@ Using ``await`` and ``async`` is only needed to synchronise activities.
    # *check* if a point in time is met already
    if time < 2001:
       ...
+
+Asynchronous programming is a complex task, and asynchronous simulations are as well.
+We cannot prevent every error - but we strive to make writing correct code as pleasant as possible.
+All hard-to-use functionality is automatically scoped and managed, making it natural to do the right thing.
+
+.. code:: python3
+
+   # scoping is a builtin concept of usim
+   async with out(time >= 3000) as scope:
+      # complex tools are automatically managed
+      async for message in stream:
+         scope.do(handle(message))
 
 Powerful Foundation
 -------------------
