@@ -13,6 +13,8 @@ Otherwise, proceed below for a short introduction to install μSim and launch Py
     :maxdepth: 1
 
     01_activity
+    02_stacked
+    03_scopes
 
 Installing μSim
 ---------------
@@ -90,7 +92,7 @@ Let's get started...
 --------------------
 
 You now have Python and μSim ready to get started.
-Head over to the :doc:`first section <./01_activity>` to write your first simulation.
+Head over to the :doc:`next section <./01_activity>` to write your first simulation.
 
 .. [#pypy3] Note that μSim does not require any non-Python dependencies.
             It is fully compatible and tested with PyPy3 as well, if you need more speed.

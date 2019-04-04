@@ -11,6 +11,8 @@
    :caption: Contents:
 
    source/tutorial/overview
+   source/glossary
+   source/api/modules
 
 μSim offers a lightweight and expressive user interface,
 built on top of a powerful and robust simulation framework.

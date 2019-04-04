@@ -14,29 +14,78 @@ Activities are implemented as special functions, namely as :term:`coroutines <co
 In short, this means you must use ``async def`` instead of just ``def``.
 In return, you can use the special keywords ``await`` and ``async for``/``async with``.
 
-Time in a Nutshell
-------------------
-
-For this example, we use μSim's time manipulation capabilities.
-Using ``usim.time``,
-you can query the current simulation time
-and
-suspend an activity for some time.
-
-.. code:: python3
-
-    # make time accessible
-    from usim import time
-
-    # access current time value
-    print(time.now)
-
-    # delay in an activity
-    await (time + 20)
-    await (time == 1999)
-
-That's it - you know how to manipulate time now.
-Just keep in mind these only work during a simulation.
+.. _tutorial define activity:
 
 Lesson 01: Defining an Activity
 -------------------------------
+
+In this example, we define our own activity and ``await`` a pre-defined notification.
+Activities are defined using ``async def <name>(<parameters>):``,
+followed by the actions making up the activity.
+We use ``usim.time`` to track and receive notifications about the progression of time in our simulation.
+
+.. code:: python3
+
+    >>> from usim import time
+    >>>
+    >>> async def drink(beverage='coffee', duration=20):       # 1
+    ...     print('Start drinking', beverage, 'at', time.now)  # 2
+    ...     await (time + duration)                            # 3
+    ...     print('Stop drinking', beverage, 'at', time.now)
+
+For the most part, activities are regular functions.
+Take a look at how our activity compares to other functions:
+
+1. Activities *must* be defined using ``async def`` - this allows us to suspend and resume activities.
+   μSim *does not* require a specific signature, however.
+   You are free to use any parameters that you see fit.
+
+2. You can freely call other functions, such as ``print``.
+   All non-suspending features of μSim, such as ``time.now``, behave like regular objects and functions.
+
+3. Activities can be suspended and resumed on notification using ``await``.
+   You can construct notifications regularly, such as ``time + duration`` marking a point in the future.
+
+The takeaway is that you use ``async``/``await`` when you need activities suspended/resumed on notifications.
+For everything else, such as querying the simulation state, you do not need to take special actions.
+
+Epilogue 01: Running an Activity
+--------------------------------
+
+With our activity defined, we can now use it as our first, small simulation!
+Any activity must be instantiated by calling it;
+this allows to fill in parameters and re-use activities.
+In order to run it, we pass the instantiated activity to ``usim.run``:
+
+.. code:: python3
+
+    >>> from usim import run
+    >>>
+    >>> drink_coffee = drink()  # instantiate activity
+    >>> run(drink_coffee)       # run the activity instance
+    Start drinking coffee at 0
+    Stop drinking coffee at 20
+
+By calling ``usim.run``, we start the simulation at the *root activities* passed in.
+μSim can handle multiple root activities;
+they are started in :term:`turn` but at the same simulation :term:`time`.
+For example, we can use our activity several times:
+
+.. code:: python3
+
+    >>> run(drink(), drink('tea', 30), drink('water', 5))
+    Start drinking coffee at 0
+    Start drinking tea at 0
+    Start drinking water at 0
+    Done drinking water at 5
+    Done drinking coffee at 20
+    Done drinking tea at 30
+
+As activities ``await`` notifications, activities are interleaved as if time would pass for real.
+By using the helpers of μSim, such as ``usim.time``, your activities naturally have the correct notifications.
+
+Let's do more things...
+-----------------------
+
+So far, we have just started a fixed set of activities.
+Head over to the :doc:`next section <./02_stacked>` to combine several activities.
