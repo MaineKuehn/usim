@@ -36,7 +36,7 @@ We again use ``usim.time`` to track and influence the progression of our simulat
     ...         await (time + 1)                       # 3
     ...         drivers.do(deliver_one(3))
     ...         print('Sent deliveries at', time.now)  # 4.1
-    ...     print('-- Done deliveries at', time.now)      # 4.2
+    ...     print('-- Done deliveries at', time.now)   # 4.2
 
 Scopes can be difficult because they are inherently about doing several things at once.
 It helps to step through individual points of notice:
