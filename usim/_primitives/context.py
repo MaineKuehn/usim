@@ -77,7 +77,7 @@ class Scope:
 
     async def _await_children(self):
         for child in self._children:
-            await child
+            await child.done
 
     def _cancel_children(self):
         for child in self._children:
