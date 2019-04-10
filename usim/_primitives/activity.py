@@ -1,6 +1,6 @@
 from functools import wraps
 import enum
-from typing import Coroutine, TypeVar, Generic, Optional, Tuple, Any, List
+from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List
 
 from .._core.loop import __LOOP_STATE__, Interrupt
 from .condition import Condition
@@ -54,13 +54,13 @@ class ActivityExit(BaseException):
     ...
 
 
-class Activity(Condition, Generic[RT]):
+class Activity(Awaitable[RT]):
     """
     Active coroutine that allows others to listen for its completion
 
     :note: Simulation code should never instantiate this class directly.
     """
-    __slots__ = ('payload', '_result', '_execution', '_cancellations')
+    __slots__ = ('payload', '_result', '_execution', '_cancellations', '_done')
 
     def __init__(self, payload: Coroutine[Any, Any, RT]):
         @wraps(payload)
@@ -78,27 +78,25 @@ class Activity(Condition, Generic[RT]):
                 self._result = result, None
             for cancellation in self._cancellations:
                 cancellation.revoke()
-            self.__trigger__()
+            self._done.__set_done__()
         super().__init__()
         self._cancellations = []  # type: List[CancelActivity]
         self._result = None  # type: Optional[Tuple[RT, BaseException]]
         self.payload = payload
+        self._done = Done(self)
         self._execution = payload_wrapper()
 
-    @property
-    async def result(self) -> RT:
-        """
-        Wait for the completion of this :py:class:`Activity` and return its result
-
-        :returns: the result of the activity
-        :raises: :py:exc:`CancelActivity` if the activity was cancelled
-        """
-        await self
+    def __await__(self):
+        yield from self._done.__await__()
         result, error = self._result
         if error is not None:
             raise error
         else:
             return result
+
+    @property
+    def done(self) -> 'Done':
+        return self._done
 
     @property
     def status(self) -> ActivityState:
@@ -112,12 +110,6 @@ class Activity(Condition, Generic[RT]):
         if self._execution.cr_frame.f_lasti == -1:
             return ActivityState.CREATED
         return ActivityState.RUNNING
-
-    def __bool__(self):
-        return self._result is not None
-
-    def __invert__(self):
-        return NotDone(self)
 
     def __runner__(self):
         return self._execution
@@ -133,7 +125,7 @@ class Activity(Condition, Generic[RT]):
         if self._result is None:
             if self.status is ActivityState.CREATED:
                 self._result = None, ActivityCancelled(self, *token)
-                self.__trigger__()
+                self._done.__set_done__()
             else:
                 cancellation = CancelActivity(self, *token)
                 self._cancellations.append(cancellation)
@@ -161,16 +153,43 @@ class Activity(Condition, Generic[RT]):
         self._execution.close()
 
 
-class NotDone(Condition):
+class Done(Condition):
+    __slots__ = ('_activity', '_value', '_inverse')
+
     def __init__(self, activity: Activity):
         super().__init__()
-        self.activity = activity
+        self._activity = activity
+        self._value = False
+        self._inverse = NotDone(self)
 
     def __bool__(self):
-        return not self.activity
+        return self._value
 
     def __invert__(self):
-        return self.activity
+        return self._inverse
+
+    def __set_done__(self):
+        """Set the boolean value of this condition"""
+        assert not self._value
+        self._value = True
+        self.__trigger__()
 
     def __repr__(self):
-        return '<%s for %r>' % (self.__class__.__name__, self.activity)
+        return '<%s for %r>' % (self.__class__.__name__, self._activity)
+
+
+class NotDone(Condition):
+    __slots__ = ('_done',)
+
+    def __init__(self, done: Done):
+        super().__init__()
+        self._done = done
+
+    def __bool__(self):
+        return not self._done
+
+    def __invert__(self):
+        return self._done
+
+    def __repr__(self):
+        return '<%s for %r>' % (self.__class__.__name__, self._done._activity)
