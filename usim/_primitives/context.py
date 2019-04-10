@@ -66,7 +66,7 @@ class Scope:
         """
         child_activity = Activity(payload)
         __LOOP_STATE__.LOOP.schedule(
-            child_activity.__runner__(),
+            child_activity.__runner__,
             delay=after, at=at
         )
         if not volatile:

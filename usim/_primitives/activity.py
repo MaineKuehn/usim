@@ -60,7 +60,7 @@ class Activity(Awaitable[RT]):
 
     :note: Simulation code should never instantiate this class directly.
     """
-    __slots__ = ('payload', '_result', '_execution', '_cancellations', '_done')
+    __slots__ = ('payload', '_result', '__runner__', '_cancellations', '_done')
 
     def __init__(self, payload: Coroutine[Any, Any, RT]):
         @wraps(payload)
@@ -79,12 +79,11 @@ class Activity(Awaitable[RT]):
             for cancellation in self._cancellations:
                 cancellation.revoke()
             self._done.__set_done__()
-        super().__init__()
         self._cancellations = []  # type: List[CancelActivity]
         self._result = None  # type: Optional[Tuple[RT, BaseException]]
         self.payload = payload
         self._done = Done(self)
-        self._execution = payload_wrapper()
+        self.__runner__ = payload_wrapper()  # type: Coroutine[Any, Any, RT]
 
     def __await__(self):
         yield from self._done.__await__()
@@ -107,17 +106,14 @@ class Activity(Awaitable[RT]):
                 return ActivityState.CANCELLED if isinstance(error, ActivityCancelled) else ActivityState.FAILED
             return ActivityState.SUCCESS
         # a stripped-down version of `inspect.getcoroutinestate`
-        if self._execution.cr_frame.f_lasti == -1:
+        if self.__runner__.cr_frame.f_lasti == -1:
             return ActivityState.CREATED
         return ActivityState.RUNNING
-
-    def __runner__(self):
-        return self._execution
 
     def __close__(self, reason=ActivityExit('activity closed')):
         """Close the underlying coroutine"""
         if self._result is None:
-            self._execution.close()
+            self.__runner__.close()
             self._result = None, reason
 
     def cancel(self, *token) -> None:
@@ -130,7 +126,7 @@ class Activity(Awaitable[RT]):
                 cancellation = CancelActivity(self, *token)
                 self._cancellations.append(cancellation)
                 cancellation.scheduled = True
-                __LOOP_STATE__.LOOP.schedule(self._execution, signal=cancellation)
+                __LOOP_STATE__.LOOP.schedule(self.__runner__, signal=cancellation)
 
     def __repr__(self):
         return '<%s of %s (%s)>' % (
@@ -150,7 +146,7 @@ class Activity(Awaitable[RT]):
         # error message or traceback.
         # In order not to detract with auxiliary, useless resource
         # warnings, we clean up silently to hide our abstraction.
-        self._execution.close()
+        self.__runner__.close()
 
 
 class Done(Condition):
