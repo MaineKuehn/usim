@@ -15,7 +15,7 @@ class TestDo:
         async with Scope() as scope:
             activity = scope.do(payload())
 
-        assert await activity.result == 2
+        assert await activity == 2
 
     @via_usim
     async def test_negative(self):
@@ -42,7 +42,7 @@ class TestDo:
             assert activity.status == ActivityState.CREATED
             await (time + 3)
             assert activity.status == ActivityState.RUNNING
-            await activity.result
+            await activity.done
             assert time.now == 15
             assert activity.status == ActivityState.SUCCESS
 
@@ -54,9 +54,9 @@ class TestDo:
         async with Scope() as scope:
             activity_one = scope.do(payload(10), at=5)
             activity_two = scope.do(payload(15), at=5)
-            await (activity_one | activity_two)
+            await (activity_one.done | activity_two.done)
             assert time.now == 15
-            await (activity_one & activity_two)
+            await (activity_one.done & activity_two.done)
             assert time.now == 20
 
     @via_usim
@@ -68,7 +68,7 @@ class TestDo:
         async with Scope() as scope:
             activity = scope.do(payload(), volatile=True)
         with pytest.raises(VolatileActivityExit):
-            assert await activity.result
+            assert await activity
         assert activity.status == ActivityState.FAILED
 
     @via_usim
@@ -154,7 +154,7 @@ async def test_until():
 
     assert time.now == 500
     with pytest.raises(ActivityCancelled):
-        await activity.result
+        await activity
 
 
 @via_usim
@@ -164,7 +164,7 @@ async def test_result():
         async with Scope() as scope:
             running_job = scope.do(run_job())
             running_job.cancel()
-            await running_job.result
+            await running_job
 
     async def run_job():
         await (time + 100)
@@ -180,7 +180,7 @@ async def test_reuse():
         async with Scope() as scope:
             running_job = scope.do(run_job())
             running_job.cancel()
-            await running_job
+            await running_job.done
 
     async def run_job():
         await (time + 100)
