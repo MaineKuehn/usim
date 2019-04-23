@@ -2,18 +2,23 @@
 Glossary of Terms
 =================
 
+.. Using references in the glossary itself:
+   When mentioning other items, always reference them.
+   When mention the current item, never reference it.
+
 
 .. glossary::
 
     Activity
-        Ongoing action that drives forward a simulation - either through time or events.
-        Activities may be suspended and resumed as desired, or interrupted involuntarily.
+        Ongoing action that drives forward a simulation - either through :term:`time` or :term:`events <event>`.
+        Activities may be :term:`suspended <Suspension>` and resumed as desired, or interrupted involuntarily.
 
     Time
         Representation of the progression of a simulation.
         Whereas the unit of time is arbitrary, its value always grows.
 
-        Time may only pass while all :term:`activities <Activity>` are *suspended*.
+        Time may only pass while all :term:`activities <Activity>`
+        are :term:`postponed <Postponement>` until a later time, not :term:`turn`.
         An :term:`activity` may actively wait for the progression of time,
         or implicitly delay until an event happens at a future point in time.
 
@@ -23,10 +28,31 @@ Glossary of Terms
     Event
         A well-defined occurrence at a specific point in :term:`time`.
         Events may occur
-        as result of activities ("dinner is done"),
+        as result of activities ("when dinner is done"),
         as time passes ("after 20 time units"),
         or
         at predefined points in time ("at 2000 time units"),
 
     Notification
         Information sent to an :term:`activity`, usually in response to an :term:`event`.
+        Notifications can only be received when an :term:`activity` is :term:`suspended <Suspension>`.
+
+    Postponement
+        :term:`Suspension` of an :term:`activity` until a later :term:`turn` at the same :term:`time`.
+        When an :term:`activity` is postponed,
+        other :term:`activities <Activity>` may run but :term:`time` does not advance.
+        If there are no other :term:`activities <Activity>` to resume,
+        a postponed :term:`activity` is resumed immediately.
+
+        :note: μSim guarantees that all its primitives postpone on asynchronous operations.
+               This ensures that activities are reliably and deterministically interwoven.
+
+    Suspension
+        Pause in the execution of an :term:`activity`,
+        allowing other :term:`activities <activity>` or :term:`time` to advance.
+        A suspended activity is only resumed when it receives a :term:`notification`.
+
+        Suspension can only occur as part of asynchronous statements:
+        waiting for the target of an ``await`` statement,
+        fetching the next item of an ``async for`` statement,
+        and entering/exiting an ``async with`` block.
