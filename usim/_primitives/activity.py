@@ -56,9 +56,30 @@ class ActivityExit(BaseException):
 
 class Activity(Awaitable[RT]):
     """
-    Active coroutine that allows others to listen for its completion
+    Concurrently running activity that allows multiple activities to await its completion
 
-    :note: Simulation code should never instantiate this class directly.
+    A :py:class:`Activity` represents an activity that is concurrently run in a :py:class:`~.Scope`.
+    This allows to store or pass an an :py:class:`Activity`, in order to check its progress.
+    Other activities can ``await`` a :py:class:`Activity`,
+    which returns any results or exceptions on completion, similar to a regular activity.
+
+    .. code:: python3
+
+        await my_activity()  # await a bare activity
+
+        async with Scope() as scope:
+            activity = scope.do(my_activity())
+            await activity   # await a rich activity
+
+    In contrast to a regular activity, it is possible to
+
+    * :py:meth:`~.Activity.cancel` an :py:class:`Activity` before completion,
+    * ``await`` the result of an :py:class:`Activity` multiple times,
+      and
+    * ``await`` that an is an :py:class:`Activity` is :py:meth:`~.Activity.cancel`.
+
+    :note: This class should not be instantiated directly.
+           Always use a :py:class:`~.Scope` to create it.
     """
     __slots__ = ('payload', '_result', '__runner__', '_cancellations', '_done')
 
@@ -95,6 +116,10 @@ class Activity(Awaitable[RT]):
 
     @property
     def done(self) -> 'Done':
+        """
+        :py:class:`~.Condition` whether the :py:class:`~.Activity` has stopped running.
+        This includes completion, cancellation and failure.
+        """
         return self._done
 
     @property
@@ -115,6 +140,7 @@ class Activity(Awaitable[RT]):
         if self._result is None:
             self.__runner__.close()
             self._result = None, reason
+            self._done.__set_done__()
 
     def cancel(self, *token) -> None:
         """Cancel this activity during the current time step"""
@@ -150,6 +176,7 @@ class Activity(Awaitable[RT]):
 
 
 class Done(Condition):
+    """Whether a :py:class:`Activity` has stopped running"""
     __slots__ = ('_activity', '_value', '_inverse')
 
     def __init__(self, activity: Activity):
@@ -175,6 +202,7 @@ class Done(Condition):
 
 
 class NotDone(Condition):
+    """Whether a :py:class:`Activity` has not stopped running"""
     __slots__ = ('_done',)
 
     def __init__(self, done: Done):
