@@ -76,7 +76,7 @@ class Activity(Awaitable[RT]):
     * :py:meth:`~.Activity.cancel` an :py:class:`Activity` before completion,
     * ``await`` the result of an :py:class:`Activity` multiple times,
       and
-    * ``await`` that an is an :py:class:`Activity` is :py:meth:`~.Activity.cancel`.
+    * ``await`` that an is an :py:class:`Activity` is :py:meth:`~.Activity.done`.
 
     :note: This class should not be instantiated directly.
            Always use a :py:class:`~.Scope` to create it.
@@ -136,14 +136,36 @@ class Activity(Awaitable[RT]):
         return ActivityState.RUNNING
 
     def __close__(self, reason=ActivityExit('activity closed')):
-        """Close the underlying coroutine"""
+        """
+        Close the underlying coroutine
+
+        This is similar to calling :py:meth:`Coroutine.close`,
+        but ensures that waiting activities are properly notified.
+        """
         if self._result is None:
             self.__runner__.close()
             self._result = None, reason
             self._done.__set_done__()
 
     def cancel(self, *token) -> None:
-        """Cancel this activity during the current time step"""
+        """
+        Cancel this activity during the current time step
+
+        If the :py:class:`~.Activity` is running,
+        a :py:class:`~.CancelActivity` is raised once the activity suspends.
+        The activity may catch and react to :py:class:`~.CancelActivity`,
+        but should not suppress it.
+
+        If the :py:class:`~.Activity` is :py:meth:`~.Activity.done` before :py:class:`~.CancelActivity` is raised,
+        the cancellation is ignored.
+        This also means that cancelling an activity multiple is allowed,
+        but only the first successful cancellation is stored as the cancellation cause.
+
+        If the :py:class:`~.Activity` has not started running, it is cancelled immediately.
+        This prevents any code execution, even before the first suspension.
+
+        :warning: The timing of cancelling an Activity before it started running may change in the future.
+        """
         if self._result is None:
             if self.status is ActivityState.CREATED:
                 self._result = None, ActivityCancelled(self, *token)
