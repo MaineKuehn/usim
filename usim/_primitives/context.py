@@ -10,17 +10,70 @@ RT = TypeVar('RT')
 
 
 class VolatileTaskExit(TaskExit):
-    ...
+    """A volatile :py:class:`~.Task` forcefully exited at the end of its scope"""
+
+
+class CancelScope(CoreInterrupt):
+    """A :py:class:`Scope` is being cancelled"""
+    __slots__ = ('subject',)
+
+    def __init__(self, subject: 'Scope', *token):
+        super().__init__(*token)
+        self.subject = subject
 
 
 class Scope:
     r"""
-    Synchronisation range for new and existing activities
+    Concurrency scope that allows branching off and waiting on multiple activities
 
-    .. code:: python
+    A new :py:class:`~.Scope` must be opened in an ``async with`` block.
+    During its block, a :py:class:`~.Scope` may :py:meth:`~.Scope.do`
+    several activities concurrently.
+    The :py:class:`~.Scope` owns and supervises all branched off activities.
+
+    .. code:: python3
+
+        async def show_clock(interval=1):
+            "An infinite loop showing the current time"
+            async for now in every(interval=interval):
+                print(now)
 
         async with Scope() as scope:
-            scope.do(show_clock, volatile=True)
+            scope.do(time + 20)  # scope can launch multiple activities at once...
+            scope.do(time + 20)
+            scope.do(time + 20)
+            scope.do(
+                show_clock(),
+                volatile=True
+            )  #  ...and mark some as expendable on exit
+            # block is exited once the three delays finished concurrently
+        # block is done after a total delay of 20
+
+    Both the block of scope and all its activities form one unit of control.
+    If either encounters an unhandled exception, all are aborted.
+    A :py:class:`~.Scope` will only exit once its block and all non-``volatile``
+    activities are done.
+
+    During its lifetime, a :py:class:`~.Scope` can be passed around freely.
+    Most importantly, it can be passed to child activities.
+    This allows to :py:meth:`~.Scope.do` things in a parent scope, and to ``await``
+    the end of the scope.
+
+    .. code:: python3
+
+        def do_some(scope):
+            "Perform several actions in a parent scope"
+            for delay in range(0, 20, 5):
+                scope.do(time + delay)
+
+        async def on_done(scope):
+            "Wait for a scope to end and report it"
+            await scope
+            print('Scope is done at', time.now)
+
+        async with Scope() as scope:
+            do_some(scope)  # pass scope around to do activities in it
+            on_done(scope)  # pass scope around to await its end
     """
     __slots__ = ('_children', '_done', '_activity', '_volatile_children')
 
@@ -69,7 +122,7 @@ class Scope:
         after all non-`volatile` activities have finished.
         Aborting ``volatile` activities is not graceful:
         :py:class:`GeneratorExit` is raised in the activity,
-        and must exit without `await`\ ing or `yield`\ ing anything.
+        which must exit without `await`\ ing or `yield`\ ing anything.
         """
         child_task = Task(payload)
         __LOOP_STATE__.LOOP.schedule(
@@ -155,7 +208,7 @@ class InterruptScope(Scope):
     def __init__(self, notification: Notification):
         super().__init__()
         self._notification = notification
-        self._interrupt = CoreInterrupt(notification, id(self))
+        self._interrupt = CancelScope(self, notification)
 
     async def __aenter__(self):
         await super().__aenter__()
