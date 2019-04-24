@@ -51,7 +51,7 @@ class CancelActivity(Interrupt):
 
 
 class ActivityExit(BaseException):
-    ...
+    """A :py:class:`~.Activity` forcefully exited"""
 
 
 class Activity(Awaitable[RT]):
