@@ -1,4 +1,4 @@
-from usim import time, Scope, ActivityState, instant
+from usim import time, Scope, TaskState, instant
 
 from ..utility import via_usim
 
@@ -15,10 +15,10 @@ class TestExecution:
             activity = scope.do(sleep(20))
             assert time.now == 0
             # await inside scope
-            await activity
+            await activity.done
             assert time.now == 20
         # await outside scope
-        await activity
+        await activity.done
         assert time.now == 20
 
     @via_usim
@@ -27,68 +27,69 @@ class TestExecution:
             activity = scope.do(sleep(20))
             assert time.now == 0
             # await result inside scope
-            assert await activity.result == 20
+            assert await activity == 20
             # await result delayed us
             assert time.now == 20
         # await outside scope
-        assert await activity.result == 20
+        assert await activity == 20
         assert time.now == 20
 
     @via_usim
     async def test_state_success(self):
         async with Scope() as scope:
             activity = scope.do(sleep(20))
-            assert activity.status == ActivityState.CREATED
+            assert activity.status == TaskState.CREATED
             await instant
-            assert activity.status == ActivityState.RUNNING
-            await activity
-            assert activity.status == ActivityState.SUCCESS
-            assert activity.status & ActivityState.FINISHED
+            assert activity.status == TaskState.RUNNING
+            await activity.done
+            assert activity.status == TaskState.SUCCESS
+            assert activity.status & TaskState.FINISHED
 
     @via_usim
     async def test_state_cancel_created(self):
         async with Scope() as scope:
             activity = scope.do(sleep(20))
-            assert activity.status == ActivityState.CREATED
+            assert activity.status == TaskState.CREATED
             activity.cancel()
             # early cancellation does not run
-            assert activity.status == ActivityState.CANCELLED
+            assert activity.status == TaskState.CANCELLED
             await instant
-            assert activity.status == ActivityState.CANCELLED
-            await activity
-            assert activity.status == ActivityState.CANCELLED
-            assert activity.status & ActivityState.FINISHED
+            assert activity.status == TaskState.CANCELLED
+            await activity.done
+            assert activity.status == TaskState.CANCELLED
+            assert activity.status & TaskState.FINISHED
 
     @via_usim
     async def test_state_cancel_running(self):
         async with Scope() as scope:
             activity = scope.do(sleep(20))
-            assert activity.status == ActivityState.CREATED
+            assert activity.status == TaskState.CREATED
             await instant
-            assert activity.status == ActivityState.RUNNING
+            assert activity.status == TaskState.RUNNING
             activity.cancel()
             # running cancellation is graceful
-            assert activity.status == ActivityState.RUNNING
-            await activity
-            assert activity.status == ActivityState.CANCELLED
-            assert activity.status & ActivityState.FINISHED
+            assert activity.status == TaskState.RUNNING
+            await activity.done
+            assert activity.status == TaskState.CANCELLED
+            assert activity.status & TaskState.FINISHED
 
     @via_usim
     async def test_condition(self):
         async with Scope() as scope:
             activity = scope.do(sleep(20))
-            assert bool(activity) is False
-            assert bool(~activity) is True
+            activity_done = activity.done
+            assert bool(activity_done) is False
+            assert bool(~activity_done) is True
             # waiting for inverted, unfinished activity does not delay
-            assert await (~activity) is True
+            assert await (~activity_done) is True
             assert time.now == 0
             await (time + 10)
-            assert bool(activity) is False
-            assert bool(~activity) is True
-            assert await (~activity) is True
+            assert bool(activity_done) is False
+            assert bool(~activity_done) is True
+            assert await (~activity_done) is True
             assert time.now == 10
             await (time + 10)
-            assert bool(activity) is True
-            assert bool(~activity) is False
-            assert await activity is True
+            assert bool(activity_done) is True
+            assert bool(~activity_done) is False
+            assert await activity_done is True
             assert time.now == 20

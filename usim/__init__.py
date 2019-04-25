@@ -5,14 +5,14 @@ from ._core.loop import Loop as _Loop
 from ._primitives.timing import Time, Eternity, Instant, each
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
-from ._primitives.context import until, Scope, VolatileActivityExit
-from ._primitives.activity import ActivityCancelled, ActivityState
+from ._primitives.context import until, Scope, VolatileTaskExit
+from ._primitives.task import TaskCancelled, TaskState
 
 
 __all__ = [
     'run',
     'time', 'eternity', 'instant', 'each',
-    'until', 'Scope', 'ActivityCancelled', 'VolatileActivityExit', 'ActivityState',
+    'until', 'Scope', 'TaskCancelled', 'VolatileTaskExit', 'TaskState',
     'Flag', 'Lock',
 ]
 

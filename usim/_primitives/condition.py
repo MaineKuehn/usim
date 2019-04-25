@@ -10,14 +10,48 @@ from .._core.loop import __LOOP_STATE__
 
 class Condition(Notification):
     """
-    A logical condition that triggers when ``True``
+    An asynchronous logical condition
+
+    Every :py:class:`~.Condition` can be used both in an
+    asynchronous *and* boolean context.
+    In an asynchronous context,
+    such as ``await``,
+    a :py:class:`~.Condition` triggers when the :py:class:`~.Condition` becomes :py:const:`True`.
+    In a boolean context,
+    such as ``if``,
+    a :py:class:`~.Condition` provides its current boolean value.
 
     .. code:: python
 
+        if condition:    # resume with current value
+            print(condition, 'is met')
+        else:
+            print(condition, 'is not met')
+
         await condition  # resume when condition is True
 
-        async with until(condition):  # abort if condition becomes False
+        async with until(condition):  # interrupt when condition is True
             ...
+
+    Every :py:class:`~.Condition` supports the bitwise operators
+    ``~a`` (not),
+    ``a & b`` (and), and
+    ``a | b`` (or)
+    to derive a new :py:class:`~.Condition`.
+    While it is possible to use the boolean operators
+    ``not``, ``and``, and ``or``,
+    they immediately evaluate any :py:class:`~.Condition` in a boolean context.
+
+    .. code:: python
+
+        await (a & b)   # resume when both a and b are True
+        await (a | b)   # resume when one of a or b are True
+        await (a & ~b)  # resume when a is True and b is False
+
+        c = a & b  # derive new Condition...
+        await c    # that can be awaited
+
+        d = a and b  # force boolean evaluation
     """
     __slots__ = ()
 
@@ -88,7 +122,11 @@ class Connective(Condition):
 
 
 class All(Connective):
-    """Logical AND of all sub-conditions"""
+    """
+    Logical AND of all sub-conditions
+
+    The expression ``a & b & c`` is equivalent to ``All(a, b, c)``.
+    """
     __slots__ = ()
 
     def __bool__(self):
@@ -102,7 +140,11 @@ class All(Connective):
 
 
 class Any(Connective):
-    """Logical OR of all sub-conditions"""
+    """
+    Logical OR of all sub-conditions
+
+    The expression ``a | b | c`` is equivalent to ``Any(a, b, c)``.
+    """
     __slots__ = ()
 
     def __bool__(self):

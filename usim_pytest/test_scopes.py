@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time, eternity, VolatileActivityExit, ActivityState, ActivityCancelled, until, each
+from usim import Scope, time, eternity, VolatileTaskExit, TaskState, TaskCancelled, until, each
 
 from .utility import via_usim
 
@@ -15,7 +15,7 @@ class TestDo:
         async with Scope() as scope:
             activity = scope.do(payload())
 
-        assert await activity.result == 2
+        assert await activity == 2
 
     @via_usim
     async def test_negative(self):
@@ -37,14 +37,14 @@ class TestDo:
 
         async with Scope() as scope:
             activity = scope.do(payload(), after=5)
-            assert activity.status == ActivityState.CREATED
+            assert activity.status == TaskState.CREATED
             await (time + 4)
-            assert activity.status == ActivityState.CREATED
+            assert activity.status == TaskState.CREATED
             await (time + 3)
-            assert activity.status == ActivityState.RUNNING
-            await activity.result
+            assert activity.status == TaskState.RUNNING
+            await activity.done
             assert time.now == 15
-            assert activity.status == ActivityState.SUCCESS
+            assert activity.status == TaskState.SUCCESS
 
     @via_usim
     async def test_at(self):
@@ -54,9 +54,9 @@ class TestDo:
         async with Scope() as scope:
             activity_one = scope.do(payload(10), at=5)
             activity_two = scope.do(payload(15), at=5)
-            await (activity_one | activity_two)
+            await (activity_one.done | activity_two.done)
             assert time.now == 15
-            await (activity_one & activity_two)
+            await (activity_one.done & activity_two.done)
             assert time.now == 20
 
     @via_usim
@@ -67,9 +67,9 @@ class TestDo:
 
         async with Scope() as scope:
             activity = scope.do(payload(), volatile=True)
-        with pytest.raises(VolatileActivityExit):
-            assert await activity.result
-        assert activity.status == ActivityState.FAILED
+        with pytest.raises(VolatileTaskExit):
+            assert await activity
+        assert activity.status == TaskState.FAILED
 
     @via_usim
     async def test_after_and_at(self):
@@ -153,18 +153,18 @@ async def test_until():
         activity = running.do(scheduler())
 
     assert time.now == 500
-    with pytest.raises(ActivityCancelled):
-        await activity.result
+    with pytest.raises(TaskCancelled):
+        await activity
 
 
 @via_usim
-@pytest.mark.xfail(raises=ActivityCancelled, strict=True)
+@pytest.mark.xfail(raises=TaskCancelled, strict=True)
 async def test_result():
     async def make_job():
         async with Scope() as scope:
             running_job = scope.do(run_job())
             running_job.cancel()
-            await running_job.result
+            await running_job
 
     async def run_job():
         await (time + 100)
@@ -180,7 +180,7 @@ async def test_reuse():
         async with Scope() as scope:
             running_job = scope.do(run_job())
             running_job.cancel()
-            await running_job
+            await running_job.done
 
     async def run_job():
         await (time + 100)

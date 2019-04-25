@@ -31,7 +31,7 @@ class Lock:
     @property
     def available(self):
         """
-        Check whether the current Activity can acquire this lock
+        Check whether the current Task can acquire this lock
         """
         if self._owner is None:
             return True
