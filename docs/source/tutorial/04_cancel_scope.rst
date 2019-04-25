@@ -13,7 +13,7 @@ Interlude 01: Interrupting Scopes
     >>>
     >>> async def deliver_all(count=3):
     ...     print('-- Start deliveries at', time.now)
-    ...     async with out(time + 10) as deliveries:   # 1
+    ...     async with until(time + 10) as deliveries:   # 1
     ...         for delivery in range(count):          # 2
     ...             deliveries.do(deliver_one(delivery))
     ...             await (time + 3)

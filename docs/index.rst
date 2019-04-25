@@ -63,7 +63,7 @@ All hard-to-use functionality is automatically scoped and managed, making it nat
 .. code:: python3
 
    # scoping is a builtin concept of usim
-   async with out(time >= 3000) as scope:
+   async with until(time >= 3000) as scope:
       # complex tools are automatically managed
       async for message in stream:
          scope.do(handle(message))

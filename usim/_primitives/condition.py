@@ -30,7 +30,7 @@ class Condition(Notification):
 
         await condition  # resume when condition is True
 
-        async with out(condition):  # interrupt when condition is True
+        async with until(condition):  # interrupt when condition is True
             ...
 
     Every :py:class:`~.Condition` supports the bitwise operators
