@@ -18,7 +18,7 @@ Glossary of Terms
         Whereas the unit of time is arbitrary, its value always grows.
 
         Time may only pass while all :term:`activities <Activity>`
-        are :term:`postponed <Postponement>` until a later time, not :term:`turn`.
+        are :term:`suspended <Suspension>` until a later time, not :term:`turn`.
         An :term:`activity` may actively wait for the progression of time,
         or implicitly delay until an event happens at a future point in time.
 
@@ -35,20 +35,19 @@ Glossary of Terms
 
     Notification
         Information sent to an :term:`activity`, usually in response to an :term:`event`.
-        Notifications can only be received when an :term:`activity` is :term:`suspended <Suspension>`.
+        Notifications are only received when the :term:`activity`
+        is :term:`suspended <Suspension>`, i.e. at an ``await``, ``async for`` or ``async with``.
 
     Postponement
         :term:`Suspension` of an :term:`activity` until a later :term:`turn` at the same :term:`time`.
-        When an :term:`activity` is postponed,
-        other :term:`activities <Activity>` may run but :term:`time` does not advance.
-        If there are no other :term:`activities <Activity>` to resume,
-        a postponed :term:`activity` is resumed immediately.
+        When an :term:`activity` is postponed, :term:`notifications <Notification>` may be received
+        and other :term:`activities <Activity>` may run but :term:`time` does not advance.
 
         :note: μSim guarantees that all its primitives postpone on asynchronous operations.
                This ensures that activities are reliably and deterministically interwoven.
 
     Suspension
-        Pause in the execution of an :term:`activity`,
+        Pause the execution of an :term:`activity`,
         allowing other :term:`activities <activity>` or :term:`time` to advance.
         A suspended activity is only resumed when it receives a :term:`notification`.
 
