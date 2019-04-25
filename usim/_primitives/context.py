@@ -3,13 +3,13 @@ from typing import Coroutine, List, TypeVar, Any
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification
 from .flag import Flag
-from .activity import Activity, ActivityExit
+from .task import Task, TaskExit
 
 
 RT = TypeVar('RT')
 
 
-class VolatileActivityExit(ActivityExit):
+class VolatileTaskExit(TaskExit):
     ...
 
 
@@ -25,15 +25,15 @@ class Scope:
     __slots__ = ('_children', '_done', '_activity', '_volatile_children')
 
     def __init__(self):
-        self._children = []  # type: List[Activity]
-        self._volatile_children = []  # type: List[Activity]
+        self._children = []  # type: List[Task]
+        self._volatile_children = []  # type: List[Task]
         self._done = Flag()
         self._activity = None
 
     def __await__(self):
         yield from self._done.__await__()
 
-    def do(self, payload: Coroutine[Any, Any, RT], *, after: float = None, at: float = None, volatile: bool = False) -> Activity[RT]:
+    def do(self, payload: Coroutine[Any, Any, RT], *, after: float = None, at: float = None, volatile: bool = False) -> Task[RT]:
         r"""
         Concurrently perform an activity in this scope
 
@@ -64,16 +64,16 @@ class Scope:
         :py:class:`GeneratorExit` is raised in the activity,
         and must exit without `await`\ ing or `yield`\ ing anything.
         """
-        child_activity = Activity(payload)
+        child_task = Task(payload)
         __LOOP_STATE__.LOOP.schedule(
-            child_activity.__runner__,
+            child_task.__runner__,
             delay=after, at=at
         )
         if not volatile:
-            self._children.append(child_activity)
+            self._children.append(child_task)
         else:
-            self._volatile_children.append(child_activity)
-        return child_activity
+            self._volatile_children.append(child_task)
+        return child_task
 
     async def _await_children(self):
         for child in self._children:
@@ -84,7 +84,7 @@ class Scope:
             child.cancel(self)
 
     def _close_volatile(self):
-        reason = VolatileActivityExit("closed at end of scope '%s'" % self)
+        reason = VolatileTaskExit("closed at end of scope '%s'" % self)
         for child in self._volatile_children:
             child.__close__(reason=reason)
 
