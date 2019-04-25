@@ -4,7 +4,7 @@ Glossary of Terms
 
 .. Using references in the glossary itself:
    When mentioning other items, always reference them.
-   When mention the current item, never reference it.
+   When mentioning the current item, never reference it.
 
 
 .. glossary::

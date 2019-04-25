@@ -4,7 +4,7 @@ Interlude 01: Interrupting Scopes
 
 .. code:: python3
 
-    >>> from usim import time, until as out
+    >>> from usim import time, until
     >>>
     >>> async def deliver_one(which):
     ...     print('Delivering', which, 'at', time.now)
