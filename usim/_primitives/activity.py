@@ -58,7 +58,7 @@ class Activity(Awaitable[RT]):
     """
     Concurrently running activity that allows multiple objects including activities to await its completion
 
-    An :py:class:`Activity` wraps an activity that is concurrently run in a :py:class:`~.Scope`.
+    An :py:class:`Activity` wraps an :term:`activity` that is concurrently run in a :py:class:`~.Scope`.
     This allows to store or pass around the :py:class:`Activity`, in order to check its progress.
     Other activities can ``await`` an :py:class:`Activity`,
     which returns any results or exceptions on completion, similar to a regular activity.
