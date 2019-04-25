@@ -58,25 +58,29 @@ class Activity(Awaitable[RT]):
     """
     Concurrently running activity that allows multiple objects including activities to await its completion
 
-    An :py:class:`Activity` represents an activity that is concurrently run in a :py:class:`~.Scope`.
-    This allows to store or pass an an :py:class:`Activity`, in order to check its progress.
+    An :py:class:`Activity` wraps an activity that is concurrently run in a :py:class:`~.Scope`.
+    This allows to store or pass around the :py:class:`Activity`, in order to check its progress.
     Other activities can ``await`` an :py:class:`Activity`,
     which returns any results or exceptions on completion, similar to a regular activity.
 
     .. code:: python3
 
-        await my_activity()  # await a bare activity
+        async def my_activity(delay):
+            await (time + delay)
+            return delay
+
+        await my_activity()  # await an unwrapped activity
 
         async with Scope() as scope:
             activity = scope.do(my_activity())
-            await activity   # await a rich activity
+            await activity   # await a wrapping Activity
 
-    In contrast to a regular activity, it is possible to
+    In contrast to a bare activity, it is possible to
 
     * :py:meth:`~.Activity.cancel` an :py:class:`Activity` before completion,
     * ``await`` the result of an :py:class:`Activity` multiple times,
       and
-    * ``await`` that an is an :py:class:`Activity` is :py:attr:`~.Activity.done`.
+    * ``await`` that an :py:class:`Activity` is :py:attr:`~.Activity.done`.
 
     :note: This class should not be instantiated directly.
            Always use a :py:class:`~.Scope` to create it.
