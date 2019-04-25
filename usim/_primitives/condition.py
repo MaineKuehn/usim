@@ -12,11 +12,11 @@ class Condition(Notification):
     """
     An asynchronous logical condition
 
-    Every :py:class:`~.Condition` can be used both in a
+    Every :py:class:`~.Condition` can be used both in an
     asynchronous *and* boolean context.
     In an asynchronous context,
     such as ``await``,
-    a :py:class:`~.Condition` triggers when :py:const:`True`.
+    a :py:class:`~.Condition` triggers when the :py:class:`~.Condition` becomes :py:const:`True`.
     In a boolean context,
     such as ``if``,
     a :py:class:`~.Condition` provides its current boolean value.

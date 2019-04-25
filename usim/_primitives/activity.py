@@ -58,9 +58,9 @@ class Activity(Awaitable[RT]):
     """
     Concurrently running activity that allows multiple objects including activities to await its completion
 
-    A :py:class:`Activity` represents an activity that is concurrently run in a :py:class:`~.Scope`.
+    An :py:class:`Activity` represents an activity that is concurrently run in a :py:class:`~.Scope`.
     This allows to store or pass an an :py:class:`Activity`, in order to check its progress.
-    Other activities can ``await`` a :py:class:`Activity`,
+    Other activities can ``await`` an :py:class:`Activity`,
     which returns any results or exceptions on completion, similar to a regular activity.
 
     .. code:: python3
@@ -158,7 +158,7 @@ class Activity(Awaitable[RT]):
 
         If the :py:class:`~.Activity` is :py:attr:`~.Activity.done` before :py:class:`~.CancelActivity` is raised,
         the cancellation is ignored.
-        This also means that cancelling an activity multiple is allowed,
+        This also means that cancelling an activity multiple times is allowed,
         but only the first successful cancellation is stored as the cancellation cause.
 
         If the :py:class:`~.Activity` has not started running, it is cancelled immediately.
@@ -198,7 +198,7 @@ class Activity(Awaitable[RT]):
 
 
 class Done(Condition):
-    """Whether a :py:class:`Activity` has stopped running"""
+    """Whether an :py:class:`Activity` has stopped running"""
     __slots__ = ('_activity', '_value', '_inverse')
 
     def __init__(self, activity: Activity):
@@ -224,7 +224,7 @@ class Done(Condition):
 
 
 class NotDone(Condition):
-    """Whether a :py:class:`Activity` has not stopped running"""
+    """Whether an :py:class:`Activity` has not stopped running"""
     __slots__ = ('_done',)
 
     def __init__(self, done: Done):
