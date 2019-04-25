@@ -56,7 +56,7 @@ class ActivityExit(BaseException):
 
 class Activity(Awaitable[RT]):
     """
-    Concurrently running activity that allows multiple activities to await its completion
+    Concurrently running activity that allows multiple objects including activities to await its completion
 
     A :py:class:`Activity` represents an activity that is concurrently run in a :py:class:`~.Scope`.
     This allows to store or pass an an :py:class:`Activity`, in order to check its progress.
