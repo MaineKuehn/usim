@@ -1,0 +1,22 @@
+language: python
+python:
+  - "3.5"
+  - "3.6"
+  - "pypy3"
+  - "3.7-dev"
+os:
+  - linux
+matrix:
+  allow_failures:
+  - python: "3.7-dev"
+before_script:
+  - pip install pip --upgrade
+  - export PYTHONHASHSEED=${PYTHONHASHSEED:-${RANDOM}}
+  - echo "export PYTHONHASHSEED=${PYTHONHASHSEED}"
+  - pip install .
+  - pip install codecov
+  - export COVERAGE_PROCESS_START=$(pwd)/.coveragerc
+script:
+  - coverage run setup.py test
+after_success:
+  - coverage report && codecov
