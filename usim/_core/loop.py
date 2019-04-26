@@ -185,7 +185,7 @@ class Loop:
 
     def schedule(
             self, target: Coroutine, signal: 'Interrupt' = None, *,
-            delay: float = None, at: float = None,
+            delay: float = None, at: float = None
     ):
         r"""
         Schedule the execution of a coroutine
