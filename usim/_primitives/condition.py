@@ -102,10 +102,10 @@ class Connective(Condition):
         super().__init__()
         self._children = conditions
 
-    def __await__(self):
+    def __await__(self) -> bool:
         return (yield from self.__await_children__().__await__())
 
-    async def __await_children__(self):
+    async def __await_children__(self) -> bool:
         await postpone()
         while not self:
             with ExitStack() as stack:
