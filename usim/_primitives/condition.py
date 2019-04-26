@@ -103,7 +103,7 @@ class Connective(Condition):
         self._children = conditions
 
     def __await__(self):
-        yield from self.__await_children__().__await__()
+        return (yield from self.__await_children__().__await__())
 
     async def __await_children__(self):
         await postpone()
