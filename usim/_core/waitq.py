@@ -82,4 +82,6 @@ elif os.environ.get(QUEUETYPE_KEY, '').upper() == 'CY':
 elif os.environ.get(QUEUETYPE_KEY, '').upper() == '':
     WaitQueue = HQWaitQueue
 else:
-    raise EnvironmentError('Invalid %r: %r' % (QUEUETYPE_KEY, os.environ.get(QUEUETYPE_KEY)))
+    raise EnvironmentError(
+        'Invalid %r: %r' % (QUEUETYPE_KEY, os.environ.get(QUEUETYPE_KEY))
+    )

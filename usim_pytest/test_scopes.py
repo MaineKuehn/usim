@@ -1,6 +1,7 @@
 import pytest
 
-from usim import Scope, time, eternity, VolatileTaskExit, TaskState, TaskCancelled, until, each
+from usim import Scope, time, eternity, VolatileTaskExit, TaskState,\
+    TaskCancelled, until, each
 
 from .utility import via_usim
 
@@ -125,7 +126,7 @@ class TestNested:
         assert time.now == 10
 
     @via_usim
-    async def test_inner_exit(self):
+    async def test_middle_exit(self):
         """Intermediate scopes done last"""
         async with Scope() as scope1:
             scope1.do(time + 7)

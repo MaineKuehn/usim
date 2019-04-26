@@ -1,8 +1,10 @@
 """
-There is no inherent time unit, such as seconds, hours, or years, implied for simulation time.
+There is no inherent time unit, such as seconds, hours, or years,
+implied for simulation time.
 A simulation should use a consistent time unit, however.
 
-The default time type is :py:class:`float`, which in principle may exhibit imprecision for fractions.
+The default time type is :py:class:`float`, which in principle may exhibit
+imprecision for fractions.
 Using the standard SI unit of seconds on a 64bit machine,
 time can represent more than 285 million years of time accurately.
 
@@ -26,7 +28,8 @@ class After(Condition):
     :param target: point in time after which this condition is :py:const:`True`
 
     The time range is *inclusive* of the time at `target`.
-    If `await`\ ed before `target`, :py:class:`After` proceeds in the :py:class:`Moment` of `target`.
+    If `await`\ ed before `target`, :py:class:`After` proceeds in the
+    :py:class:`Moment` of `target`.
     Otherwise, it proceeds in an :py:class:`Instant`.
     """
     __slots__ = ('target', '_scheduled')
@@ -60,7 +63,7 @@ class After(Condition):
             return True
         self._ensure_trigger()
         yield from Notification.__await__(self)
-        return True
+        return True  # noqa: B901
 
     def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
         self._ensure_trigger()
@@ -98,7 +101,7 @@ class Before(Condition):
             yield from postpone().__await__()
         else:
             yield from Hibernate().__await__()
-        return True
+        return True  # noqa: B901
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.target)
@@ -134,7 +137,7 @@ class Moment(Condition):
             yield from self._transition.__await__()
         else:
             yield from Hibernate().__await__()
-        return True
+        return True  # noqa: B901
 
     def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
         self._transition.__subscribe__(waiter, interrupt)
@@ -184,7 +187,7 @@ class Instant(Condition):
 
     def __await__(self) -> Awaitable[bool]:
         yield from postpone().__await__()
-        return True
+        return True  # noqa: B901
 
 
 class Delay(Notification):
@@ -288,7 +291,9 @@ class DurationIter:
         return self
 
 
-def each(*, delay: float = None, interval: float = None) -> Union[DurationIter, IntervalIter]:
+def each(
+        *, delay: float = None, interval: float = None
+) -> Union[DurationIter, IntervalIter]:
     if delay is not None and interval is None:
         return DurationIter(delay)
     elif interval is not None and delay is None:

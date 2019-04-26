@@ -38,15 +38,24 @@ class BoolExpression(Condition):
         return self._test()
 
     def __invert__(self):
-        return BoolExpression(self._operator_inverse[self._condition], self._left, self._right)
+        return BoolExpression(
+            self._operator_inverse[self._condition], self._left, self._right
+        )
 
-    def __init__(self, condition: Callable[[Any, Any], bool], left: Union[object, 'Tracked'], right: Union[object, 'Tracked']):
+    def __init__(
+            self,
+            condition: Callable[[Any, Any], bool],
+            left: Union[object, 'Tracked'],
+            right: Union[object, 'Tracked']
+    ):
         super().__init__()
         self._subscribed = False
         self._condition = condition
         self._left = left
         self._right = right
-        self._source = tuple(value for value in (left, right) if isinstance(value, Tracked))
+        self._source = tuple(
+            value for value in (left, right) if isinstance(value, Tracked)
+        )
         if isinstance(left, Tracked) and isinstance(right, Tracked):
             self._test = lambda: condition(left.value, right.value)
         elif isinstance(left, Tracked):
@@ -54,7 +63,10 @@ class BoolExpression(Condition):
         elif isinstance(right, Tracked):
             self._test = lambda: condition(left, right.value)
         else:
-            raise TypeError("at least one of 'left' or 'right' must be of type %s" % Tracked.__name__)
+            raise TypeError(
+                "at least one of 'left' or 'right' must be of type %s" %
+                Tracked.__name__
+            )
 
     def _start_listening(self):
         if not self._subscribed:
@@ -73,7 +85,7 @@ class BoolExpression(Condition):
         self._start_listening()
         result = (yield from super().__await__())
         self._stop_listening()
-        return result
+        return result  # noqa: B901
 
     async def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
         self._start_listening()
@@ -88,7 +100,9 @@ class BoolExpression(Condition):
             await self.__trigger__()
 
     def __repr__(self):
-        return '%s %s %s' % (self._left, self._operator_symbol[self._condition], self._right)
+        return '%s %s %s' % (
+            self._left, self._operator_symbol[self._condition], self._right
+        )
 
 
 class Tracked(Generic[V]):
@@ -136,7 +150,9 @@ class Tracked(Generic[V]):
         await self.set(to)
         return self
 
-    def _async_operation(self, op: Callable[[V, RHS], V], rhs: RHS) -> 'TrackedOperation[V]':
+    def _async_operation(
+            self, op: Callable[[V, RHS], V], rhs: RHS,
+    ) -> 'TrackedOperation[V]':
         return TrackedOperation(self, Operation(op, rhs))
 
     # boolean operations producing a BoolExpression
@@ -202,8 +218,9 @@ class Tracked(Generic[V]):
         raise TypeError("tracked object does not support reflected operators\n"
                         "Use 'await (tracked + 4)' instead of 'await (4 + tracked)'")
 
-    __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__ = __rdivmod__ = __rpow__ = __rlshift__ \
-        = __rrshift__ = __rand__ = __rxor__ = __ror__ = __radd__
+    __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__\
+        = __rdivmod__ = __rpow__ = __rlshift__ = __rrshift__ = __rand__ = __rxor__\
+        = __ror__ = __radd__
 
     # augmented operators
     # Python currently does not support await for augmented assignment, as in
@@ -212,16 +229,21 @@ class Tracked(Generic[V]):
         raise TypeError("tracked object does not support augmented assignment\n"
                         "Use 'tracked = await (tracked + 4)' instead")
 
-    __isub__ = __imul__ = __imatmul__ = __itruediv__ = __ifloordiv__ = __imod__ = __ipow__ = __ilshift__ = __irshift__ \
-        = __iand__ = __ixor__ = __ior__ = __iadd__
+    __isub__ = __imul__ = __imatmul__ = __itruediv__ = __ifloordiv__ = __imod__\
+        = __ipow__ = __ilshift__ = __irshift__ = __iand__ = __ixor__ = __ior__\
+        = __iadd__
 
     def __await__(self):
-        raise TypeError("tracked object can't be used in await expression\n"
-                        "Use a derived condition or expression instead")
+        raise TypeError(
+            "tracked object can't be used in await expression\n"
+            "Use a derived condition or expression instead"
+        )
 
     def __bool__(self):
-        raise TypeError("tracked object has no bool()\n"
-                        "Use 'bool(tracked.value)' or 'await (tracked == True)' instead")
+        raise TypeError(
+            "tracked object has no bool()\n"
+            "Use 'bool(tracked.value)' or 'await (tracked == True)' instead"
+        )
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self._value)
@@ -266,7 +288,7 @@ class TrackedOperation(Generic[V]):
         tracked = self._tracked
         for operation in self._operations:
             yield from tracked.set(operation.operator(tracked.value, operation.rhs))
-        return tracked
+        return tracked  # noqa: B901
 
     def __extend__(self, op: Callable[[V, RHS], V], rhs: RHS) -> 'TrackedOperation[V]':
         return TrackedOperation(self._tracked, *self._operations, Operation(op, rhs))
@@ -295,7 +317,10 @@ class TrackedOperation(Generic[V]):
 
     def __pow__(self, other: RHS, modulo=None) -> 'TrackedOperation[V]':
         if modulo is not None:
-            raise TypeError("%s does not support the 'modulo' parameter for 'pow'" % self.__class__.__name__)
+            raise TypeError(
+                "%s does not support the 'modulo' parameter for 'pow'" %
+                self.__class__.__name__
+            )
         return self.__extend__(operator.pow, other)
 
     def __lshift__(self, other: RHS) -> 'TrackedOperation[V]':
@@ -311,11 +336,14 @@ class TrackedOperation(Generic[V]):
         return self.__extend__(operator.or_, other)
 
     def __radd__(self, other):
-        raise TypeError("tracked object does not support reflected operators\n"
-                        "Use 'await (tracked + 4 + 5)' instead of 'await (4 + tracked + 5)'")
+        raise TypeError(
+            "tracked object does not support reflected operators\n"
+            "Use 'await (tracked + 4 + 5)' instead of 'await (4 + tracked + 5)'"
+        )
 
-    __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__ = __rdivmod__ = __rpow__ = __rlshift__ \
-        = __rrshift__ = __rand__ = __rxor__ = __ror__ = __radd__
+    __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__\
+        = __rdivmod__ = __rpow__ = __rlshift__ = __rrshift__ = __rand__ = __rxor__\
+        = __ror__ = __radd__
 
     def __str__(self):
         return '%s %s %s)' % (

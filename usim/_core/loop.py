@@ -2,8 +2,10 @@ r"""
 event handling core facilities
 
 This is the core scheduling/synchronization implementation.
-It defines a basic event-loop with simulated time, as well as the signals understood by the loop.
-The entirety of this module is for internal use only, and should not be used by simulation code directly.
+It defines a basic event-loop with simulated time, as well as the signals
+understood by the loop.
+The entirety of this module is for internal use only, and should not be used
+by simulation code directly.
 """
 import collections
 import threading
@@ -19,7 +21,9 @@ class ActivityError(RuntimeError):
         self.activity = activity
         self.signal = signal
         super().__init__(
-            'Running %r failed with an exception in response to %s' % (activity, signal)
+            'Activity %r raised an exception in response to %s' % (
+                activity, signal
+            )
         )
 
 
@@ -30,7 +34,9 @@ class ActivityLeak(RuntimeError):
         self.signal = signal
         self.result = result
         super().__init__(
-            'Running %r produced unhandled output %r in response to %s' % (activity, result, signal)
+            'Activity %r returned %r in response to %s' % (
+                activity, result, signal
+            )
         )
 
 
@@ -48,7 +54,7 @@ class Hibernate(object):
     __slots__ = ()
 
     def __await__(self) -> Awaitable:
-        return (yield self)
+        yield self
 
 
 #: reusable instance of :py:class:`Hibernate`
@@ -66,13 +72,16 @@ class Loop:
     :ivar activity: the coroutine currently executing
 
     The event loop runs a number of coroutines concurrently.
-    By interacting with the event loop to exchange commands, coroutines are synchronized.
+    By interacting with the event loop to exchange commands,
+    coroutines are synchronized.
     Commands are either ``await``\ able, issued in an ``async def`` coroutine,
-    or side-channel via ``__LOOP_STATE__.LOOP``, issued by either coroutines or subroutines.
+    or side-channel via ``__LOOP_STATE__.LOOP``,
+    issued by either coroutines or subroutines.
 
     The event loop understands only a single ``await``\ able command,
     :py:class:`Hibernate`, which immediately suspends the currently active coroutine.
-    This does *not* schedule the coroutine for resumption, which must be done separately.
+    This does *not* schedule the coroutine for resumption,
+    which must be done separately.
 
     .. code:: python
 
@@ -81,12 +90,16 @@ class Loop:
             await Hibernate()  # suspend execution indefinitely
             print('awoken')    # only run if the coroutine is re-scheduled somehow
 
-    The :py:class:`Loop` instance running in the current thread is available as ``__LOOP_STATE__.LOOP``.
-    This reference must be used by coroutines to send non-suspending commands to the loop.
+    The :py:class:`Loop` instance running in the current thread
+    is available as ``__LOOP_STATE__.LOOP``.
+    This reference may be used by coroutines to send non-suspending commands
+    to the loop.
 
     The event loop understands only a single side-channel command,
-    :py:meth:`~.Loop.schedule`, which schedules the execution of a coroutine at a simulated time point.
-    A coroutine is executed either by sending :py:const:`None` or throwing an :py:class:`~.Interrupt`.
+    :py:meth:`~.Loop.schedule`, which schedules the execution of a coroutine
+    at a simulated time point.
+    A coroutine is executed either by sending :py:const:`None`
+    or throwing an :py:class:`~.Interrupt`.
 
     .. code:: python
 
@@ -159,7 +172,9 @@ class Loop:
                 reply = target.throw(signal)
             else:
                 reply = target.send(None)
-            assert type(reply) is Hibernate, '%s received %s but only supports the Hibernate command' % (
+            assert (
+                type(reply) is Hibernate
+            ), '%s received %s but only supports the Hibernate command' % (
                 self.__class__.__name__, reply
             )
         except StopIteration as err:
@@ -168,7 +183,10 @@ class Loop:
         except BaseException as err:
             raise ActivityError(target, signal=signal) from err
 
-    def schedule(self, target: Coroutine, signal: 'Interrupt' = None, *, delay: float = None, at: float = None):
+    def schedule(
+            self, target: Coroutine, signal: 'Interrupt' = None, *,
+            delay: float = None, at: float = None,
+    ):
         r"""
         Schedule the execution of a coroutine
 
@@ -180,7 +198,9 @@ class Loop:
         Coroutines are executed using `target.send(None)` unless `signal` is provided,
         in which case `target.throw(signal)` is used instead.
         """
-        assert delay is None or at is None, "schedule date must be either absolute or relative"
+        assert (
+            delay is None or at is None
+        ), "schedule date must be either absolute or relative"
         if delay is None and at is None:
             self._pending.append(Activation(target, signal))
         elif delay is not None:
