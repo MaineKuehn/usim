@@ -1,0 +1,6 @@
+scanner:
+    diff_only: False  # If False, the entire file touched by the Pull Request is scanned for errors. If True, only the diff is scanned.
+    linter: flake8
+
+flake8:
+    max-line-length: 88  # flake8-bugbear uses 80*1.1
