@@ -88,6 +88,11 @@ class Condition(Notification):
         else:
             super().__subscribe__(waiter, interrupt)
 
+    def __repr__(self):
+        return '<%s, bool=%s, waiters=%d>' % (
+            self.__class__.__name__, bool(self), len(self._waiting)
+        )
+
 
 class Connective(Condition):
     """Logical connection of sub-conditions"""
