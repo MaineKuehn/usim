@@ -197,7 +197,7 @@ class Task(Awaitable[RT]):
     def __repr__(self):
         return '<%s of %s (%s)>' % (
             self.__class__.__name__, self.payload,
-            'outstanding' if not self else (
+            'outstanding' if self._result is None else (
                 'result={!r}'.format(self._result[0])
                 if self._result[1] is None
                 else
