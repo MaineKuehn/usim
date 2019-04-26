@@ -10,7 +10,7 @@ with open(os.path.join(repo_base_dir, "usim", "__about__.py")) as about_file:
     long_description = package_about.__doc__
 
 
-TESTS_REQUIRE = ['pytest>=3.6.0', 'pytest-timeout']
+TESTS_REQUIRE = ['pytest>=4.3.0', 'pytest-timeout']
 
 
 if __name__ == '__main__':
