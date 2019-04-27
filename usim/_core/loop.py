@@ -2,7 +2,7 @@ r"""
 event handling core facilities
 
 This is the core scheduling/synchronization implementation.
-It defines a basic event-loop with simulated time, as well as the signals
+It defines a basic event loop with simulated time, as well as the signals
 understood by the loop.
 The entirety of this module is for internal use only, and should not be used
 by simulation code directly.
@@ -80,8 +80,8 @@ class Loop:
 
     The event loop understands only a single ``await``\ able command,
     :py:class:`Hibernate`, which immediately suspends the currently active coroutine.
-    This does *not* schedule the coroutine for resumption,
-    which must be done separately.
+    This does *not* schedule the coroutine for resumption.
+    This must be done separately.
 
     .. code:: python
 
@@ -184,8 +184,11 @@ class Loop:
             raise ActivityError(target, signal=signal) from err
 
     def schedule(
-            self, target: Coroutine, signal: 'Interrupt' = None, *,
-            delay: float = None, at: float = None
+            self, 
+            target: Coroutine, 
+            signal: 'Interrupt' = None, *,
+            delay: float = None, 
+            at: float = None
     ):
         r"""
         Schedule the execution of a coroutine

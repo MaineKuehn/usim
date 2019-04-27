@@ -65,7 +65,7 @@ class Task(Awaitable[RT]):
     This allows to store or pass on the :py:class:`Task`
     in order to control the underlying activity.
     Other activities can ``await`` a :py:class:`Task`
-    to receive any results or exceptions on completion,
+    to receive results or exceptions on completion,
     similar to a regular activity.
 
     .. code:: python3

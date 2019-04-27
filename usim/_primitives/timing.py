@@ -1,6 +1,6 @@
 """
-There is no inherent time unit, such as seconds, hours, or years,
-implied for simulation time.
+For simulation time there is no inherent time unit, such as seconds,
+hours, or years, implied.
 A simulation should use a consistent time unit, however.
 
 The default time type is :py:class:`float`, which in principle may exhibit

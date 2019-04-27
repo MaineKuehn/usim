@@ -6,8 +6,8 @@ This makes it easy for you to submit bug reports or directly propose changes.
 ## Reporting a Bug
 
 Enabling precise and reliable simulations is our goal,
-and that means swatting every single bug.
-However, there is only so much time in a day -
+and that means chasing every single bug.
+However, there is so little time in a day -
 Please help us help you!
 
 * Avoid reporting issues that are already being worked on:
@@ -15,7 +15,7 @@ Please help us help you!
     Test whether the issue also occurs with the most recent version of μSim.
   * *Check previous reports:*
     Have a look at [previous reports](https://github.com/MaineKuehn/usim/issues?q=is%3Aissue+label%3Abug)
-    if they match your issue.
+    if any of those matches your issue.
     Feel free to comment on open issues, especially when they are old.
 * Isolate the cause of the issue:
   * Identify where in your simulation the issue occurs, and under which conditions.
@@ -34,8 +34,8 @@ Please help us help you!
 
 We welcome direct contributions of code and documentation,
 but also need to maintain the current and future quality of μSim.
-The better you integrate with the development of μSim,
-the more likely and faster can your contribution be included.
+The better you integrate with the development style of μSim,
+the more likely and faster we can include your contribution.
 
 * Locate your contribution with respect to ongoing development:
   * Check the [open issues](https://github.com/MaineKuehn/usim/issues?q=is%3Aissue+label%3Abug+is%3Aopen)
@@ -49,4 +49,4 @@ the more likely and faster can your contribution be included.
     For new features, prepend ``WIP:`` to the title to show that it needs discussion.
   * Provide a description of the changes, ideally with a short example.
     Include references to all related issues and pull requests.
-* Your changes will be reviewed before being merged
+* We will review your changes before merging

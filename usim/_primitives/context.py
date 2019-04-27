@@ -177,7 +177,7 @@ def until(notification: Notification):
     An asynchronous `until`-scope listens for a notification
     *without* stopping execution.
     This allows notification on any break point,
-    i.e. `await` in the context or while waiting for children.
+    e.g. `await` in the context or while waiting for children.
 
     .. code:: python
 
