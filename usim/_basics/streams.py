@@ -1,4 +1,4 @@
-"""
+r"""
 Synchronizing streams that allow consumers to wait for messages from producers
 
 Streams synchronize **adding** and **retrieving** messages
@@ -29,7 +29,8 @@ A channel cannot be used in an ``async with until(...):`` statement.
 """
 from collections import deque
 
-from typing import Generic, TypeVar, Dict, List, Coroutine, Awaitable, Union, AsyncIterable, AsyncIterator
+from typing import Generic, TypeVar, Dict, List, Coroutine, Awaitable,\
+    Union, AsyncIterable, AsyncIterator
 
 from .._core.loop import __LOOP_STATE__
 from .._primitives.notification import postpone, Notification, NoSubscribers
@@ -56,7 +57,8 @@ class Channel(AsyncIterable, Generic[ST]):
 
     def __init__(self):
         super().__init__()
-        self._consumer_buffers = {}  # type: Dict[Union[Coroutine, ChannelAsyncIterator], List[ST]]
+        self._consumer_buffers = {}  \
+            # type: Dict[Union[Coroutine, ChannelAsyncIterator], List[ST]]
         self._notification = Notification()
         self._closed = False
 
@@ -75,7 +77,7 @@ class Channel(AsyncIterable, Generic[ST]):
             self._consumer_buffers.pop(activity)
         if not buffer and self._closed:
             raise StreamClosed(self)
-        return buffer[0]
+        return buffer[0]  # noqa: B901
 
     def __aiter__(self):
         return ChannelAsyncIterator(self)
@@ -124,7 +126,7 @@ class Queue(AsyncIterable, Generic[ST]):
         self._notification.__awake_all__()
 
     def __await__(self) -> Awaitable[ST]:
-        return (yield from self._await_message().__await__())
+        return (yield from self._await_message().__await__())  # noqa: B901
 
     async def _await_message(self):
         async with self._read_mutex:

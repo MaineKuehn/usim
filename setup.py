@@ -10,6 +10,9 @@ with open(os.path.join(repo_base_dir, "usim", "__about__.py")) as about_file:
     long_description = package_about.__doc__
 
 
+TESTS_REQUIRE = ['pytest>=4.3.0', 'pytest-timeout']
+
+
 if __name__ == '__main__':
     setup(
         name=package_about['__title__'],
@@ -25,6 +28,8 @@ if __name__ == '__main__':
         ],
         extras_require={
             'docs': ["sphinx", "sphinx_rtd_theme"],
+            'test': TESTS_REQUIRE,
+            'contrib': ['flake8', 'flake8-bugbear'] + TESTS_REQUIRE,
         },
         # metadata for package search
         license='MIT',
@@ -43,5 +48,5 @@ if __name__ == '__main__':
         # unit tests
         test_suite='usim_pytest',
         setup_requires=['pytest-runner'],
-        tests_require=['pytest', 'pytest-timeout'],
+        tests_require=TESTS_REQUIRE,
     )

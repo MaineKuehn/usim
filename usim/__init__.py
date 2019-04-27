@@ -1,6 +1,6 @@
 from typing import Coroutine
 
-from .__about__ import __version__
+from .__about__ import __version__  # noqa: F401
 from ._core.loop import Loop as _Loop
 from ._primitives.timing import Time, Eternity, Instant, each
 from ._primitives.flag import Flag

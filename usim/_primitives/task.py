@@ -60,10 +60,13 @@ class Task(Awaitable[RT]):
     """
     Concurrently running activity
 
-    A :py:class:`Task` wraps an :term:`activity` that is concurrently run in a :py:class:`~.Scope`.
-    This allows to store or pass on the :py:class:`Task` in order to control the underlying activity.
+    A :py:class:`Task` wraps an :term:`activity` that is
+    concurrently run in a :py:class:`~.Scope`.
+    This allows to store or pass on the :py:class:`Task`
+    in order to control the underlying activity.
     Other activities can ``await`` a :py:class:`Task`
-    to receive any results or exceptions on completion, similar to a regular activity.
+    to receive results or exceptions on completion,
+    similar to a regular activity.
 
     .. code:: python3
 
@@ -99,7 +102,11 @@ class Task(Awaitable[RT]):
             try:
                 result = await self.payload
             except CancelTask as err:
-                assert err.subject is self, "task for activity %r received cancellation of %r" % (self, err.subject)
+                assert (
+                    err.subject is self
+                ), "task for activity %r received cancellation of %r" % (
+                    self, err.subject
+                )
                 self._result = None, err.__transcript__
             else:
                 self._result = result, None
@@ -118,7 +125,7 @@ class Task(Awaitable[RT]):
         if error is not None:
             raise error
         else:
-            return result
+            return result  # noqa: B901
 
     @property
     def done(self) -> 'Done':
@@ -134,7 +141,11 @@ class Task(Awaitable[RT]):
         if self._result is not None:
             result, error = self._result
             if error is not None:
-                return TaskState.CANCELLED if isinstance(error, TaskCancelled) else TaskState.FAILED
+                return (
+                    TaskState.CANCELLED
+                    if isinstance(error, TaskCancelled)
+                    else TaskState.FAILED
+                )
             return TaskState.SUCCESS
         # a stripped-down version of `inspect.getcoroutinestate`
         if self.__runner__.cr_frame.f_lasti == -1:
@@ -162,15 +173,16 @@ class Task(Awaitable[RT]):
         The activity may catch and react to :py:class:`~.CancelActivity`,
         but should not suppress it.
 
-        If the :py:class:`~.Task` is :py:attr:`~.Task.done` before :py:class:`~.CancelTask` is raised,
-        the cancellation is ignored.
+        If the :py:class:`~.Task` is :py:attr:`~.Task.done` before
+        :py:class:`~.CancelTask` is raised, the cancellation is ignored.
         This also means that cancelling an activity multiple times is allowed,
         but only the first successful cancellation is stored as the cancellation cause.
 
         If the :py:class:`~.Task` has not started running, it is cancelled immediately.
         This prevents any code execution, even before the first suspension.
 
-        :warning: The timing of cancelling a Task before it started running may change in the future.
+        :warning: The timing of cancelling a Task before it started running
+                  may change in the future.
         """
         if self._result is None:
             if self.status is TaskState.CREATED:

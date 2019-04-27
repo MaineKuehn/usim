@@ -33,7 +33,14 @@ class Scope:
     def __await__(self):
         yield from self._done.__await__()
 
-    def do(self, payload: Coroutine[Any, Any, RT], *, after: float = None, at: float = None, volatile: bool = False) -> Task[RT]:
+    def do(
+            self,
+            payload: Coroutine[Any, Any, RT],
+            *,
+            after: float = None,
+            at: float = None,
+            volatile: bool = False
+    ) -> Task[RT]:
         r"""
         Concurrently perform an activity in this scope
 
@@ -100,8 +107,12 @@ class Scope:
         # since it can happen on any await, we check multiple times
         if exc_type is GeneratorExit:
             return self._handle_close(exc_val)
-        assert self._activity is __LOOP_STATE__.LOOP.activity,\
-            "Instances of %s cannot be shared between activities" % self.__class__.__name__
+        assert (
+            self._activity is __LOOP_STATE__.LOOP.activity
+        ), (
+            "Instances of %s cannot be shared between activities" %
+            self.__class__.__name__
+        )
         await self._done.set()
         if exc_type is None:
             try:
@@ -163,8 +174,10 @@ def until(notification: Notification):
     r"""
     :py:class:`Scope` that is interrupted on notification
 
-    An asynchronous `until`-scope listens for a notification *without* stopping execution.
-    This allows notification on any break point, i.e. `await` in the context or while waiting for children.
+    An asynchronous `until`-scope listens for a notification
+    *without* stopping execution.
+    This allows notification on any break point,
+    e.g. `await` in the context or while waiting for children.
 
     .. code:: python
 

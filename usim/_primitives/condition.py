@@ -16,7 +16,8 @@ class Condition(Notification):
     asynchronous *and* boolean context.
     In an asynchronous context,
     such as ``await``,
-    a :py:class:`~.Condition` triggers when the :py:class:`~.Condition` becomes :py:const:`True`.
+    a :py:class:`~.Condition` triggers when the :py:class:`~.Condition`
+    becomes :py:const:`True`.
     In a boolean context,
     such as ``if``,
     a :py:class:`~.Condition` provides its current boolean value.
@@ -63,7 +64,7 @@ class Condition(Notification):
             yield from postpone().__await__()
         while not self:
             yield from super().__await__()
-        return True
+        return True  # noqa: B901
 
     def __and__(self, other) -> 'Condition':
         return All(self, other)
@@ -97,8 +98,13 @@ class Connective(Condition):
         # unpack similar connections
         # eliminate duplicates
         self._children = tuple(
-            set(condition for condition in conditions if not isinstance(condition, self.__class__)) |
-            set(condition._children for condition in conditions if isinstance(condition, self.__class__))
+            set(condition for condition in conditions if not isinstance(
+                condition, self.__class__
+            )).union(
+                condition._children for condition in conditions if isinstance(
+                    condition, self.__class__
+                )
+            )
         )
 
     def __await__(self):
@@ -118,7 +124,10 @@ class Connective(Condition):
         return True
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, ', '.join(repr(child) for child in self._children))
+        return '%s(%s)' % (
+            self.__class__.__name__,
+            ', '.join(repr(child) for child in self._children)
+        )
 
 
 class All(Connective):
