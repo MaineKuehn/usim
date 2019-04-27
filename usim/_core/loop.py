@@ -184,10 +184,10 @@ class Loop:
             raise ActivityError(target, signal=signal) from err
 
     def schedule(
-            self, 
-            target: Coroutine, 
+            self,
+            target: Coroutine,
             signal: 'Interrupt' = None, *,
-            delay: float = None, 
+            delay: float = None,
             at: float = None
     ):
         r"""
