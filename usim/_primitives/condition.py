@@ -36,11 +36,11 @@ class Condition(Notification):
 
     Every :py:class:`~.Condition` supports the bitwise operators
     ``~a`` (not),
-    ``a & b`` (and), and
+    ``a & b`` (and), as well as
     ``a | b`` (or)
     to derive a new :py:class:`~.Condition`.
     While it is possible to use the boolean operators
-    ``not``, ``and``, and ``or``,
+    ``not``, ``and``, as well as ``or``,
     they immediately evaluate any :py:class:`~.Condition` in a boolean context.
 
     .. code:: python
