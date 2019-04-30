@@ -1,3 +1,6 @@
+import math
+import sys
+
 import pytest
 
 from usim import time, until
@@ -52,3 +55,33 @@ class TestTime:
             await (time >= start - 5)  # await moment in the past
             assert True, "After in the past should always pass"
         assert start == time.now
+
+    @via_usim
+    async def test_before(self):
+        start, delay = time.now, 20
+        for seq in range(5):
+            await (time < start + seq * delay)
+            assert start == time.now
+        assert start == time.now
+
+    @via_usim
+    async def test_previous_before(self):
+        start, delay = time.now, 20
+        async with until(time == start + delay):
+            await (time < start - 5)  # await moment in the past
+            assert False, "Before in the past should never pass"
+        assert start + delay == time.now
+
+    @via_usim
+    async def test_eternity_eq(self):
+        async with until(time == sys.float_info.max):
+            await (time == math.inf)  # await moment in the past
+            assert False, "Eternity should never pass"
+        assert math.inf > time.now
+
+    @via_usim
+    async def test_eternity_ge(self):
+        async with until(time >= sys.float_info.max):
+            await (time >= math.inf)  # await moment in the past
+            assert False, "Eternity should never pass"
+        assert math.inf > time.now
