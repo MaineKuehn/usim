@@ -289,16 +289,16 @@ time = Time()
 
 
 class IntervalIter:
-    __slots__ = ('interval', '_last')
+    __slots__ = ('_interval', '_last')
 
     def __init__(self, interval: float):
-        self.interval = interval
+        self._interval = interval
         self._last = None
 
     async def __anext__(self):
         if self._last is None:
-            self._last = __LOOP_STATE__.LOOP.time - self.interval
-        await (time == self._last + self.interval)
+            self._last = __LOOP_STATE__.LOOP.time - self._interval
+        await (time == self._last + self._interval)
         self._last = time.now
         return self._last
 
@@ -307,13 +307,13 @@ class IntervalIter:
 
 
 class DurationIter:
-    __slots__ = ('delay',)
+    __slots__ = ('_delay',)
 
     def __init__(self, delay: float):
-        self.delay = delay
+        self._delay = delay
 
     async def __anext__(self):
-        await (time + self.delay)
+        await (time + self._delay)
         return time.now
 
     def __aiter__(self):
