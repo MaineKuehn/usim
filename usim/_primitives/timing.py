@@ -256,10 +256,21 @@ class Time:
         return Before(other)
 
     if __debug__:
+        def __le__(self, other):
+            raise TypeError((
+                "'<=' not supported between 'time' and instances of '%s'\n\n"
+                "Only 'now and after' (time >= date) is well-defined,\n"
+                "but 'now and before' (time <= date) is not. Use instead:\n"
+                "* 'await (time < date)' to not wait before a point in time\n"
+                "* 'await (time >= date)' to not wait after or at a point in time\n"
+                "\n"
+                "To check if time is before or at a point, use 'time.now <= date'"
+            ) % type(other).__name__)
+
         def __await__(self):
             raise TypeError(
                 "'time' cannot be used in 'await' expression\n\n"
-                "Use 'time' to derive operands for specific expressions\n:"
+                "Use 'time' to derive operands for specific expressions:\n"
                 "* 'await (time + duration)' to delay for a specific duration\n"
                 "* 'await (time == date)' to delay until a specific point in time\n"
                 "* 'await (time >= date)' to delay until after a point in time\n"
