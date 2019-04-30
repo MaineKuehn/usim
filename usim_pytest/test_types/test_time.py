@@ -85,3 +85,38 @@ class TestTime:
             await (time >= math.inf)  # await moment in the past
             assert False, "Eternity should never pass"
         assert math.inf > time.now
+
+
+class TestTimeCondition:
+    @via_usim
+    async def test_after(self):
+        start = time.now
+        assert (time >= time.now)
+        assert not (time >= time.now + 20)
+        assert not ~(time >= time.now)
+        assert ~(time >= time.now + 20)
+        await (time >= time.now)
+        await (time >= time.now + 20)
+        assert time.now == start + 20
+
+    @via_usim
+    async def test_before(self):
+        start = time.now
+        assert not (time < time.now)
+        assert (time < time.now + 20)
+        assert ~(time < time.now)
+        assert not ~(time < time.now + 20)
+        await (time < time.now + 20)
+        async with until(time + 20):
+            await (time < time.now)
+        assert time.now == start + 20
+
+    @via_usim
+    async def test_moment(self):
+        start = time.now
+        assert (time == start)
+        assert not (time == start + 20)
+        await (time == start + 20)
+        assert not (time == start)
+        assert (time == start + 20)
+        assert time.now == start + 20
