@@ -103,7 +103,7 @@ class Connective(Condition):
         self._children = conditions
 
     def __await__(self) -> bool:
-        return (yield from self.__await_children__().__await__())
+        return (yield from self.__await_children__().__await__())  # noqa: B901
 
     async def __await_children__(self) -> bool:
         await postpone()
