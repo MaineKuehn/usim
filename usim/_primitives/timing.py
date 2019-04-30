@@ -255,6 +255,19 @@ class Time:
     def __lt__(self, other: float) -> Before:
         return Before(other)
 
+    if __debug__:
+        def __await__(self):
+            raise TypeError(
+                "'time' cannot be used in 'await' expression\n\n"
+                "Use 'time' to derive operands for specific expressions\n:"
+                "* 'await (time + duration)' to delay for a specific duration\n"
+                "* 'await (time == date)' to delay until a specific point in time\n"
+                "* 'await (time >= date)' to delay until after a point in time\n"
+                "* 'await (time < date)' to indefinitely block after a point in time\n"
+                "\n"
+                "To get the current time, use 'time.now'"
+            )
+
 
 time = Time()
 
