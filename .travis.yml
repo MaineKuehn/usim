@@ -3,12 +3,11 @@ python:
   - "3.5"
   - "3.6"
   - "pypy3"
-  - "3.7-dev"
 os:
   - linux
-matrix:
-  allow_failures:
-  - python: "3.7-dev"
+env:
+  - DEBUG=-O
+  - DEBUG=
 before_script:
   - pip install pip --upgrade
   - python3 -m pip list
@@ -20,6 +19,6 @@ before_script:
   - export PYTEST_ADDOPTS=-v
 script:
   - python -m flake8
-  - coverage run setup.py test
+  - python $DEBUG -m coverage run setup.py test
 after_success:
   - coverage report && codecov
