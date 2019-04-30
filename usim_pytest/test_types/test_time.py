@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from usim import time, until
+from usim import time, until, eternity, instant
 
 from ..utility import via_usim
 
@@ -119,4 +119,18 @@ class TestTimeCondition:
         await (time == start + 20)
         assert not (time == start)
         assert (time == start + 20)
+        assert time.now == start + 20
+
+    @via_usim
+    async def test_extremes(self):
+        start = time.now
+        assert instant
+        assert not eternity
+        assert not ~instant
+        assert ~eternity
+        await (time == start + 20)
+        assert instant
+        assert not eternity
+        assert not ~instant
+        assert ~eternity
         assert time.now == start + 20
