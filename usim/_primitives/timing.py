@@ -125,7 +125,12 @@ class Moment(Condition):
         return __LOOP_STATE__.LOOP.time == self.target
 
     def __invert__(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Inverting a moment is not well-defined\n\n"
+            "The inverse implies the moment immediately after another,\n"
+            "i.e. '(time < date | time > date)'. The latter term is not\n"
+            "a meaningful event."
+        )
 
     def __await__(self) -> Awaitable[bool]:
         # we will *never* wake up once the target has passed
