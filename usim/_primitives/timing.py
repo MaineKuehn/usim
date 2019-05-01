@@ -12,8 +12,6 @@ time can represent more than 285 million years of time accurately.
        it is still not possible to reach :py:class:`Eternity`.
        This may change in the future.
 """
-from math import inf
-
 from typing import Awaitable, Coroutine, Union
 
 from .._core.loop import __LOOP_STATE__, Hibernate, Interrupt as CoreInterrupt
@@ -249,9 +247,7 @@ class Time:
     def __add__(self, other: float) -> Delay:
         return Delay(other)
 
-    def __ge__(self, other: float) -> Condition:
-        if other is inf:
-            return Eternity()
+    def __ge__(self, other: float) -> After:
         return After(other)
 
     def __eq__(self, other: float) -> Moment:

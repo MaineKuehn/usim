@@ -73,18 +73,14 @@ class TestTime:
         assert start + delay == time.now
 
     @via_usim
-    async def test_eternity_eq(self):
-        async with until(time == sys.float_info.max):
-            await (time == math.inf)  # await moment in the past
-            assert False, "Eternity should never pass"
-        assert math.inf > time.now
+    async def test_infinity(self):
+        await (time == math.inf)
+        assert math.inf == time.now
 
     @via_usim
-    async def test_eternity_ge(self):
-        async with until(time >= sys.float_info.max):
-            await (time >= math.inf)  # await moment in the past
-            assert False, "Eternity should never pass"
-        assert math.inf > time.now
+    async def test_infinity_ge(self):
+        await (time >= math.inf)
+        assert math.inf == time.now
 
 
 class TestTimeCondition:
