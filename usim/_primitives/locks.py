@@ -85,3 +85,18 @@ class Lock:
         return '<%s, owner=%s, depth=%s>' % (
             self.__class__.__name__, self._owner, self._depth
         )
+
+    if __debug__:
+        def __enter__(self):
+            raise AttributeError(
+                "Lock does not implement '__enter__'\n\n"
+                "A lock cannot be acquired in a regular context.\n"
+                "Use an 'async with' context instead."
+            )
+
+        def __exit__(self):
+            raise AttributeError(
+                "Lock does not implement '__exit__'\n\n"
+                "A lock cannot be acquired in a regular context.\n"
+                "Use an 'async with' context instead."
+            )
