@@ -44,6 +44,7 @@ class TestLock:
     @via_usim
     async def test_contended(self):
         lock = Lock()
+
         async def mutext_sleep(delay):
             async with lock:
                 await (time + delay)
