@@ -33,16 +33,27 @@ class Lock:
         self._depth = 0
 
     @property
-    def available(self):
+    def available(self) -> bool:
         """
         Check whether the current Task can acquire this lock
+
+        Entering a :py:class:`~~.Lock` in its context manager does not allow
+        backing off when the :py:class:`~~.Lock` cannot be acquired.
+        Availability of a :py:class:`~~.Lock` should be checked if it shall
+        only be acquired when available.
+
+        .. code:: python3
+
+            if lock.available:  # only acquire lock if possible
+                with lock:
+                    ...
+            else:
+                ...
         """
         if self._owner is None:
             return True
-        elif self._owner is __LOOP_STATE__.LOOP.activity:
-            return True
         else:
-            return False
+            return self._owner is __LOOP_STATE__.LOOP.activity
 
     async def __aenter__(self):
         current_activity = __LOOP_STATE__.LOOP.activity
