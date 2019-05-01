@@ -23,12 +23,15 @@ class After(Condition):
     r"""
     The time range at and after a certain point in time
 
-    :param target: point in time after which this condition is :py:const:`True`
+    :param target: point in time from which on this condition is :py:const:`True`
 
     The time range is *inclusive* of the time at `target`.
-    If `await`\ ed before `target`, :py:class:`After` proceeds in the
-    :py:class:`Moment` of `target`.
-    Otherwise, it proceeds in an :py:class:`Instant`.
+    If `await`\ ed before `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` until :term:`time` is advanced to `target`.
+    If `await`\ ed at or after `target`, an :term:`activity` is
+    :term:`postponed <Postponement>`.
+
+    The expression ``time >= target`` is equivalent to ``After(target)``.
     """
     __slots__ = ('target', '_scheduled')
 
@@ -78,6 +81,12 @@ class Before(Condition):
     :param target: point in time before which this condition is :py:const:`True`
 
     The time range is *exclusive* of the time at `target`.
+    If `await`\ ed before `target`, an :term:`activity` is
+    :term:`postponed <Postponement>`.
+    If `await`\ ed at or after `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` until :term:`time` is advanced to `target`.
+
+    The expression ``time < target`` is equivalent to ``Before(target)``.
     """
     __slots__ = ('target',)
 
@@ -110,6 +119,15 @@ class Moment(Condition):
     A certain point in time
 
     :param target: point in time during which this condition is :py:const:`True`
+
+    If `await`\ ed before `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` until :term:`time` is advanced to `target`.
+    If `await`\ ed at `target`, an :term:`activity` is
+    :term:`postponed <Postponement>`.
+    If `await`\ ed after `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` indefinitely.
+
+    The expression ``time == target`` is equivalent to ``Moment(target)``.
     """
     __slots__ = ('target', '_transition')
 
@@ -156,6 +174,11 @@ class Eternity(Condition):
     r"""
     A future point in time infinitely far into the future
 
+    An :term:`activity` that `await`\ s :py:class:`~.Eternity`
+    is never woken up by itself.
+    This holds true even when :term:`time` advances to :py:data:`math.inf`
+    or another representation of infinity.
+
     .. code:: python
 
         await Eternity()  # wait forever
@@ -175,6 +198,10 @@ class Eternity(Condition):
 class Instant(Condition):
     r"""
     A future point in time indistinguishable from the current time
+
+    An :term:`activity` that `await`\ s :py:class:`~.Instant`
+    is merely :term:`postponed <Postponement>`.
+    The current :term:`time` has no effect on this.
 
     .. code:: python
 
@@ -196,6 +223,22 @@ class Instant(Condition):
 class Delay(Notification):
     r"""
     A relative delay from the current time
+
+    :param duration: delay in time after which this condition is :py:const:`True`
+
+    A :py:class:`~.Delay` does not form a :py:class:`~.Condition`.
+    The ``delay`` is always in relation to the current time:
+    every time a :py:class:`~.Delay` is `await`\ ed creates a new
+    :term:`event`.
+
+    .. code:: python3
+
+        delay = time + 20
+        await delay      # delay for 20
+        await delay      # delay for 20 again
+        print(time.now)  # gives 40
+
+    The expression ``time + duration`` is equivalent to ``Delay(duration)``.
     """
     __slots__ = ('duration',)
 
@@ -220,6 +263,7 @@ class Time:
         now = time.now        # get the current time
         await (time + 20)     # wait for a time span to pass
         await (time == 1999)  # wait for a time date to occur
+        await (time >= 1999)  # wait for a time date to occur or pass
 
         async with until(time + 20):  # abort block after a delay
             ...
@@ -236,6 +280,9 @@ class Time:
     current time (``time.now <= point``).
     To avoid accidental mixing of ``await``\ able and non-\ ``await``\ able
     comparisons, :py:class:`Time` does not support the later.
+
+    :note: There is no need to instantiate :py:class:`Time` as it is stateless.
+           Use the instance :py:data:`usim.time` instead.
     """
     __slots__ = ()
 
