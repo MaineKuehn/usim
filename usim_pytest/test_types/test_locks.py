@@ -1,6 +1,6 @@
 import pytest
 
-from usim import time, Lock
+from usim import time, Lock, Scope
 
 from ..utility import via_usim
 
@@ -17,6 +17,7 @@ class TestLock:
         lock = Lock()
         async with lock:
             await (time + 5)
+        assert time == 5
 
     @via_usim
     async def test_acquire_reentry(self):
@@ -27,6 +28,7 @@ class TestLock:
                     await (time + 5)
         async with lock, lock, lock:
             await (time + 5)
+        assert time == 10
 
     @via_usim
     async def test_acquire_multiple(self):
@@ -37,3 +39,16 @@ class TestLock:
                     await (time + 5)
         async with lock_a, lock_b, lock_c:
             await (time + 5)
+        assert time == 10
+
+    @via_usim
+    async def test_contended(self):
+        lock = Lock()
+        async def mutext_sleep(delay):
+            async with lock:
+                await (time + delay)
+        async with Scope() as scope:
+            scope.do(mutext_sleep(5))
+            scope.do(mutext_sleep(5))
+            scope.do(mutext_sleep(10))
+        assert time == 20
