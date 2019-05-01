@@ -53,3 +53,19 @@ class TestLock:
             scope.do(mutext_sleep(5))
             scope.do(mutext_sleep(10))
         assert time == 20
+
+    @via_usim
+    async def test_available(self):
+        lock = Lock()
+
+        async def hold_lock():
+            async with lock:
+                await (time + 10)
+        assert lock.available
+        async with lock:
+            assert lock.available
+        async with Scope() as scope:
+            scope.do(hold_lock())
+            await (time + 5)
+            assert not lock.available
+        assert lock.available
