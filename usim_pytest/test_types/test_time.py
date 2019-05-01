@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from usim import time, until, eternity, instant
+from usim import time, until, eternity, instant, each
 
 from ..utility import via_usim
 
@@ -134,3 +134,27 @@ class TestTimeCondition:
         assert not ~instant
         assert ~eternity
         assert time.now == start + 20
+
+
+class TestTimeIteration:
+    @via_usim
+    async def test_delay(self):
+        start, iteration = time.now, 0
+        async for now in each(delay=20):
+            iteration += 1
+            await (time + 5)
+            assert time.now - now == 5
+            assert time.now == start + iteration * 25
+            if iteration == 5:
+                break
+
+    @via_usim
+    async def test_interval(self):
+        start, iteration = time.now, 0
+        async for now in each(interval=20):
+            await (time + 5)
+            assert time.now - now == 5
+            assert time.now == start + iteration * 20 + 5
+            if iteration == 5:
+                break
+            iteration += 1
