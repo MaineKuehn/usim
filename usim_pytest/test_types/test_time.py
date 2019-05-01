@@ -158,3 +158,9 @@ class TestTimeIteration:
             if iteration == 5:
                 break
             iteration += 1
+
+    @via_usim
+    async def test_misue(self):
+        with pytest.raises(TypeError):
+            async for _ in each(interval=20, delay=20):
+                assert False
