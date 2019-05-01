@@ -10,14 +10,18 @@ class Lock:
 
     Locks enforce mutually exclusive access for Activities,
     by allowing only one owner at any time.
-    Activities can acquire ownership of a Lock only via an ``async with`` context:
+    Activities can acquire ownership of a :py:class:`~~.Lock` only via an
+    ``async with`` context, and automatically release when exiting the block:
 
     .. code:: python
 
         async with lock:
             ...
 
-    Locks are re-entrant:
+    Ownership of a lock is inherently tied to a specific :term:`activity`;
+    it is not possible to acquire and release a :py:class:`~.Lock`
+    across several activities.
+    Every lock is re-entrant for its owning :term:`activity`:
     an Activity can acquire the same lock multiple times.
     This allows using Locks safely in recursive calls.
     """
