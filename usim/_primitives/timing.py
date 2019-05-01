@@ -328,4 +328,4 @@ def each(
     elif interval is not None and delay is None:
         return IntervalIter(interval)
     else:
-        raise ValueError("exactly one of 'delay' or 'interval' must be used")
+        raise TypeError("each() got conflicting arguments 'delay' and 'interval'")
