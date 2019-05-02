@@ -1,3 +1,5 @@
+import pytest
+
 from usim import time, Scope
 from usim.basics import Queue, StreamClosed
 
@@ -5,6 +7,15 @@ from ..utility import via_usim
 
 
 class TestQueue:
+    @via_usim
+    async def test_close(self):
+        queue = Queue()
+        await queue.close()
+        with pytest.raises(StreamClosed):
+            await queue.put(None)
+        with pytest.raises(StreamClosed):
+            await queue
+
     @via_usim
     async def test_put_get(self):
         queue = Queue()
