@@ -7,8 +7,7 @@ os:
   - linux
 env:
   - USIM_WAITQUEUE=
-  - USIM_WAITQUEUE=WD
-  - USIM_WAITQUEUE=CY
+  - USIM_WAITQUEUE=SD
 before_script:
   - pip install pip --upgrade
   - python3 -m pip list
