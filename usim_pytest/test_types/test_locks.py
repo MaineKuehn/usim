@@ -69,3 +69,47 @@ class TestLock:
             await (time + 5)
             assert not lock.available
         assert lock.available
+
+    @via_usim
+    async def test_release_exception(self):
+        lock = Lock()
+
+        with pytest.raises(KeyError):
+            async with lock:
+                raise KeyError
+        with pytest.raises(KeyError):
+            async with lock:
+                raise KeyError
+        async with lock:  # lock must remain acquirable after exception
+            assert True
+
+    @via_usim
+    async def test_contested_cancel(self):
+        lock = Lock()
+
+        async def hold_lock(duration=10):
+            async with lock:
+                await (time + duration)
+
+        async with Scope() as scope:
+            scope.do(hold_lock())
+            middle = scope.do(hold_lock())
+            scope.do(hold_lock())
+            await (time + 5)
+            middle.cancel()
+        assert time == 20
+
+    @via_usim
+    async def test_designated_cancel(self):
+        lock = Lock()
+
+        async def hold_lock(duration=10):
+            async with lock:
+                await (time + duration)
+
+        async with Scope() as scope:
+            async with lock:
+                # target is scheduled to get the lock once we release it...
+                target = scope.do(hold_lock())
+                # ..but we schedule it to cancel first
+                target.cancel()
