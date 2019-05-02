@@ -79,11 +79,6 @@ class Lock:
             self.__release__()
         return False
 
-    def __block__(self, by):
-        """Prevent the lock from being acquired"""
-        assert self._owner is None or self._owner is by, 'cannot block an owned lock'
-        self._owner = by
-
     def __release__(self):
         try:
             candidate, signal = self._notification.__awake_next__()
