@@ -131,11 +131,14 @@ class Queue(AsyncIterable, Generic[ST]):
         When there are no items in a closed :py:class:`~.Queue`,
         attempts to retrieve items fail with :py:exc:`~.StreamClosed`.
         Items already buffered may still be received.
+
+        A :py:class:`~.Queue` can be closed multiple times;
+        subsequent closes have no effects other than :term:`postponement`.
         """
         if not self._closed:
             self._closed = True
             self._notification.__awake_all__()
-            await postpone()
+        await postpone()
 
     def __await__(self) -> Awaitable[ST]:
         return (yield from self._await_message().__await__())  # noqa: B901
