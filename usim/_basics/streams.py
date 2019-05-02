@@ -121,9 +121,10 @@ class Queue(AsyncIterable, Generic[ST]):
         self._read_mutex = Lock()
         self._closed = False
 
-    def close(self):
+    async def close(self):
         self._closed = True
         self._notification.__awake_all__()
+        await postpone()
 
     def __await__(self) -> Awaitable[ST]:
         return (yield from self._await_message().__await__())  # noqa: B901
