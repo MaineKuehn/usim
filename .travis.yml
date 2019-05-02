@@ -16,7 +16,8 @@ before_script:
   - echo "export PYTHONHASHSEED=${PYTHONHASHSEED}"
   - pip install .[contrib]
   - pip install codecov
-  - [ "$USIM_WAITQUEUE" == "CY" ] && pip install cython
+  - |
+    [ "$USIM_WAITQUEUE" == "CY" ] && pip install cython
   - export COVERAGE_PROCESS_START=$(pwd)/.coveragerc
   - export PYTEST_ADDOPTS=-v
 script:
