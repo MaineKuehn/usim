@@ -63,8 +63,19 @@ class Channel(AsyncIterable, Generic[ST]):
         self._closed = False
 
     async def close(self):
-        self._closed = True
-        self._notification.__awake_all__()
+        """
+        Prevent putting further messages into the :py:class:`~.Channel`
+
+        Closing a :py:class:`~.Channel` causes subsequent attempts
+        to :py:meth:`~.Channel.put` or retrieve items to fail
+        with :py:exc:`~.StreamClosed`.
+
+        A :py:class:`~.Channel` can be closed multiple times;
+        subsequent closes have no effects other than :term:`postponement`.
+        """
+        if not self._closed:
+            self._closed = True
+            self._notification.__awake_all__()
         await postpone()
 
     def __await__(self) -> Awaitable[ST]:
@@ -84,6 +95,14 @@ class Channel(AsyncIterable, Generic[ST]):
         return ChannelAsyncIterator(self)
 
     async def put(self, item: ST):
+        r"""
+        Put an item into the :py:class:`~.Channel`
+
+        :param item: the item to broadcast
+        :raises StreamClosed: if the stream has been :py:meth:`~.close`\ d
+        """
+        if self._closed:
+            raise StreamClosed(self)
         for buffer in self._consumer_buffers.values():
             buffer.append(item)
         self._notification.__awake_all__()
