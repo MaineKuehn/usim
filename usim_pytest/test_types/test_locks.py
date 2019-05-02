@@ -1,6 +1,6 @@
 import pytest
 
-from usim import time, Lock, Scope
+from usim import time, Lock, Scope, instant
 
 from ..utility import via_usim
 
@@ -111,5 +111,6 @@ class TestLock:
             async with lock:
                 # target is scheduled to get the lock once we release it...
                 target = scope.do(hold_lock())
+                await instant
                 # ..but we schedule it to cancel first
                 target.cancel()
