@@ -71,9 +71,7 @@ class Lock:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is GeneratorExit:
-            return False
-        assert self._owner == __LOOP_STATE__.LOOP.activity
+        assert exc_type is GeneratorExit or self._owner == __LOOP_STATE__.LOOP.activity
         self._depth -= 1
         if self._depth == 0:
             self.__release__()
