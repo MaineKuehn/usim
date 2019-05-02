@@ -65,6 +65,7 @@ class Channel(AsyncIterable, Generic[ST]):
     async def close(self):
         self._closed = True
         self._notification.__awake_all__()
+        await postpone()
 
     def __await__(self) -> Awaitable[ST]:
         if self._closed:
