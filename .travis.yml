@@ -17,7 +17,7 @@ before_script:
   - pip install .[contrib]
   - pip install codecov
   - |
-    [ "$USIM_WAITQUEUE" == "CY" ] && pip install cython
+    [ "$USIM_WAITQUEUE" == "CY" ] && pip install cython || true
   - export COVERAGE_PROCESS_START=$(pwd)/.coveragerc
   - export PYTEST_ADDOPTS=-v
 script:
