@@ -9,7 +9,7 @@ by simulation code directly.
 """
 import collections
 import threading
-from typing import Coroutine, TypeVar, Awaitable, Optional
+from typing import Coroutine, TypeVar, Awaitable, Optional, Union
 
 from .waitq import WaitQueue
 
@@ -44,8 +44,32 @@ class ActivityLeak(RuntimeError):
 RT = TypeVar('RT')
 
 
+class MissingLoop:
+    r"""
+    Placeholder for the :py:class:`~.Loop` expected in an active simulation
+
+    This class exists to provide helpful error messages if usim is used
+    without starting its event loop. If you encounter this class unexpectedly,
+    see 'https://usim.readthedocs.io' for details.
+    """
+    __slots__ = ('_run_qname',)
+
+    def __init__(self, run_qname: str = 'usim.run'):
+        self._run_qname = run_qname
+
+    def __getattr__(self, field: str):
+        raise RuntimeError((
+            "field '%s' can only be accessed with an active usim event loop\n\n"
+            "You have attempted to use an async feature of usim outside of\n"
+            "a usim simulation. This likely means that you used a different\n"
+            "async framework. You must run usim's async features as part of\n"
+            "an active usim simulation.\n\n"
+            "Use '%s' to start an appropriate simulation."
+        ) % (field, self._run_qname))
+
+
 __LOOP_STATE__ = threading.local()
-__LOOP_STATE__.LOOP = None  # type: Loop
+__LOOP_STATE__.LOOP = MissingLoop()  # type: Union[MissingLoop, Loop]
 
 
 # Commands
