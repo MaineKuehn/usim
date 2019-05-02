@@ -3,7 +3,7 @@ import pytest
 from usim import time, Scope
 from usim.basics import Queue, StreamClosed
 
-from ..utility import via_usim
+from ..utility import via_usim, turnstamp
 
 
 class TestQueue:
@@ -15,6 +15,10 @@ class TestQueue:
             await queue.put(None)
         with pytest.raises(StreamClosed):
             await queue
+        start = turnstamp()
+        await queue.close()
+        end = turnstamp()
+        assert end > start
 
     @via_usim
     async def test_put_get(self):
