@@ -123,6 +123,15 @@ class Queue(AsyncIterable, Generic[ST]):
         self._closed = False
 
     async def close(self):
+        """
+        Prevent putting further messages into the :py:class:`~.Queue`
+
+        Closing a :py:class:`~.Queue` causes subsequent attempts
+        to :py:meth:`~.Queue.put` items to fail with :py:exc:`~.StreamClosed`.
+        When there are no items in a closed :py:class:`~.Queue`,
+        attempts to retrieve items fail with :py:exc:`~.StreamClosed`.
+        Items already buffered may still be received.
+        """
         self._closed = True
         self._notification.__awake_all__()
         await postpone()
@@ -147,6 +156,12 @@ class Queue(AsyncIterable, Generic[ST]):
         return QueueAsyncIterator(self)
 
     async def put(self, item: ST):
+        r"""
+        Put an item into the :py:class:`~.Queue`
+
+        :param item: the item to enqueue
+        :raises StreamClosed: if the stream has been :py:meth:`~.close`\ d
+        """
         self._buffer.append(item)
         try:
             self._notification.__awake_next__()
