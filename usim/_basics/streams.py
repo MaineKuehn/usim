@@ -132,9 +132,10 @@ class Queue(AsyncIterable, Generic[ST]):
         attempts to retrieve items fail with :py:exc:`~.StreamClosed`.
         Items already buffered may still be received.
         """
-        self._closed = True
-        self._notification.__awake_all__()
-        await postpone()
+        if not self._closed:
+            self._closed = True
+            self._notification.__awake_all__()
+            await postpone()
 
     def __await__(self) -> Awaitable[ST]:
         return (yield from self._await_message().__await__())  # noqa: B901
@@ -162,6 +163,8 @@ class Queue(AsyncIterable, Generic[ST]):
         :param item: the item to enqueue
         :raises StreamClosed: if the stream has been :py:meth:`~.close`\ d
         """
+        if self._closed:
+            raise StreamClosed(self)
         self._buffer.append(item)
         try:
             self._notification.__awake_next__()
