@@ -1,8 +1,18 @@
 from typing import Callable, Coroutine
 from functools import wraps
+from collections import namedtuple
 
 from usim import run
-from usim._core.loop import ActivityError
+from usim._core.loop import ActivityError, __LOOP_STATE__
+
+
+Turnstamp = namedtuple('Turnstamp', ('time', 'turn'))
+
+
+def turnstamp() -> Turnstamp:
+    """Get the precise progress as ``time, turn``"""
+    loop = __LOOP_STATE__.LOOP
+    return Turnstamp(loop.time, loop.turn)
 
 
 def via_usim(test_case: Callable[..., Coroutine]):
