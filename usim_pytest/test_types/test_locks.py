@@ -102,15 +102,23 @@ class TestLock:
     @via_usim
     async def test_designated_cancel(self):
         lock = Lock()
+        markers = []
 
-        async def hold_lock(duration=10):
+        async def hold_lock(mark, duration=10):
             async with lock:
                 await (time + duration)
+                markers.append(mark)
 
         async with Scope() as scope:
+            # acquire the lock so children have to queue
             async with lock:
                 # target is scheduled to get the lock once we release it...
-                target = scope.do(hold_lock())
+                target = scope.do(hold_lock(0))
+                # ..and then release it for its kin...
+                scope.do(hold_lock(1))
                 await instant
-                # ..but we schedule it to cancel first
+                # ..but we schedule target to cancel first
                 target.cancel()
+        # target (mark 0) did not insert itself
+        # peer (mark 1) did insert itself after acquiring the lock
+        assert markers == [1]
