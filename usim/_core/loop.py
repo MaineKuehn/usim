@@ -203,7 +203,8 @@ class Loop:
             )
         except StopIteration as err:
             if err.args:
-                raise ActivityLeak(target, signal, err.args) from err
+                # async def ... return foo -> StopIteration.args == (foo,)
+                raise ActivityLeak(target, signal, err.args[0]) from err
         except BaseException as err:
             raise ActivityError(target, signal=signal) from err
 
