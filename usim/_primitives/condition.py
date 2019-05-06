@@ -36,11 +36,11 @@ class Condition(Notification):
 
     Every :py:class:`~.Condition` supports the bitwise operators
     ``~a`` (not),
-    ``a & b`` (and), and
+    ``a & b`` (and), as well as
     ``a | b`` (or)
     to derive a new :py:class:`~.Condition`.
     While it is possible to use the boolean operators
-    ``not``, ``and``, and ``or``,
+    ``not``, ``and``, as well as ``or``,
     they immediately evaluate any :py:class:`~.Condition` in a boolean context.
 
     .. code:: python
@@ -88,6 +88,11 @@ class Condition(Notification):
         else:
             super().__subscribe__(waiter, interrupt)
 
+    def __repr__(self):
+        return '<%s, bool=%s, waiters=%d>' % (
+            self.__class__.__name__, bool(self), len(self._waiting)
+        )
+
 
 class Connective(Condition):
     """Logical connection of sub-conditions"""
@@ -95,22 +100,12 @@ class Connective(Condition):
 
     def __init__(self, *conditions: Condition):
         super().__init__()
-        # unpack similar connections
-        # eliminate duplicates
-        self._children = tuple(
-            set(condition for condition in conditions if not isinstance(
-                condition, self.__class__
-            )).union(
-                condition._children for condition in conditions if isinstance(
-                    condition, self.__class__
-                )
-            )
-        )
+        self._children = conditions
 
-    def __await__(self):
-        yield from self.__await_children__().__await__()
+    def __await__(self) -> bool:
+        return (yield from self.__await_children__().__await__())  # noqa: B901
 
-    async def __await_children__(self):
+    async def __await_children__(self) -> bool:
         await postpone()
         while not self:
             with ExitStack() as stack:
@@ -141,6 +136,11 @@ class All(Connective):
     def __bool__(self):
         return all(self._children)
 
+    def __and__(self, other) -> 'Condition':
+        if isinstance(other, All):
+            return All(*self._children, *other._children)
+        return All(*self._children, other)
+
     def __invert__(self):
         return Any(*(~child for child in self._children))
 
@@ -158,6 +158,11 @@ class Any(Connective):
 
     def __bool__(self):
         return any(self._children)
+
+    def __or__(self, other) -> 'Condition':
+        if isinstance(other, Any):
+            return Any(*self._children, *other._children)
+        return Any(*self._children, other)
 
     def __invert__(self):
         return All(*(~child for child in self._children))
