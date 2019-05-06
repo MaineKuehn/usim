@@ -10,7 +10,7 @@ class Lock:
 
     Locks enforce mutually exclusive access for Activities,
     by allowing only one owner at any time.
-    Activities can acquire ownership of a :py:class:`~~.Lock` only via an
+    Activities can acquire ownership of a :py:class:`~.Lock` only via an
     ``async with`` context, and automatically release when exiting the block:
 
     .. code:: python
@@ -37,9 +37,9 @@ class Lock:
         """
         Check whether the current Task can acquire this lock
 
-        Entering a :py:class:`~~.Lock` in its context manager does not allow
-        backing off when the :py:class:`~~.Lock` cannot be acquired.
-        Availability of a :py:class:`~~.Lock` should be checked if it shall
+        Entering a :py:class:`~.Lock` in its context manager does not allow
+        backing off when the :py:class:`~.Lock` cannot be acquired.
+        Availability of a :py:class:`~.Lock` should be checked if it shall
         only be acquired when available.
 
         .. code:: python3
