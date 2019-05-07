@@ -143,7 +143,7 @@ class Moment(Condition):
     def __invert__(self):
         raise NotImplementedError(
             "Inverting a moment is not well-defined\n\n"
-            "The inverse implies the moment immediately after another,\n"
+            "The inverse implies the moment immediately before or after another,\n"
             "i.e. '(time < date | time > date)'. The latter term is not\n"
             "a meaningful event."
         )
