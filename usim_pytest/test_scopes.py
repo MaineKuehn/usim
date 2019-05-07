@@ -3,7 +3,7 @@ import pytest
 from usim import Scope, time, eternity, VolatileTaskExit, TaskState,\
     TaskCancelled, until, each
 
-from .utility import via_usim
+from .utility import via_usim, debug_api
 
 
 class TestDo:
@@ -18,6 +18,7 @@ class TestDo:
 
         assert await activity == 2
 
+    @debug_api
     @via_usim
     async def test_negative(self):
         async def payload():
@@ -72,6 +73,7 @@ class TestDo:
             assert await activity
         assert activity.status == TaskState.FAILED
 
+    @debug_api
     @via_usim
     async def test_after_and_at(self):
         async def payload():
