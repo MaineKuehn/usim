@@ -1,5 +1,5 @@
 import os
-from typing import Generic, TypeVar, Tuple, Dict, List
+from typing import Generic, TypeVar, Tuple, Dict, List, Union, Type
 from heapq import heappush, heappop
 from collections import deque
 
@@ -27,7 +27,7 @@ class HQWaitQueue(Generic[K, V]):
         try:
             self._data[key].append(item)
         except KeyError:
-            self._data[key] = elements = deque()
+            self._data[key] = elements = deque()  # type: deque[V]
             elements.append(item)
             heappush(self._keys, key)
 
@@ -58,7 +58,7 @@ class SDWaitQueue(Generic[K, V]):
         try:
             self._data[key].append(item)
         except KeyError:
-            self._data[key] = elements = deque()
+            self._data[key] = elements = deque()  # type: deque[V]
             elements.append(item)
 
     def pop(self) -> 'Tuple[K, deque[V]]':
@@ -73,7 +73,7 @@ class SDWaitQueue(Generic[K, V]):
 
 QUEUETYPE_KEY = 'USIM_WAITQUEUE'
 if os.environ.get(QUEUETYPE_KEY, '').upper() == 'SD':
-    WaitQueue = SDWaitQueue
+    WaitQueue = SDWaitQueue  # type: Union[Type[SDWaitQueue], Type[HQWaitQueue]]
 elif os.environ.get(QUEUETYPE_KEY, '').upper() == 'CY':
     import pyximport
     pyximport.install()

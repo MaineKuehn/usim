@@ -114,7 +114,8 @@ class Task(Awaitable[RT]):
                 cancellation.revoke()
             self._done.__set_done__()
         self._cancellations = []  # type: List[CancelTask]
-        self._result = None  # type: Optional[Tuple[RT, BaseException]]
+        self._result = None  \
+            # type: Optional[Tuple[Optional[RT], Optional[BaseException]]]
         self.payload = payload
         self._done = Done(self)
         self.__runner__ = payload_wrapper()  # type: Coroutine[Any, Any, RT]
