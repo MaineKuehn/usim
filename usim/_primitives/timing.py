@@ -12,8 +12,6 @@ time can represent more than 285 million years of time accurately.
        it is still not possible to reach :py:class:`Eternity`.
        This may change in the future.
 """
-from math import inf
-
 from typing import Awaitable, Coroutine, Union
 
 from .._core.loop import __LOOP_STATE__, Hibernate, Interrupt as CoreInterrupt
@@ -25,12 +23,15 @@ class After(Condition):
     r"""
     The time range at and after a certain point in time
 
-    :param target: point in time after which this condition is :py:const:`True`
+    :param target: point in time from which on this condition is :py:const:`True`
 
     The time range is *inclusive* of the time at `target`.
-    If `await`\ ed before `target`, :py:class:`After` proceeds in the
-    :py:class:`Moment` of `target`.
-    Otherwise, it proceeds in an :py:class:`Instant`.
+    If `await`\ ed before `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` until :term:`time` is advanced to `target`.
+    If `await`\ ed at or after `target`, an :term:`activity` is
+    :term:`postponed <Postponement>`.
+
+    The expression ``time >= target`` is equivalent to ``After(target)``.
     """
     __slots__ = ('target', '_scheduled')
 
@@ -80,6 +81,12 @@ class Before(Condition):
     :param target: point in time before which this condition is :py:const:`True`
 
     The time range is *exclusive* of the time at `target`.
+    If `await`\ ed before `target`, an :term:`activity` is
+    :term:`postponed <Postponement>`.
+    If `await`\ ed at or after `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` until :term:`time` is advanced to `target`.
+
+    The expression ``time < target`` is equivalent to ``Before(target)``.
     """
     __slots__ = ('target',)
 
@@ -112,6 +119,15 @@ class Moment(Condition):
     A certain point in time
 
     :param target: point in time during which this condition is :py:const:`True`
+
+    If `await`\ ed before `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` until :term:`time` is advanced to `target`.
+    If `await`\ ed at `target`, an :term:`activity` is
+    :term:`postponed <Postponement>`.
+    If `await`\ ed after `target`, an :term:`activity` is
+    :term:`suspended <Suspension>` indefinitely.
+
+    The expression ``time == target`` is equivalent to ``Moment(target)``.
     """
     __slots__ = ('target', '_transition')
 
@@ -125,7 +141,12 @@ class Moment(Condition):
         return __LOOP_STATE__.LOOP.time == self.target
 
     def __invert__(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            "Inverting a moment is not well-defined\n\n"
+            "The inverse implies the moment immediately before or after another,\n"
+            "i.e. '(time < date | time > date)'. The latter term is not\n"
+            "a meaningful event."
+        )
 
     def __await__(self) -> Awaitable[bool]:
         # we will *never* wake up once the target has passed
@@ -153,6 +174,11 @@ class Eternity(Condition):
     r"""
     A future point in time infinitely far into the future
 
+    An :term:`activity` that `await`\ s :py:class:`~.Eternity`
+    is never woken up by itself.
+    This holds true even when :term:`time` advances to :py:data:`math.inf`
+    or another representation of infinity.
+
     .. code:: python
 
         await Eternity()  # wait forever
@@ -172,6 +198,10 @@ class Eternity(Condition):
 class Instant(Condition):
     r"""
     A future point in time indistinguishable from the current time
+
+    An :term:`activity` that `await`\ s :py:class:`~.Instant`
+    is merely :term:`postponed <Postponement>`.
+    The current :term:`time` has no effect on this.
 
     .. code:: python
 
@@ -193,6 +223,22 @@ class Instant(Condition):
 class Delay(Notification):
     r"""
     A relative delay from the current time
+
+    :param duration: delay in time after which this condition is :py:const:`True`
+
+    A :py:class:`~.Delay` does not form a :py:class:`~.Condition`.
+    The ``delay`` is always in relation to the current time:
+    every time a :py:class:`~.Delay` is `await`\ ed creates a new
+    :term:`event`.
+
+    .. code:: python3
+
+        delay = time + 20
+        await delay      # delay for 20
+        await delay      # delay for 20 again
+        print(time.now)  # gives 40
+
+    The expression ``time + duration`` is equivalent to ``Delay(duration)``.
     """
     __slots__ = ('duration',)
 
@@ -217,6 +263,7 @@ class Time:
         now = time.now        # get the current time
         await (time + 20)     # wait for a time span to pass
         await (time == 1999)  # wait for a time date to occur
+        await (time >= 1999)  # wait for a time date to occur or pass
 
         async with until(time + 20):  # abort block after a delay
             ...
@@ -233,6 +280,9 @@ class Time:
     current time (``time.now <= point``).
     To avoid accidental mixing of ``await``\ able and non-\ ``await``\ able
     comparisons, :py:class:`Time` does not support the later.
+
+    :note: There is no need to instantiate :py:class:`Time` as it is stateless.
+           Use the instance :py:data:`usim.time` instead.
     """
     __slots__ = ()
 
@@ -244,9 +294,7 @@ class Time:
     def __add__(self, other: float) -> Delay:
         return Delay(other)
 
-    def __ge__(self, other: float) -> Condition:
-        if other is inf:
-            return Eternity()
+    def __ge__(self, other: float) -> After:
         return After(other)
 
     def __eq__(self, other: float) -> Moment:
@@ -255,21 +303,45 @@ class Time:
     def __lt__(self, other: float) -> Before:
         return Before(other)
 
+    if __debug__:
+        def __le__(self, other):
+            raise TypeError((
+                "'<=' not supported between 'time' and instances of '%s'\n\n"
+                "Only 'now and after' (time >= date) is well-defined,\n"
+                "but 'now and before' (time <= date) is not. Use instead:\n"
+                "* 'await (time < date)' to not wait before a point in time\n"
+                "* 'await (time >= date)' to not wait after or at a point in time\n"
+                "\n"
+                "To check if time is before or at a point, use 'time.now <= date'"
+            ) % type(other).__name__)
+
+        def __await__(self):
+            raise TypeError(
+                "'time' cannot be used in 'await' expression\n\n"
+                "Use 'time' to derive operands for specific expressions:\n"
+                "* 'await (time + duration)' to delay for a specific duration\n"
+                "* 'await (time == date)' to delay until a specific point in time\n"
+                "* 'await (time >= date)' to delay until after a point in time\n"
+                "* 'await (time < date)' to indefinitely block after a point in time\n"
+                "\n"
+                "To get the current time, use 'time.now'"
+            )
+
 
 time = Time()
 
 
 class IntervalIter:
-    __slots__ = ('interval', '_last')
+    __slots__ = ('_interval', '_last')
 
     def __init__(self, interval: float):
-        self.interval = interval
+        self._interval = interval
         self._last = None
 
     async def __anext__(self):
         if self._last is None:
-            self._last = __LOOP_STATE__.LOOP.time - self.interval
-        await (time == self._last + self.interval)
+            self._last = __LOOP_STATE__.LOOP.time - self._interval
+        await (time == self._last + self._interval)
         self._last = time.now
         return self._last
 
@@ -278,13 +350,13 @@ class IntervalIter:
 
 
 class DurationIter:
-    __slots__ = ('delay',)
+    __slots__ = ('_delay',)
 
     def __init__(self, delay: float):
-        self.delay = delay
+        self._delay = delay
 
     async def __anext__(self):
-        await (time + self.delay)
+        await (time + self._delay)
         return time.now
 
     def __aiter__(self):
@@ -299,4 +371,4 @@ def each(
     elif interval is not None and delay is None:
         return IntervalIter(interval)
     else:
-        raise ValueError("exactly one of 'delay' or 'interval' must be used")
+        raise TypeError("each() got conflicting arguments 'delay' and 'interval'")
