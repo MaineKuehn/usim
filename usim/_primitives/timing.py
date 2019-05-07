@@ -12,7 +12,7 @@ time can represent more than 285 million years of time accurately.
        it is still not possible to reach :py:class:`Eternity`.
        This may change in the future.
 """
-from typing import Awaitable, Coroutine, Union
+from typing import Coroutine, Union, Generator, Any
 
 from .._core.loop import __LOOP_STATE__, Hibernate, Interrupt as CoreInterrupt
 from .notification import postpone, Notification
@@ -55,7 +55,7 @@ class After(Condition):
     async def _async_trigger(self):
         self.__trigger__()
 
-    def __await__(self) -> Awaitable[bool]:
+    def __await__(self) -> Generator[Any, None, bool]:
         # we will *always* wake up once the target has passed
         # either we wake up in the same time frame,
         # or just wait for a single trigger
@@ -100,7 +100,7 @@ class Before(Condition):
     def __invert__(self):
         return After(self.target)
 
-    def __await__(self) -> Awaitable[bool]:
+    def __await__(self) -> Generator[Any, None, bool]:
         # we will *never* wake up once the target has passed
         # either we wake up in the same time frame,
         # or just hibernate indefinitely
@@ -148,7 +148,7 @@ class Moment(Condition):
             "a meaningful event."
         )
 
-    def __await__(self) -> Awaitable[bool]:
+    def __await__(self) -> Generator[Any, None, bool]:
         # we will *never* wake up once the target has passed
         # either we wake up in the same time frame,
         # or just hibernate indefinitely
@@ -191,8 +191,9 @@ class Eternity(Condition):
     def __invert__(self):
         return Instant()
 
-    def __await__(self) -> Awaitable[bool]:
+    def __await__(self) -> Generator[Any, None, bool]:
         yield from Hibernate().__await__()
+        return True  # noqa: B901
 
 
 class Instant(Condition):
@@ -215,7 +216,7 @@ class Instant(Condition):
     def __invert__(self):
         return Eternity()
 
-    def __await__(self) -> Awaitable[bool]:
+    def __await__(self) -> Generator[Any, None, bool]:
         yield from postpone().__await__()
         return True  # noqa: B901
 

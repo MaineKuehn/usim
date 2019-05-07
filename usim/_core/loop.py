@@ -9,7 +9,7 @@ by simulation code directly.
 """
 import collections
 import threading
-from typing import Coroutine, TypeVar, Awaitable, Optional, Union
+from typing import Coroutine, TypeVar, Optional, Union, Generator
 
 from .waitq import WaitQueue
 
@@ -77,7 +77,7 @@ class Hibernate(object):
     r"""Pause current execution indefinitely"""
     __slots__ = ()
 
-    def __await__(self) -> Awaitable:
+    def __await__(self) -> 'Generator[Hibernate, None, None]':
         yield self
 
 

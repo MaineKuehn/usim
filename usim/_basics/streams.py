@@ -29,8 +29,8 @@ A channel cannot be used in an ``async with until(...):`` statement.
 """
 from collections import deque
 
-from typing import Generic, TypeVar, Dict, List, Coroutine, Awaitable,\
-    Union, AsyncIterable, AsyncIterator
+from typing import Generic, TypeVar, Dict, List, Coroutine,\
+    Union, AsyncIterable, AsyncIterator, Generator, Any
 
 from .._core.loop import __LOOP_STATE__
 from .._primitives.notification import postpone, Notification, NoSubscribers
@@ -78,7 +78,7 @@ class Channel(AsyncIterable, Generic[ST]):
             self._notification.__awake_all__()
         await postpone()
 
-    def __await__(self) -> Awaitable[ST]:
+    def __await__(self) -> Generator[Any, None, ST]:
         if self._closed:
             raise StreamClosed(self)
         activity = __LOOP_STATE__.LOOP.activity
@@ -159,7 +159,7 @@ class Queue(AsyncIterable, Generic[ST]):
             self._notification.__awake_all__()
         await postpone()
 
-    def __await__(self) -> Awaitable[ST]:
+    def __await__(self) -> Generator[Any, None, ST]:
         return (yield from self._await_message().__await__())  # noqa: B901
 
     async def _await_message(self):

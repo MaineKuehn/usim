@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 
-from typing import Coroutine, Awaitable
+from typing import Coroutine, Generator, Any as AnyT
 
 from .._core.loop import Hibernate, Interrupt as CoreInterrupt
 
@@ -59,7 +59,7 @@ class Condition(Notification):
     def __bool__(self):
         raise NotImplementedError("Condition must implement '__bool__'")
 
-    def __await__(self) -> Awaitable[bool]:
+    def __await__(self) -> Generator[AnyT, None, bool]:
         if self:
             yield from postpone().__await__()
         while not self:
@@ -102,7 +102,7 @@ class Connective(Condition):
         super().__init__()
         self._children = conditions
 
-    def __await__(self) -> bool:
+    def __await__(self) -> Generator[AnyT, None, bool]:
         return (yield from self.__await_children__().__await__())  # noqa: B901
 
     async def __await_children__(self) -> bool:

@@ -1,6 +1,6 @@
 import operator
 
-from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine, Awaitable
+from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine, Generator
 
 from .._core.loop import Interrupt as CoreInterrupt
 from .._primitives.notification import postpone
@@ -81,7 +81,7 @@ class BoolExpression(Condition):
                     source.__del_listener__(self)
         self._subscribed = False
 
-    def __await__(self) -> Awaitable[bool]:
+    def __await__(self) -> Generator[Any, None, bool]:
         self._start_listening()
         result = (yield from super().__await__())
         self._stop_listening()
@@ -284,10 +284,12 @@ class TrackedOperation(Generic[V]):
         self._tracked = value
         self._operations = operations
 
-    def __await__(self) -> Tracked[V]:
+    def __await__(self) -> Generator[Any, None, Tracked[V]]:
         tracked = self._tracked
         for operation in self._operations:
-            yield from tracked.set(operation.operator(tracked.value, operation.rhs))
+            yield from tracked.set(
+                operation.operator(tracked.value, operation.rhs)
+            ).__await__()
         return tracked  # noqa: B901
 
     def __extend__(self, op: Callable[[V, RHS], V], rhs: RHS) -> 'TrackedOperation[V]':
