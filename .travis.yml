@@ -21,8 +21,7 @@ before_script:
   - export COVERAGE_PROCESS_START=$(pwd)/.coveragerc
   - export PYTEST_ADDOPTS=-v
 script:
-  - |
-    [[ "x$USIM_WAITQUEUE" == "x" ]] || python -m flake8 && python -m mypy usim
+  - python -m flake8
   - coverage run setup.py test
 after_success:
   - coverage report && codecov
