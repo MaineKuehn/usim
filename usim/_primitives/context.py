@@ -24,7 +24,7 @@ class CancelScope(CoreInterrupt):
 
 class Scope:
     r"""
-    Concurrency scope that allows branching off and waiting on multiple activities
+    Concurrency scope that allows branching off and waiting for multiple activities
 
     A new :py:class:`~.Scope` must be opened in an ``async with`` block.
     During its block, a :py:class:`~.Scope` may :py:meth:`~.Scope.do`
