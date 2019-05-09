@@ -23,13 +23,13 @@ def turnstamp() -> Turnstamp:
     return Turnstamp(loop.time, loop.turn)
 
 
-def debug_api(test_case: Callable[..., RT]) -> Callable[..., RT]:
+def assertion_mode(test_case: Callable[..., RT]) -> Callable[..., RT]:
     """
     Mark a test as using the optional assertion API only available in __debug__
 
     .. code:: python3
 
-        @assert_api
+        @assertion_mode
         @via_usim
         async def test_do_assert(self):
             async with Scope() as scope:
