@@ -33,23 +33,6 @@ async def postpone():
         wake_up.revoke()
 
 
-@contextmanager
-def subscribe(notification: 'Notification'):
-    task = __LOOP_STATE__.LOOP.activity
-    wake_up = Interrupt(notification, task)
-    notification.__subscribe__(task, wake_up)
-    try:
-        yield
-    except Interrupt as err:
-        if err is not wake_up:
-            assert (
-                task is __LOOP_STATE__.LOOP.activity
-            ), 'Break points cannot be passed to other coroutines'
-            raise
-    finally:
-        notification.__unsubscribe__(task, wake_up)
-
-
 class Notification:
     """
     Synchronisation point to which activities can subscribe
