@@ -99,13 +99,14 @@ class Notification:
         finally:
             self.__unsubscribe__(task, wake_up)
 
-    def __del__(self):
-        if self._waiting:
-            raise RuntimeError(
-                '%r collected without releasing %d waiting tasks:\n  %s' % (
-                    self, len(self._waiting), self._waiting
+    if __debug__:
+        def __del__(self):
+            if self._waiting:
+                raise RuntimeError(
+                    '%r collected without releasing %d waiting tasks:\n  %s' % (
+                        self, len(self._waiting), self._waiting
+                    )
                 )
-            )
 
     def __repr__(self):
         return '<%s, waiters=%d>' % (self.__class__.__name__, len(self._waiting))
