@@ -9,7 +9,7 @@ so that you can pinpoint where errors originate.
 At the same time, μSim strives to provide
 best performance for correct simulations.
 Once you have verified your simulation,
-you can elide all consistency assertions with zero cost.
+you can omit all consistency assertions with zero cost.
 
 :note: μSim runs in assertion mode by default.
 
@@ -33,7 +33,7 @@ assertions protect against creating events in the past:
 
 When run regularly, this will fail with an :py:exc:`AssertionError`.
 The error includes some information to tell you what went wrong,
-and attempt to explain how to fix it.
+and attempts to explain how to fix it.
 
 In addition to validating your simulation,
 assertion mode also provides rich exception messages.
@@ -74,8 +74,8 @@ is in an undefined state.
 Instead of trying to recover, you should fix the root cause
 of the erroneous condition.
 
-Eliding Assertions
-------------------
+Omitting Assertions
+-------------------
 
 While assertions are important for verification,
 they incur a runtime performance overhead.
