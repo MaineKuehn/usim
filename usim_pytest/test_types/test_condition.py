@@ -65,3 +65,21 @@ class TestChainedCondition:
         assert chain
         assert not ~chain
         assert await chain
+
+    @via_usim
+    async def test_flatten_and(self):
+        a, b, c, d, e, f = Flag(), Flag(), Flag(), Flag(), Flag(), Flag()
+        lexical_chain = a & b & c & d & e & f
+        parenthesised_chain = a & (b & (c & (d & (e & f))))
+        pairwise_chain = (a & b) & (c & d) & (e & f)
+        assert lexical_chain._children == parenthesised_chain._children
+        assert lexical_chain._children == pairwise_chain._children
+
+    @via_usim
+    async def test_flatten_or(self):
+        a, b, c, d, e, f = Flag(), Flag(), Flag(), Flag(), Flag(), Flag()
+        lexical_chain = a | b | c | d | e | f
+        parenthesised_chain = a | (b | (c | (d | (e | f))))
+        pairwise_chain = (a | b) | (c | d) | (e | f)
+        assert lexical_chain._children == parenthesised_chain._children
+        assert lexical_chain._children == pairwise_chain._children
