@@ -46,8 +46,8 @@ an Exception with additional help on intended usage:
 
     Use 'time' to derive operands for specific expressions:
     * 'await (time + duration)' to delay for a specific duration
-    * 'await (time == date)' to delay until a specific point in time
-    * 'await (time >= date)' to delay until after a point in time
+    * 'await (time == date)' to proceed at a specific point in time
+    * 'await (time >= date)' to proceed at or after a point in time
     * 'await (time < date)' to indefinitely block after a point in time
 
     To get the current time, use 'time.now'
