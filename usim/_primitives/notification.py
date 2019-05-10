@@ -51,7 +51,7 @@ class Notification:
 
     def __await__(self):
         with self.__subscription__():
-            yield from Hibernate().__await__()
+            yield from Hibernate()
 
     def __awake_next__(self) -> Tuple[Coroutine, Interrupt]:
         """Awake the oldest waiter"""

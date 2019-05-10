@@ -107,7 +107,7 @@ class Before(Condition):
         if self:
             yield from postpone().__await__()
         else:
-            yield from Hibernate().__await__()
+            yield from Hibernate()
         return True  # noqa: B901
 
     def __repr__(self):
@@ -157,7 +157,7 @@ class Moment(Condition):
         elif not self._transition:
             yield from self._transition.__await__()
         else:
-            yield from Hibernate().__await__()
+            yield from Hibernate()
         return True  # noqa: B901
 
     def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
@@ -192,7 +192,7 @@ class Eternity(Condition):
         return Instant()
 
     def __await__(self) -> Generator[Any, None, bool]:
-        yield from Hibernate().__await__()
+        yield from Hibernate()
         return True  # noqa: B901
 
 

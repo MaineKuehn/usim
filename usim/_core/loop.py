@@ -80,6 +80,8 @@ class Hibernate(object):
     def __await__(self) -> 'Generator[Hibernate, None, None]':
         yield self
 
+    __iter__ = __await__
+
 
 #: reusable instance of :py:class:`Hibernate`
 HIBERNATE = Hibernate
