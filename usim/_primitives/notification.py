@@ -50,19 +50,8 @@ class Notification:
         self._waiting = []  # type: List[Tuple[Coroutine, Interrupt]]
 
     def __await__(self):
-        yield from self.__await_notification__().__await__()
-
-    async def __await_notification__(self, interrupt: Interrupt = None):
-        activity = __LOOP_STATE__.LOOP.activity
-        interrupt = interrupt if interrupt is not None else Interrupt(self, activity)
-        self.__subscribe__(activity, interrupt)
-        try:
-            await Hibernate()  # break point - we are resumed when the event is set
-        except Interrupt as err:
-            if err is not interrupt:  # resumed prematurely
-                raise
-        finally:
-            self.__unsubscribe__(activity, interrupt)
+        with self.__subscription__():
+            yield from Hibernate().__await__()
 
     def __awake_next__(self) -> Tuple[Coroutine, Interrupt]:
         """Awake the oldest waiter"""
