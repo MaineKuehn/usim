@@ -14,7 +14,7 @@ time can represent more than 285 million years of time accurately.
 """
 from typing import Coroutine, Union, Generator, Any
 
-from .._core.loop import __LOOP_STATE__, Hibernate, Interrupt as CoreInterrupt
+from .._core.loop import __LOOP_STATE__, __HIBERNATE__, Interrupt as CoreInterrupt
 from .notification import postpone, Notification
 from .condition import Condition
 
@@ -107,7 +107,7 @@ class Before(Condition):
         if self:
             yield from postpone().__await__()
         else:
-            yield from Hibernate()
+            yield from __HIBERNATE__
         return True  # noqa: B901
 
     def __repr__(self):
@@ -157,7 +157,7 @@ class Moment(Condition):
         elif not self._transition:
             yield from self._transition.__await__()
         else:
-            yield from Hibernate()
+            yield from __HIBERNATE__
         return True  # noqa: B901
 
     def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
@@ -192,7 +192,7 @@ class Eternity(Condition):
         return Instant()
 
     def __await__(self) -> Generator[Any, None, bool]:
-        yield from Hibernate()
+        yield from __HIBERNATE__
         return True  # noqa: B901
 
 

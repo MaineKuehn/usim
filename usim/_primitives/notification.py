@@ -1,7 +1,7 @@
 from typing import List, Tuple, Coroutine
 from contextlib import contextmanager
 
-from .._core.loop import Hibernate, Interrupt, __LOOP_STATE__
+from .._core.loop import Interrupt, __LOOP_STATE__, __HIBERNATE__
 
 
 # TODO: add protocol for destroying a notification
@@ -22,7 +22,7 @@ async def postpone():
     wake_up = Interrupt('postpone', task)
     __LOOP_STATE__.LOOP.schedule(task, signal=wake_up)
     try:
-        await Hibernate()
+        await __HIBERNATE__
     except Interrupt as err:
         if err is not wake_up:
             assert (
@@ -51,7 +51,7 @@ class Notification:
 
     def __await__(self):
         with self.__subscription__():
-            yield from Hibernate()
+            yield from __HIBERNATE__
 
     def __awake_next__(self) -> Tuple[Coroutine, Interrupt]:
         """Awake the oldest waiter"""
