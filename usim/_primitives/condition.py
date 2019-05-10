@@ -67,9 +67,13 @@ class Condition(Notification):
         return True  # noqa: B901
 
     def __and__(self, other) -> 'Condition':
+        if isinstance(other, All):
+            return All(self, *other._children)
         return All(self, other)
 
     def __or__(self, other) -> 'Condition':
+        if isinstance(other, Any):
+            return Any(self, *other._children)
         return Any(self, other)
 
     def __invert__(self) -> 'Condition':
