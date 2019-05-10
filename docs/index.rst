@@ -11,6 +11,7 @@
    :caption: Contents:
 
    source/tutorial/overview
+   source/topics/overview
    source/glossary
    source/api/modules
 

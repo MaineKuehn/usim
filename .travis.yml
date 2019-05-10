@@ -6,9 +6,10 @@ python:
 os:
   - linux
 env:
-  - USIM_WAITQUEUE=
-  - USIM_WAITQUEUE=SD
-  - USIM_WAITQUEUE=CY
+  - USIM_WAITQUEUE="" DEBUG="-O"
+  - USIM_WAITQUEUE=""
+  - USIM_WAITQUEUE="SD"
+  - USIM_WAITQUEUE="CY"
 before_script:
   - pip install pip --upgrade
   - python3 -m pip list
@@ -22,6 +23,6 @@ before_script:
   - export PYTEST_ADDOPTS=-v
 script:
   - python -m flake8
-  - coverage run setup.py test
+  - python $DEBUG -m coverage run setup.py test
 after_success:
   - coverage report && codecov
