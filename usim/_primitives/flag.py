@@ -11,10 +11,10 @@ class Flag(Condition):
         self._value = False
         self._inverse = InverseFlag(self)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self._value
 
-    def __invert__(self):
+    def __invert__(self) -> 'InverseFlag':
         return self._inverse
 
     async def set(self, to: bool = True):
@@ -35,10 +35,10 @@ class InverseFlag(Condition):
         super().__init__()
         self._event = flag
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return not self._event
 
-    def __invert__(self):
+    def __invert__(self) -> 'Flag':
         return self._event
 
     async def set(self, to: bool = True):
