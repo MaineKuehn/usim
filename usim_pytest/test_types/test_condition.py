@@ -1,4 +1,4 @@
-from usim import Flag
+from usim import Flag, until, instant
 
 from ..utility import via_usim
 
@@ -83,3 +83,38 @@ class TestChainedCondition:
         pairwise_chain = (a | b) | (c | d) | (e | f)
         assert lexical_chain._children == parenthesised_chain._children
         assert lexical_chain._children == pairwise_chain._children
+
+
+class TestContextCondition:
+    @via_usim
+    async def test_release_self(self):
+        flag = Flag()
+        entered, exited = False, False
+        async with until(flag):
+            entered = True
+            await flag.set()  # get interrupted immediately
+            exited = True
+        assert entered and not exited
+
+    @via_usim
+    async def test_release_concurrent(self):
+        flag = Flag()
+        entered, exited = False, False
+        async with until(flag) as scope:
+            scope.do(flag.set())
+            await instant  # start task
+            entered = True
+            await instant
+            exited = True
+        assert entered and not exited
+
+    @via_usim
+    async def test_release_concurrent(self):
+        flag = Flag()
+        await flag.set()
+        entered, exited = False, False
+        async with until(flag):
+            entered = True
+            await instant
+            exited = True
+        assert entered and not exited
