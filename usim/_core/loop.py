@@ -83,17 +83,17 @@ class Hibernate(object):
     and synchronous generators;
     the latter is intended for ``__await__`` methods.
 
+    This class is stateless and effectively works like a singleton.
+    Use :py:attr:`~.__HIBERNATE__` to avoid creating new instances.
+
     .. code:: python3
 
         async def sleep():
-            await Hibernate()
+            await __HIBERNATE__
 
         class Sleep:
             def __await__():
-                yield from Hibernate()
-
-    :note: This class is stateless and effectively works like a singleton.
-           Use :py:attr:`~.__HIBERNATE__` to avoid creating new instances.
+                yield from __HIBERNATE__
     """
     __slots__ = ()
 
