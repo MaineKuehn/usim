@@ -24,4 +24,7 @@ class TestFlag:
         assert not flag and i_flag
         assert ~flag is i_flag
         assert flag is ~i_flag
-        await i_flag.set()
+        await i_flag.set(to=False)
+        assert flag and not i_flag
+        assert ~flag is i_flag
+        assert flag is ~i_flag
