@@ -1,7 +1,7 @@
 from typing import List, Tuple, Coroutine
 from contextlib import contextmanager
 
-from .._core.loop import Hibernate, Interrupt, __LOOP_STATE__
+from .._core.loop import Interrupt, __LOOP_STATE__, __HIBERNATE__
 
 
 # TODO: add protocol for destroying a notification
@@ -22,7 +22,7 @@ async def postpone():
     wake_up = Interrupt('postpone', task)
     __LOOP_STATE__.LOOP.schedule(task, signal=wake_up)
     try:
-        await Hibernate()
+        await __HIBERNATE__
     except Interrupt as err:
         if err is not wake_up:
             assert (
@@ -31,23 +31,6 @@ async def postpone():
             raise
     finally:
         wake_up.revoke()
-
-
-@contextmanager
-def subscribe(notification: 'Notification'):
-    task = __LOOP_STATE__.LOOP.activity
-    wake_up = Interrupt(notification, task)
-    notification.__subscribe__(task, wake_up)
-    try:
-        yield
-    except Interrupt as err:
-        if err is not wake_up:
-            assert (
-                task is __LOOP_STATE__.LOOP.activity
-            ), 'Break points cannot be passed to other coroutines'
-            raise
-    finally:
-        notification.__unsubscribe__(task, wake_up)
 
 
 class Notification:
@@ -67,19 +50,8 @@ class Notification:
         self._waiting = []  # type: List[Tuple[Coroutine, Interrupt]]
 
     def __await__(self):
-        yield from self.__await_notification__().__await__()
-
-    async def __await_notification__(self, interrupt: Interrupt = None):
-        activity = __LOOP_STATE__.LOOP.activity
-        interrupt = interrupt if interrupt is not None else Interrupt(self, activity)
-        self.__subscribe__(activity, interrupt)
-        try:
-            await Hibernate()  # break point - we are resumed when the event is set
-        except Interrupt as err:
-            if err is not interrupt:  # resumed prematurely
-                raise
-        finally:
-            self.__unsubscribe__(activity, interrupt)
+        with self.__subscription__():
+            yield from __HIBERNATE__
 
     def __awake_next__(self) -> Tuple[Coroutine, Interrupt]:
         """Awake the oldest waiter"""
@@ -127,13 +99,14 @@ class Notification:
         finally:
             self.__unsubscribe__(task, wake_up)
 
-    def __del__(self):
-        if self._waiting:
-            raise RuntimeError(
-                '%r collected without releasing %d waiting tasks:\n  %s' % (
-                    self, len(self._waiting), self._waiting
+    if __debug__:
+        def __del__(self):
+            if self._waiting:
+                raise RuntimeError(
+                    '%r collected without releasing %d waiting tasks:\n  %s' % (
+                        self, len(self._waiting), self._waiting
+                    )
                 )
-            )
 
     def __repr__(self):
         return '<%s, waiters=%d>' % (self.__class__.__name__, len(self._waiting))

@@ -74,15 +74,37 @@ __LOOP_STATE__.LOOP = MissingLoop()  # type: Union[MissingLoop, Loop]
 
 # Commands
 class Hibernate(object):
-    r"""Pause current execution indefinitely"""
+    r"""
+    Pause current execution indefinitely
+
+    When yielding this event to :py:class:`~.Loop`,
+    the current activity is suspended.
+    It can be used both in asynchronous functions
+    and synchronous generators;
+    the latter is intended for ``__await__`` methods.
+
+    This class is stateless and effectively works like a singleton.
+    Use :py:attr:`~.__HIBERNATE__` to avoid creating new instances.
+
+    .. code:: python3
+
+        async def sleep():
+            await __HIBERNATE__
+
+        class Sleep:
+            def __await__():
+                yield from __HIBERNATE__
+    """
     __slots__ = ()
 
     def __await__(self) -> 'Generator[Hibernate, None, None]':
         yield self
 
+    __iter__ = __await__
+
 
 #: reusable instance of :py:class:`Hibernate`
-HIBERNATE = Hibernate
+__HIBERNATE__ = Hibernate()
 
 
 class Loop:
