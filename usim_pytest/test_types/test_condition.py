@@ -88,6 +88,7 @@ class TestChainedCondition:
 class TestContextCondition:
     @via_usim
     async def test_release_self(self):
+        """Condition is set synchronously"""
         flag = Flag()
         entered, exited = False, False
         async with until(flag):
@@ -98,6 +99,7 @@ class TestContextCondition:
 
     @via_usim
     async def test_release_concurrent(self):
+        """Condition is set concurrently"""
         flag = Flag()
         entered, exited = False, False
         async with until(flag) as scope:
@@ -109,7 +111,8 @@ class TestContextCondition:
         assert entered and not exited
 
     @via_usim
-    async def test_release_concurrent(self):
+    async def test_release_early(self):
+        """Condition is set before entering interrupt scope"""
         flag = Flag()
         await flag.set()
         entered, exited = False, False
