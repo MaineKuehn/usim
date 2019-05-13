@@ -214,6 +214,9 @@ class Tracked(Generic[V]):
     def __or__(self, other):
         return self.__set_expression__(self.value | other)
 
+    def __xor__(self, other):
+        return self.__set_expression__(self.value ^ other)
+
     def __radd__(self, other):
         raise TypeError("tracked object does not support reflected operators\n"
                         "Use 'await (tracked + 4)' instead of 'await (4 + tracked)'")
