@@ -24,6 +24,14 @@ inplace_operators = (
 
 class TestTracked:
     @via_usim
+    async def test_misuse(self):
+        tracked = Tracked(1137)
+        with pytest.raises(TypeError):
+            await tracked
+        with pytest.raises(TypeError):
+            bool(tracked)
+
+    @via_usim
     async def test_operators(self):
         for op in modifying_operators:
             tracked = Tracked(1137)
