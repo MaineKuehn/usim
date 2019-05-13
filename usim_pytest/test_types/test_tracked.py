@@ -8,7 +8,8 @@ from ..utility import via_usim
 
 modifying_operators = (
     operator.__add__, operator.__sub__,
-    operator.__mul__, operator.__matmul__, operator.__truediv__, operator.__floordiv__,
+    operator.__mul__, operator.__matmul__,
+    operator.__truediv__, operator.__floordiv__,
     operator.__mod__, operator.__pow__, operator.__lshift__, operator.__rshift__,
     operator.__and__, operator.__or__, operator.__xor__,
 )
