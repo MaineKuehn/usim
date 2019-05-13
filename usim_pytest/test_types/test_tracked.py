@@ -13,6 +13,13 @@ modifying_operators = (
     operator.__mod__, operator.__pow__, operator.__lshift__, operator.__rshift__,
     operator.__and__, operator.__or__, operator.__xor__,
 )
+inplace_operators = (
+    operator.__iadd__, operator.__isub__,
+    operator.__imul__, operator.__imatmul__,
+    operator.__itruediv__, operator.__ifloordiv__,
+    operator.__imod__, operator.__ipow__, operator.__ilshift__, operator.__irshift__,
+    operator.__iand__, operator.__ior__, operator.__ixor__,
+)
 
 
 class TestTracked:
@@ -28,3 +35,19 @@ class TestTracked:
             else:
                 result = await op(tracked, 10)
                 assert expected == result
+
+    @via_usim
+    async def test_reflected(self):
+        """Reflected operations are not well-defined"""
+        for op in modifying_operators:
+            tracked = Tracked(1137)
+            with pytest.raises(TypeError):
+                await op(10, tracked)
+
+    @via_usim
+    async def test_inplace(self):
+        """Inplace operations are not well-defined"""
+        for op in inplace_operators:
+            tracked = Tracked(1137)
+            with pytest.raises(TypeError):
+                op(tracked, 10)
