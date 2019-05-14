@@ -88,12 +88,12 @@ class BoolExpression(Condition):
         self._stop_listening()
         return result  # noqa: B901
 
-    async def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
+    def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
         self._start_listening()
-        await super().__subscribe__(waiter, interrupt)
+        super().__subscribe__(waiter, interrupt)
 
-    async def __trigger__(self):
-        await super().__trigger__()
+    def __trigger__(self):
+        super().__trigger__()
         self._stop_listening()
 
     async def __on_changed__(self):
