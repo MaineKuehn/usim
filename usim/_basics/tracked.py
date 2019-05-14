@@ -96,9 +96,9 @@ class BoolExpression(Condition):
         super().__trigger__()
         self._stop_listening()
 
-    async def __on_changed__(self):
+    def __on_changed__(self):
         if self._test():
-            await self.__trigger__()
+            self.__trigger__()
 
     def __repr__(self):
         return '%s %s %s' % (
@@ -144,7 +144,7 @@ class Tracked(Generic[V]):
         """Set the value"""
         self._value = to
         for listener in self._listeners:
-            await listener.__on_changed__()
+            listener.__on_changed__()
         await postpone()
 
     # boolean operations producing a BoolExpression
