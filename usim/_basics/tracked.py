@@ -210,8 +210,10 @@ class Tracked(Generic[V]):
 
     if __debug__:
         def __radd__(self, other):
-            raise TypeError("tracked object does not support reflected operators\n"
-                            "Use 'await (tracked + 4)' instead of 'await (4 + tracked)'")
+            raise TypeError(
+                "tracked object does not support reflected operators\n"
+                "Use 'await (tracked + 4)' instead of 'await (4 + tracked)'"
+            )
 
         __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__\
             = __rdivmod__ = __rpow__ = __rlshift__ = __rrshift__ = __rand__ = __rxor__\
@@ -270,7 +272,7 @@ class AsyncOperation(Generic[V, RHS]):
     def __await__(self) -> Generator[Any, None, None]:
         base = self._base
         yield from base.set(
-             self._operator(base.value, self._rhs)
+            self._operator(base.value, self._rhs)
         ).__await__()
 
     def __str__(self):
