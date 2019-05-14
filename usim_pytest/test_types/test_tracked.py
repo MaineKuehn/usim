@@ -80,8 +80,14 @@ class TestTracked:
 
     @via_usim
     async def test_comparison(self):
+        value = 1137
         for op in comparison_operators:
-            tracked = Tracked(1137)
-            expected = op(tracked.value, 1137)
-            expression = await op(tracked, 1137)
+            expected = op(value, value)
+            expression = op(Tracked(value), value)
+            assert expected == bool(expression)
+            expression = op(value, Tracked(value))
+            assert expected == bool(expression)
+            expression = op(Tracked(value), value)
+            assert expected == bool(expression)
+            expression = op(Tracked(value), Tracked(value))
             assert expected == bool(expression)
