@@ -41,8 +41,8 @@ class TestTracked:
                 with pytest.raises(TypeError):
                     await op(tracked, 10)
             else:
-                result = await op(tracked, 10)
-                assert expected == result
+                await op(tracked, 10)
+                assert expected == tracked.value
 
     @via_usim
     async def test_reflected(self):
