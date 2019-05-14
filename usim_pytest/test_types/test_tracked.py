@@ -20,6 +20,11 @@ inplace_operators = (
     operator.__imod__, operator.__ipow__, operator.__ilshift__, operator.__irshift__,
     operator.__iand__, operator.__ior__, operator.__ixor__,
 )
+comparison_operators = (
+    operator.__lt__, operator.__le__,
+    operator.__eq__, operator.__ne__,
+    operator.__gt__, operator.__ge__,
+)
 
 
 class TestTracked:
@@ -72,3 +77,11 @@ class TestTracked:
             tracked = Tracked(1137)
             with pytest.raises(TypeError):
                 op(tracked, 10)
+
+    @via_usim
+    async def test_comparison(self):
+        for op in comparison_operators:
+            tracked = Tracked(1137)
+            expected = op(tracked.value, 1137)
+            expression = await op(tracked, 1137)
+            assert expected == bool(expression)
