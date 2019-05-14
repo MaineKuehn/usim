@@ -161,10 +161,10 @@ class Tracked(Generic[V]):
         return BoolExpression(operator.ne, self, other)
 
     def __ge__(self, other):
-        return BoolExpression(operator.gt, self, other)
+        return BoolExpression(operator.ge, self, other)
 
     def __gt__(self, other):
-        return BoolExpression(operator.ge, self, other)
+        return BoolExpression(operator.gt, self, other)
 
     # modifying operators
     def __add__(self, other) -> 'AsyncOperation[V]':
