@@ -1,6 +1,7 @@
 import operator
 
-from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine, Generator
+from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine, Generator,\
+    Awaitable
 
 from .._core.loop import Interrupt as CoreInterrupt
 from .._primitives.notification import postpone
@@ -175,47 +176,49 @@ class Tracked(Generic[V]):
         return BoolExpression(operator.ge, self, other)
 
     # modifying operators
-    def __add__(self, other):
-        return self.__set_expression__(self.value + other)
+    def __add__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__add__, other)
 
-    def __sub__(self, other):
-        return self.__set_expression__(self.value - other)
+    def __sub__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__sub__, other)
 
-    def __mul__(self, other):
-        return self.__set_expression__(self.value * other)
+    def __mul__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__mul__, other)
 
-    def __matmul__(self, other):
-        return self.__set_expression__(self.value @ other)
+    def __matmul__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__matmul__, other)
 
-    def __truediv__(self, other):
-        return self.__set_expression__(self.value / other)
+    def __truediv__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__truediv__, other)
 
-    def __floordiv__(self, other):
-        return self.__set_expression__(self.value // other)
+    def __floordiv__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__floordiv__, other)
 
-    def __mod__(self, other):
-        return self.__set_expression__(self.value % other)
+    def __mod__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__mod__, other)
 
     def __divmod__(self, other):
         return self.__set_expression__(divmod(self.value, other))
 
-    def __pow__(self, power, modulo=None):
+    def __pow__(self, power, modulo=None) -> 'Union[AsyncOperation[V], Awaitable]':
+        if modulo is None:
+            return AsyncOperation(self, operator.__pow__, power)
         return self.__set_expression__(pow(self.value, power, modulo))
 
-    def __lshift__(self, other):
-        return self.__set_expression__(self.value << other)
+    def __lshift__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__lshift__, other)
 
-    def __rshift__(self, other):
-        return self.__set_expression__(self.value >> other)
+    def __rshift__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__rshift__, other)
 
-    def __and__(self, other):
-        return self.__set_expression__(self.value & other)
+    def __and__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__and__, other)
 
-    def __or__(self, other):
-        return self.__set_expression__(self.value | other)
+    def __or__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__or__, other)
 
-    def __xor__(self, other):
-        return self.__set_expression__(self.value ^ other)
+    def __xor__(self, other) -> 'AsyncOperation[V]':
+        return AsyncOperation(self, operator.__xor__, other)
 
     def __radd__(self, other):
         raise TypeError("tracked object does not support reflected operators\n"
@@ -252,8 +255,9 @@ class Tracked(Generic[V]):
         return '%s(%s)' % (self.__class__.__name__, self._value)
 
 
-class Operation(Generic[V, RHS]):
-    __slots__ = ('operator', 'rhs')
+class AsyncOperation(Generic[V, RHS]):
+    __slots__ = ('_base', '_operator', '_rhs')
+
     _operator_symbol = {
         operator.add: '+',
         operator.sub: '-',
@@ -269,96 +273,19 @@ class Operation(Generic[V, RHS]):
         operator.or_: '|'
     }
 
-    def __init__(self, op: Callable[[V, RHS], V], rhs: RHS):
-        self.operator = op
-        self.rhs = rhs
+    def __init__(self, base: Tracked[V], op: Callable[[V, RHS], V], rhs: RHS):
+        self._base = base
+        self._operator = op
+        self._rhs = rhs
+
+    def __await__(self) -> Generator[Any, None, None]:
+        base = self._base
+        yield from base.set(
+             self._operator(base.value, self._rhs)
+        ).__await__()
 
     def __str__(self):
-        return '%s %s' % (self._operator_symbol[self.operator], self.rhs)
+        return '%s %s' % (self._operator_symbol[self._operator], self._rhs)
 
     def __repr__(self):
-        return '%s(%s, %r)' % (self.__class__.__name__, self.operator, self.rhs)
-
-
-class TrackedOperation(Generic[V]):
-    __slots__ = ('_tracked', '_operations')
-
-    def __init__(self, value: Tracked[V], *operations: Operation):
-        self._tracked = value
-        self._operations = operations
-
-    def __await__(self) -> Generator[Any, None, Tracked[V]]:
-        tracked = self._tracked
-        for operation in self._operations:
-            yield from tracked.set(
-                operation.operator(tracked.value, operation.rhs)
-            ).__await__()
-        return tracked  # noqa: B901
-
-    def __extend__(self, op: Callable[[V, RHS], V], rhs: RHS) -> 'TrackedOperation[V]':
-        return TrackedOperation(self._tracked, *self._operations, Operation(op, rhs))
-
-    # modifying operators
-    def __add__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.add, other)
-
-    def __sub__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.sub, other)
-
-    def __mul__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.mul, other)
-
-    def __matmul__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.matmul, other)
-
-    def __truediv__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.truediv, other)
-
-    def __floordiv__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.floordiv, other)
-
-    def __mod__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.mod, other)
-
-    def __pow__(self, other: RHS, modulo=None) -> 'TrackedOperation[V]':
-        if modulo is not None:
-            raise TypeError(
-                "%s does not support the 'modulo' parameter for 'pow'" %
-                self.__class__.__name__
-            )
-        return self.__extend__(operator.pow, other)
-
-    def __lshift__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.lshift, other)
-
-    def __rshift__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.rshift, other)
-
-    def __and__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.and_, other)
-
-    def __or__(self, other: RHS) -> 'TrackedOperation[V]':
-        return self.__extend__(operator.or_, other)
-
-    def __radd__(self, other):
-        raise TypeError(
-            "tracked object does not support reflected operators\n"
-            "Use 'await (tracked + 4 + 5)' instead of 'await (4 + tracked + 5)'"
-        )
-
-    __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__\
-        = __rdivmod__ = __rpow__ = __rlshift__ = __rrshift__ = __rand__ = __rxor__\
-        = __ror__ = __radd__
-
-    def __str__(self):
-        return '%s %s %s)' % (
-            '(' * len(self._operations),
-            self._tracked,
-            ') '.join(str(op) for op in self._operations)
-        )
-
-    def __repr__(self):
-        return '%s(%s)' % (
-            self.__class__.__name__,
-            str(self._operations)[1:-1]
-        )
+        return '%s(%s, %r)' % (self.__class__.__name__, self._operator, self._rhs)
