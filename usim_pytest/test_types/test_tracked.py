@@ -45,6 +45,16 @@ class TestTracked:
                 assert expected == tracked.value
 
     @via_usim
+    async def test_operator_pow(self):
+        tracked = Tracked(1137)
+        expected = pow(tracked.value, 42)
+        await pow(tracked, 42)
+        assert expected == tracked.value
+        expected = pow(tracked.value, 42, 3)
+        await pow(tracked, 42, 3)
+        assert expected == tracked.value
+
+    @via_usim
     async def test_reflected(self):
         """Reflected operations are not well-defined"""
         for op in modifying_operators:
