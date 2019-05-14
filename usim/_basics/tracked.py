@@ -147,10 +147,6 @@ class Tracked(Generic[V]):
             await listener.__on_changed__()
         await postpone()
 
-    async def __set_expression__(self, to: V):
-        await self.set(to)
-        return self
-
     # boolean operations producing a BoolExpression
     def __lt__(self, other):
         return BoolExpression(operator.lt, self, other)
@@ -191,9 +187,6 @@ class Tracked(Generic[V]):
 
     def __mod__(self, other) -> 'AsyncOperation[V]':
         return AsyncOperation(self, operator.__mod__, other)
-
-    def __divmod__(self, other):
-        return self.__set_expression__(divmod(self.value, other))
 
     def __pow__(self, power, modulo=None) -> 'Union[AsyncOperation[V], Awaitable]':
         if modulo is None:
