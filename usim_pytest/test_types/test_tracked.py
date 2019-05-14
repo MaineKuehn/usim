@@ -41,17 +41,20 @@ class TestTracked:
                 with pytest.raises(TypeError):
                     await op(tracked, 10)
             else:
-                await op(tracked, 10)
+                result = await op(tracked, 10)
+                assert result is None
                 assert expected == tracked.value
 
     @via_usim
     async def test_operator_pow(self):
         tracked = Tracked(1137)
         expected = pow(tracked.value, 42)
-        await pow(tracked, 42)
+        result = await pow(tracked, 42)
+        assert result is None
         assert expected == tracked.value
         expected = pow(tracked.value, 42, 3)
-        await pow(tracked, 42, 3)
+        result = await pow(tracked, 42, 3)
+        assert result is None
         assert expected == tracked.value
 
     @via_usim
