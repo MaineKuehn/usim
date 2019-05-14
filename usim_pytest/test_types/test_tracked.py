@@ -1,6 +1,7 @@
 import operator
 import pytest
 
+from usim import Scope, time
 from usim.basics import Tracked
 
 from ..utility import via_usim
@@ -92,3 +93,12 @@ class TestTracked:
             expression = op(Tracked(value), Tracked(value))
             assert expected == bool(expression)
             assert expected != bool(~expression)
+
+    @via_usim
+    async def test_comparison_wait(self):
+        value = 1137
+        tracked = Tracked(value)
+        async with Scope() as scope:
+            scope.do(tracked + 10, after=20)
+            await (tracked == value + 10)
+        assert time.now == 20
