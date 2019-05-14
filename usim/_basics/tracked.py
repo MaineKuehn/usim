@@ -208,36 +208,37 @@ class Tracked(Generic[V]):
     def __xor__(self, other) -> 'AsyncOperation[V]':
         return AsyncOperation(self, operator.__xor__, other)
 
-    def __radd__(self, other):
-        raise TypeError("tracked object does not support reflected operators\n"
-                        "Use 'await (tracked + 4)' instead of 'await (4 + tracked)'")
+    if __debug__:
+        def __radd__(self, other):
+            raise TypeError("tracked object does not support reflected operators\n"
+                            "Use 'await (tracked + 4)' instead of 'await (4 + tracked)'")
 
-    __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__\
-        = __rdivmod__ = __rpow__ = __rlshift__ = __rrshift__ = __rand__ = __rxor__\
-        = __ror__ = __radd__
+        __rsub__ = __rmul__ = __rmatmul__ = __rtruediv__ = __rfloordiv__ = __rmod__\
+            = __rdivmod__ = __rpow__ = __rlshift__ = __rrshift__ = __rand__ = __rxor__\
+            = __ror__ = __radd__
 
-    # augmented operators
-    # Python currently does not support await for augmented assignment, as in
-    #       await a += 20
-    def __iadd__(self, other):
-        raise TypeError("tracked object does not support augmented assignment\n"
-                        "Use 'tracked = await (tracked + 4)' instead")
+        # augmented operators
+        # Python currently does not support await for augmented assignment, as in
+        #       await a += 20
+        def __iadd__(self, other):
+            raise TypeError("tracked object does not support augmented assignment\n"
+                            "Use 'tracked = await (tracked + 4)' instead")
 
-    __isub__ = __imul__ = __imatmul__ = __itruediv__ = __ifloordiv__ = __imod__\
-        = __ipow__ = __ilshift__ = __irshift__ = __iand__ = __ixor__ = __ior__\
-        = __iadd__
+        __isub__ = __imul__ = __imatmul__ = __itruediv__ = __ifloordiv__ = __imod__\
+            = __ipow__ = __ilshift__ = __irshift__ = __iand__ = __ixor__ = __ior__\
+            = __iadd__
 
-    def __await__(self):
-        raise TypeError(
-            "tracked object can't be used in await expression\n"
-            "Use a derived condition or expression instead"
-        )
+        def __await__(self):
+            raise TypeError(
+                "tracked object can't be used in await expression\n"
+                "Use a derived condition or expression instead"
+            )
 
-    def __bool__(self):
-        raise TypeError(
-            "tracked object has no bool()\n"
-            "Use 'bool(tracked.value)' or 'await (tracked == True)' instead"
-        )
+        def __bool__(self):
+            raise TypeError(
+                "tracked object has no bool()\n"
+                "Use 'bool(tracked.value)' or 'await (tracked == True)' instead"
+            )
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self._value)
