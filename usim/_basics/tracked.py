@@ -151,11 +151,6 @@ class Tracked(Generic[V]):
         await self.set(to)
         return self
 
-    def _async_operation(
-            self, op: Callable[[V, RHS], V], rhs: RHS,
-    ) -> 'TrackedOperation[V]':
-        return TrackedOperation(self, Operation(op, rhs))
-
     # boolean operations producing a BoolExpression
     def __lt__(self, other):
         return BoolExpression(operator.lt, self, other)
@@ -203,7 +198,7 @@ class Tracked(Generic[V]):
     def __pow__(self, power, modulo=None) -> 'Union[AsyncOperation[V], Awaitable]':
         if modulo is None:
             return AsyncOperation(self, operator.__pow__, power)
-        return self.__set_expression__(pow(self.value, power, modulo))
+        return self.set(pow(self.value, power, modulo))
 
     def __lshift__(self, other) -> 'AsyncOperation[V]':
         return AsyncOperation(self, operator.__lshift__, other)
