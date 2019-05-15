@@ -13,7 +13,7 @@ V = TypeVar('V')
 RHS = TypeVar('RHS')
 
 
-class BoolExpression(Condition):
+class AsyncComparison(Condition):
     """
     A boolean condition on a Tracked value
     """
@@ -38,7 +38,7 @@ class BoolExpression(Condition):
         return self._test()
 
     def __invert__(self):
-        return BoolExpression(
+        return AsyncComparison(
             self._operator_inverse[self._condition], self._left, self._right
         )
 
@@ -99,9 +99,9 @@ class Tracked(Generic[V]):
 
     def __init__(self, value: V):
         self._value = value
-        self._listeners = WeakSet()  # type: WeakSet[BoolExpression]
+        self._listeners = WeakSet()  # type: WeakSet[AsyncComparison]
 
-    def __add_listener__(self, listener: BoolExpression):
+    def __add_listener__(self, listener: AsyncComparison):
         """Add a new listener for changes"""
         self._listeners.add(listener)
 
@@ -112,24 +112,24 @@ class Tracked(Generic[V]):
             listener.__on_changed__()
         await postpone()
 
-    # boolean operations producing a BoolExpression
+    # boolean operations producing a AsyncComparison
     def __lt__(self, other):
-        return BoolExpression(operator.lt, self, other)
+        return AsyncComparison(operator.lt, self, other)
 
     def __le__(self, other):
-        return BoolExpression(operator.le, self, other)
+        return AsyncComparison(operator.le, self, other)
 
     def __eq__(self, other):
-        return BoolExpression(operator.eq, self, other)
+        return AsyncComparison(operator.eq, self, other)
 
     def __ne__(self, other):
-        return BoolExpression(operator.ne, self, other)
+        return AsyncComparison(operator.ne, self, other)
 
     def __ge__(self, other):
-        return BoolExpression(operator.ge, self, other)
+        return AsyncComparison(operator.ge, self, other)
 
     def __gt__(self, other):
-        return BoolExpression(operator.gt, self, other)
+        return AsyncComparison(operator.gt, self, other)
 
     # modifying operators
     def __add__(self, other) -> 'AsyncOperation[V]':
