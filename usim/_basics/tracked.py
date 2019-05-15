@@ -1,10 +1,8 @@
 import operator
 from weakref import WeakSet
 
-from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine, Generator,\
-    Awaitable
+from typing import Callable, Union, Any, Generic, TypeVar, Generator, Awaitable
 
-from .._core.loop import Interrupt as CoreInterrupt
 from .._primitives.notification import postpone
 from .._primitives.condition import Condition
 
