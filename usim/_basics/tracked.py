@@ -51,13 +51,9 @@ class BoolExpression(Condition):
             right: Union[object, 'Tracked']
     ):
         super().__init__()
-        self._subscribed = False
         self._condition = condition
         self._left = left
         self._right = right
-        self._source = tuple(
-            value for value in (left, right) if isinstance(value, Tracked)
-        )
         if isinstance(left, Tracked):
             if isinstance(right, Tracked):
                 self._test = lambda: condition(left.value, right.value)
