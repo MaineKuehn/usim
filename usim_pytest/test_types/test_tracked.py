@@ -98,6 +98,8 @@ class TestTracked:
     async def test_comparison_wait(self):
         value = 1137
         tracked = Tracked(value)
+        await (tracked == value)
+        assert time.now == 0
         async with Scope() as scope:
             scope.do(tracked + 10, after=20)
             await (tracked == value + 10)
