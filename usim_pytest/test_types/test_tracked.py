@@ -101,6 +101,7 @@ class TestTracked:
         await (tracked == value)
         assert time.now == 0
         async with Scope() as scope:
+            scope.do(tracked + 10, after=10)
             scope.do(tracked + 10, after=20)
-            await (tracked == value + 10)
+            await (tracked == value + 20)
         assert time.now == 20
