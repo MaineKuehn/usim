@@ -1,4 +1,5 @@
 import operator
+from weakref import WeakSet
 
 from typing import Callable, List, Union, Any, Generic, TypeVar, Coroutine, Generator,\
     Awaitable
@@ -46,7 +47,7 @@ class BoolExpression(Condition):
     def __init__(
             self,
             condition: Callable[[Any, Any], bool],
-            left: Union[object, 'Tracked'],
+            left: 'Tracked',
             right: Union[object, 'Tracked']
     ):
         super().__init__()
@@ -57,44 +58,18 @@ class BoolExpression(Condition):
         self._source = tuple(
             value for value in (left, right) if isinstance(value, Tracked)
         )
-        if isinstance(left, Tracked) and isinstance(right, Tracked):
-            self._test = lambda: condition(left.value, right.value)
-        elif isinstance(left, Tracked):
-            self._test = lambda: condition(left.value, right)
-        elif isinstance(right, Tracked):
-            self._test = lambda: condition(left, right.value)
+        if isinstance(left, Tracked):
+            if isinstance(right, Tracked):
+                self._test = lambda: condition(left.value, right.value)
+                right.__add_listener__(self)
+            else:
+                self._test = lambda: condition(left.value, right)
+            left.__add_listener__(self)
         else:
             raise TypeError(
-                "at least one of 'left' or 'right' must be of type %s" %
-                Tracked.__name__
+                "the left-hand-side in a %s must be of type %s" %
+                (self.__class__.__name__, Tracked.__name__)
             )
-
-    def _start_listening(self):
-        if not self._subscribed:
-            for source in self._source:
-                source.__add_listener__(self)
-        self._subscribed = True
-
-    def _stop_listening(self):
-        if self._subscribed and not self._waiting:
-            if self._subscribed:
-                for source in self._source:
-                    source.__del_listener__(self)
-        self._subscribed = False
-
-    def __await__(self) -> Generator[Any, None, bool]:
-        self._start_listening()
-        result = (yield from super().__await__())
-        self._stop_listening()
-        return result  # noqa: B901
-
-    def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
-        self._start_listening()
-        super().__subscribe__(waiter, interrupt)
-
-    def __trigger__(self):
-        super().__trigger__()
-        self._stop_listening()
 
     def __on_changed__(self):
         if self._test():
@@ -130,20 +105,16 @@ class Tracked(Generic[V]):
 
     def __init__(self, value: V):
         self._value = value
-        self._listeners = []  # type: List[BoolExpression]
+        self._listeners = WeakSet()  # type: WeakSet[BoolExpression]
 
     def __add_listener__(self, listener: BoolExpression):
         """Add a new listener for changes"""
-        self._listeners.append(listener)
-
-    def __del_listener__(self, listener: BoolExpression):
-        """Remove an existing listener for changes"""
-        self._listeners.remove(listener)
+        self._listeners.add(listener)
 
     async def set(self, to: V):
         """Set the value"""
         self._value = to
-        for listener in self._listeners:
+        for listener in list(self._listeners):
             listener.__on_changed__()
         await postpone()
 
