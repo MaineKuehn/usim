@@ -230,6 +230,8 @@ class AsyncOperation(Generic[V, RHS]):
     }
 
     def __init__(self, base: Tracked[V], op: Callable[[V, RHS], V], rhs: RHS):
+        assert not isinstance(rhs, Tracked),\
+            "Operations on Tracked values require one untracked value"
         self._base = base
         self._operator = op
         self._rhs = rhs

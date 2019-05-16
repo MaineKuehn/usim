@@ -4,7 +4,7 @@ import pytest
 from usim import Scope, time
 from usim.basics import Tracked
 
-from ..utility import via_usim
+from ..utility import via_usim, assertion_mode
 
 
 modifying_operators = (
@@ -105,3 +105,9 @@ class TestTracked:
             scope.do(tracked + 10, after=20)
             await (tracked == value + 20)
         assert time.now == 20
+
+    @assertion_mode
+    @via_usim
+    async def test_tracked_op_tracked(self):
+        with pytest.raises(AssertionError):
+            b = Tracked(2) + Tracked(2)
