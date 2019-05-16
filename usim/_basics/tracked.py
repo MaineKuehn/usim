@@ -140,7 +140,7 @@ class Tracked(Generic[V]):
             listener.__on_changed__()
         await postpone()
 
-    # boolean operations producing a AsyncComparison
+    # boolean operations producing an AsyncComparison
     def __lt__(self, other):
         return AsyncComparison(self, operator.lt, other)
 
