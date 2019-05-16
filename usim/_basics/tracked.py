@@ -15,7 +15,12 @@ RHS = TypeVar('RHS')
 
 class AsyncComparison(Condition):
     """
-    A boolean condition on a Tracked value
+    An asynchronous comparison of a :py:class:`~.Tracked` value
+
+    This represents expressions of the form ``tracked == 1992``
+    or ``tracked_a == tracked_b``. All comparison operators are
+    supported. Like any :py:class:`~.Condition`, it can be used both
+    in an asynchronous and boolean context.
     """
     _operator_symbol = {
         operator.lt: '<',
@@ -77,10 +82,10 @@ class AsyncComparison(Condition):
 
 class Tracked(Generic[V]):
     """
-    A value whose changes are tracked to generate events
+    A mutable value whose changes are tracked to generate and trigger events
 
     The purpose of a tracked value is to derive notification points on the fly.
-    Boolean and arithmetic expressions provide events and triggers, respectively:
+    Comparison and mathematical expressions define and trigger events, respectively:
 
     .. code:: python
 
@@ -89,12 +94,30 @@ class Tracked(Generic[V]):
                 # boolean expression providing an event to wait for
                 await (coffee < 0.1)
                 print('Coffee is low! Initiating emergency refill!')
-                # arithmetic expression triggering waiting activities
+                # arithmetic expression triggering events of waiters
                 await (coffee + 0.9)
                 print('Coffee refilled! Emergency resolved!')
+
+    The purpose of :py:class:`~.Tracked` is to make operations asynchronous -
+    the actual operations are taken from the wrapped value.
+    This dictates both the availability and effect of operations.
+
+    :py:class:`~.Tracked` does not require its underlying ``value`` to be mutable.
+    Instead, the underlying ``value`` is replaced when :py:class:`~.Tracked` changes -
+    for example, ``await (tracked + 5)`` is a shorthand
+    for ``await tracked.set(tracked.value + 5)``.
+    This works both for immutable types, such as :py:class:`int`,
+    and mutable types, such as :py:class:`list`.
+
+    :py:class:`~.Tracked` assumes sole responsibility for changing ``value``.
+    This means that ``value`` should be changed only via :py:meth:`~.set`
+    or async operators, such as ``await (tracked + 3)``.
+    Circumventing this to change a mutable ``value`` directly prevents
+    :py:class:`~.Tracked` from detecting the change and triggering events.
     """
     @property
     def value(self) -> V:
+        """The current value"""
         return self._value
 
     def __init__(self, value: V):
@@ -203,8 +226,13 @@ class Tracked(Generic[V]):
     if __debug__:
         def __await__(self):
             raise TypeError(
-                "tracked object can't be used in await expression\n"
-                "Use a derived condition or expression instead"
+                "Tracked object can't be used in await expression\n"
+                "Use a derived condition or expression instead:\n"
+                "* 'await (tracked + 2)' to set the value based on its current value\n"
+                "* 'await tracked.set(21)' to set the value to a fixed value\n"
+                "* 'await (tracked == 21)' to proceed once a value is reached\n"
+                "\n"
+                "Availability of operators depends on the type of the tracked value."
             )
 
     def __repr__(self):
@@ -212,6 +240,14 @@ class Tracked(Generic[V]):
 
 
 class AsyncOperation(Generic[V, RHS]):
+    r"""
+    An asynchronous operation on a :py:class:`~.Tracked` value
+
+    This represents expressions of the form ``tracked + 1992``.
+    All operators are supported, provided the underlying type supports them.
+    The operation is only realised when ``await``\ ed, in which case the
+    underlying :py:attr:`~.Tracked.value` is changed.
+    """
     __slots__ = ('_base', '_operator', '_rhs')
 
     _operator_symbol = {
