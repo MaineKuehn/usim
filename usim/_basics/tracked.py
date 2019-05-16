@@ -74,9 +74,14 @@ class AsyncComparison(Condition):
         if self._test():
             self.__trigger__()
 
-    def __repr__(self):
+    def __str__(self):
         return '%s %s %s' % (
             self._left, self._operator_symbol[self._condition], self._right
+        )
+
+    def __repr__(self):
+        return '%s(%r, operator.%s, %r)' % (
+            self.__class__.__name__, self._left, self._condition.__name__, self._right
         )
 
 
