@@ -106,6 +106,16 @@ class TestTracked:
             await (tracked == value + 20)
         assert time.now == 20
 
+    @via_usim
+    async def test_mutable(self):
+        """Tracked does not mutate the initial value if operations are pure"""
+        tracked = Tracked([1, 2, 3])
+        tracked_value = tracked.value
+        await (tracked == [1, 2, 3])
+        await (tracked + [4, 5])
+        assert tracked_value == [1, 2, 3]
+        assert tracked == [1, 2, 3, 4, 5]
+
     @assertion_mode
     @via_usim
     async def test_tracked_op_tracked(self):
