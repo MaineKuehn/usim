@@ -120,4 +120,4 @@ class TestTracked:
     @via_usim
     async def test_tracked_op_tracked(self):
         with pytest.raises(AssertionError):
-            b = Tracked(2) + Tracked(2)
+            Tracked(2) + Tracked(2)
