@@ -279,7 +279,11 @@ class AsyncOperation(Generic[V, RHS]):
         ).__await__()
 
     def __str__(self):
-        return '%s %s' % (self._operator_symbol[self._operator], self._rhs)
+        return '%s %s %s' % (
+            self._base, self._operator_symbol[self._operator], self._rhs
+        )
 
     def __repr__(self):
-        return '%s(%s, %r)' % (self.__class__.__name__, self._operator, self._rhs)
+        return '%s(%r, operator.%s, %r)' % (
+            self.__class__.__name__, self._base, self._operator.__name__, self._rhs
+        )
