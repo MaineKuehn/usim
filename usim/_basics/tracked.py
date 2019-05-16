@@ -44,13 +44,13 @@ class AsyncComparison(Condition):
 
     def __invert__(self):
         return AsyncComparison(
-            self._operator_inverse[self._condition], self._left, self._right
+            self._left, self._operator_inverse[self._condition], self._right
         )
 
     def __init__(
             self,
-            condition: Callable[[Any, Any], bool],
             left: 'Tracked',
+            condition: Callable[[Any, Any], bool],
             right: Union[object, 'Tracked']
     ):
         super().__init__()
@@ -137,22 +137,22 @@ class Tracked(Generic[V]):
 
     # boolean operations producing a AsyncComparison
     def __lt__(self, other):
-        return AsyncComparison(operator.lt, self, other)
+        return AsyncComparison(self, operator.lt, other)
 
     def __le__(self, other):
-        return AsyncComparison(operator.le, self, other)
+        return AsyncComparison(self, operator.le, other)
 
     def __eq__(self, other):
-        return AsyncComparison(operator.eq, self, other)
+        return AsyncComparison(self, operator.eq, other)
 
     def __ne__(self, other):
-        return AsyncComparison(operator.ne, self, other)
+        return AsyncComparison(self, operator.ne, other)
 
     def __ge__(self, other):
-        return AsyncComparison(operator.ge, self, other)
+        return AsyncComparison(self, operator.ge, other)
 
     def __gt__(self, other):
-        return AsyncComparison(operator.gt, self, other)
+        return AsyncComparison(self, operator.gt, other)
 
     # modifying operators
     def __add__(self, other) -> 'AsyncOperation[V]':
