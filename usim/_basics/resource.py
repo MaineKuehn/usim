@@ -1,0 +1,127 @@
+from typing import TypeVar, Dict, Iterable, Generic, Optional
+
+from .._core.loop import __LOOP_STATE__
+from .tracked import Tracked
+
+
+T = TypeVar('T')
+
+
+def _kwarg_name_check(names: Iterable[str], allow_missing=True):
+    namespace = {}
+    if allow_missing:
+        exec("""def signature(*, %s=0):...""" % '=0, '.join(names), namespace)
+    else:
+        exec("""def signature(*, %s):...""" % ', '.join(names), namespace)
+    return namespace['signature']
+
+
+class Resources(Dict[str, T]):
+    """
+    Mapping that supports element-wise operations
+
+    :warning: This is for internal use only.
+    """
+    def __add__(self, other: 'Dict[str, T]'):
+        return self.__class__(
+            (key, self[key] + other.get(key, 0))
+            for key in self.keys()
+        )
+
+    def __sub__(self, other: 'Dict[str, T]'):
+        return self.__class__(
+            (key, self[key] - other.get(key, 0))
+            for key in self.keys()
+        )
+
+    def __ge__(self, other: 'Dict[str, T]') -> bool:
+        return all(self[key] >= value for key, value in other.items())
+
+    def __lt__(self, other: 'Dict[str, T]') -> bool:
+        return all(self[key] < value for key, value in other.items())
+
+
+class BorrowedResources(Generic[T]):
+    def __init__(self, resources: 'ConservedResources', amounts: Dict[str, T]):
+        self._resources = resources
+        self._requested = amounts
+
+    async def __aenter__(self):
+        await (self._resources.__available__ >= self._requested)
+        await self._resources.__remove_resources__(self._requested)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is GeneratorExit:
+            # we are killed forcefully and cannot perform async operations
+            # dispatch a new activity to release our resources eventually
+            __LOOP_STATE__.LOOP.schedule(
+                self._resources.__insert_resources__(self._requested)
+            )
+        else:
+            await self._resources.__insert_resources__(self._requested)
+
+
+class ConservedResources(Generic[T]):
+    """
+    Fixed supply of named resources which can be temporarily borrowed
+
+    The resources and their maximum capacity are defined
+    when the resource supply is created.
+    Afterwards, it is only possible to temporarily :py:meth:`borrow`
+    resources:
+
+    .. code:: python3
+
+        # create a limited supply of resources
+        resources = ConservedResources(cores=8, memory=16000)
+
+        # temporarily remove resources
+        async with resources.borrow(cores=2, money=4000):
+            await computation
+
+    Individual resources are assumed to be indistinguishable,
+    i.e. there is merely an *amount* of each.
+    As a result, there is no order imposed for borrowing and returning
+    resources.
+    Resources are borrowed as soon as there are enough available,
+    and they are returned without regard to other borrowings.
+    """
+    def __init__(self, __zero__: Optional[T] = None, **capacity: T):
+        if not capacity:
+            raise TypeError(
+                '%s requires at least 1 keyword-only argument' % self.__class__.__name__
+            )
+        self._zero = __zero__ if __zero__ is not None else\
+            type(next(iter(capacity.values())))()  # bare type invocation must be zero
+        self._capacity = Resources(capacity)
+        if any(value <= self._zero for value in capacity.values()):
+            raise ValueError('capacities must be greater than zero')
+        self.__available__ = Tracked(Resources(capacity.copy()))
+        self._verify_names = _kwarg_name_check(capacity.keys())
+
+    async def __insert_resources__(self, amounts: Dict[str, T]):
+        new_levels = self.__available__.value + Resources(amounts)
+        await self.__available__.set(new_levels)
+
+    async def __remove_resources__(self, amounts: Dict[str, T]):
+        new_levels = self.__available__.value - Resources(amounts)
+        await self.__available__.set(new_levels)
+
+    def borrow(self, **amounts: T) -> BorrowedResources[T]:
+        """
+        Temporarily borrow resources
+
+        :param amounts:
+        :return:
+        """
+        self._verify_names(**amounts)
+        if amounts.keys() - self._capacity.keys():
+            raise TypeError(
+                "borrow() got unexpected keyword arguments '%s'" %
+                "', '".join(amounts.keys() - self._capacity.keys())
+            )
+        if any(value < self._zero for value in amounts.values()):
+            raise ValueError('cannot borrow negative amounts')
+        if not self._capacity >= amounts:
+            raise ValueError('cannot borrow beyond capacity')
+        return BorrowedResources(self, amounts)
