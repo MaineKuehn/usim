@@ -8,6 +8,19 @@ from ..utility import via_usim
 
 class TestConserveResources:
     @via_usim
+    async def test_misuse(self):
+        resources = ConservedResources(a=10, b=10)
+        with pytest.raises(ValueError):
+            async with resources.borrow(a=-1, b=-1):
+                pass
+        with pytest.raises(ValueError):
+            async with resources.borrow(a=-1):
+                pass
+        with pytest.raises(ValueError):
+            async with resources.borrow(b=-1):
+                pass
+
+    @via_usim
     async def test_borrow(self):
         resources = ConservedResources(a=10, b=10)
         async with resources.borrow(a=5, b=5):
@@ -18,6 +31,22 @@ class TestConserveResources:
             assert True
         async with resources.borrow(a=7, b=7):
             assert True
+        async with resources.borrow(a=10, b=10):
+            assert True
+
+    @via_usim
+    async def test_nested_borrow(self):
+        resources = ConservedResources(a=10, b=10)
+        async with resources.borrow(a=5, b=5):
+            async with resources.borrow(a=5, b=5):
+                assert True
+            async with resources.borrow(a=5):
+                assert True
+            async with resources.borrow(b=5):
+                assert True
+        async with resources.borrow(a=7, b=7):
+            async with resources.borrow(a=3, b=3):
+                assert True
         async with resources.borrow(a=10, b=10):
             assert True
 
