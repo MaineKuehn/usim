@@ -44,8 +44,11 @@ class NamedVolume(Dict[str, T]):
     def __ge__(self, other: 'Dict[str, T]') -> bool:
         return all(self[key] >= value for key, value in other.items())
 
-    def __lt__(self, other: 'Dict[str, T]') -> bool:
-        return all(self[key] < value for key, value in other.items())
+    def __gt__(self, other: 'Dict[str, T]') -> bool:
+        return all(self[key] > value for key, value in other.items())
+
+    def __le__(self, other: 'Dict[str, T]') -> bool:
+        return all(self[key] <= value for key, value in other.items())
 
 
 class BorrowedResources(Generic[T]):
@@ -98,10 +101,11 @@ class ConservedResources(Generic[T]):
             raise TypeError(
                 '%s requires at least 1 keyword-only argument' % self.__class__.__name__
             )
-        self._zero = __zero__ if __zero__ is not None else\
+        __zero__ = __zero__ if __zero__ is not None else\
             type(next(iter(capacity.values())))()  # bare type invocation must be zero
+        self._zero = NamedVolume(dict.fromkeys(capacity,__zero__))
         self._capacity = NamedVolume(capacity)
-        if any(value <= self._zero for value in capacity.values()):
+        if not self._capacity > self._zero:
             raise ValueError('capacities must be greater than zero')
         self.__available__ = Tracked(NamedVolume(capacity.copy()))
         self._verify_arguments = _kwarg_validator('borrow', arguments=capacity.keys())
@@ -122,7 +126,7 @@ class ConservedResources(Generic[T]):
         :return:
         """
         self._verify_arguments(**amounts)
-        if any(value < self._zero for value in amounts.values()):
+        if not self._zero <= amounts:
             raise ValueError('cannot borrow negative amounts')
         if not self._capacity >= amounts:
             raise ValueError('cannot borrow beyond capacity')
