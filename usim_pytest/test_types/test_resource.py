@@ -9,6 +9,10 @@ from ..utility import via_usim
 class TestConserveResources:
     @via_usim
     async def test_misuse(self):
+        with pytest.raises(ValueError):
+            ConservedResources(a=10, b=-10)
+        with pytest.raises(TypeError):
+            ConservedResources()
         resources = ConservedResources(a=10, b=10)
         with pytest.raises(ValueError):
             async with resources.borrow(a=-1, b=-1):
