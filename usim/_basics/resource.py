@@ -1,4 +1,4 @@
-from typing import TypeVar, Dict, Iterable, Generic, Optional
+from typing import TypeVar, Dict, Iterable, Generic, Optional, Callable
 
 from .._core.loop import __LOOP_STATE__
 from .tracked import Tracked
@@ -7,16 +7,23 @@ from .tracked import Tracked
 T = TypeVar('T')
 
 
-def _kwarg_name_check(names: Iterable[str], allow_missing=True):
+def _kwarg_validator(name, arguments: Iterable[str]) -> Callable:
+    """
+    Create a validator for a function taking keyword ``arguments``
+
+    :param name: name to use when reporting a mismatch
+    :param arguments: names of arguments the function may receive
+    """
+    assert arguments
     namespace = {}
-    if allow_missing:
-        exec("""def signature(*, %s=0):...""" % '=0, '.join(names), namespace)
-    else:
-        exec("""def signature(*, %s):...""" % ', '.join(names), namespace)
-    return namespace['signature']
+    exec("""def %s(*, %s=None):...""" % (
+        name,
+        '=None, '.join(arguments)
+    ), namespace)
+    return namespace[name]
 
 
-class Resources(Dict[str, T]):
+class NamedVolume(Dict[str, T]):
     """
     Mapping that supports element-wise operations
 
@@ -93,33 +100,28 @@ class ConservedResources(Generic[T]):
             )
         self._zero = __zero__ if __zero__ is not None else\
             type(next(iter(capacity.values())))()  # bare type invocation must be zero
-        self._capacity = Resources(capacity)
+        self._capacity = NamedVolume(capacity)
         if any(value <= self._zero for value in capacity.values()):
             raise ValueError('capacities must be greater than zero')
-        self.__available__ = Tracked(Resources(capacity.copy()))
-        self._verify_names = _kwarg_name_check(capacity.keys())
+        self.__available__ = Tracked(NamedVolume(capacity.copy()))
+        self._verify_arguments = _kwarg_validator('borrow', arguments=capacity.keys())
 
     async def __insert_resources__(self, amounts: Dict[str, T]):
-        new_levels = self.__available__.value + Resources(amounts)
+        new_levels = self.__available__.value + NamedVolume(amounts)
         await self.__available__.set(new_levels)
 
     async def __remove_resources__(self, amounts: Dict[str, T]):
-        new_levels = self.__available__.value - Resources(amounts)
+        new_levels = self.__available__.value - NamedVolume(amounts)
         await self.__available__.set(new_levels)
 
     def borrow(self, **amounts: T) -> BorrowedResources[T]:
         """
-        Temporarily borrow resources
+        Temporarily borrow resources for a given context
 
         :param amounts:
         :return:
         """
-        self._verify_names(**amounts)
-        if amounts.keys() - self._capacity.keys():
-            raise TypeError(
-                "borrow() got unexpected keyword arguments '%s'" %
-                "', '".join(amounts.keys() - self._capacity.keys())
-            )
+        self._verify_arguments(**amounts)
         if any(value < self._zero for value in amounts.values()):
             raise ValueError('cannot borrow negative amounts')
         if not self._capacity >= amounts:
