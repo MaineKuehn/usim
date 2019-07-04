@@ -103,7 +103,7 @@ class ConservedResources(Generic[T]):
             )
         __zero__ = __zero__ if __zero__ is not None else\
             type(next(iter(capacity.values())))()  # bare type invocation must be zero
-        self._zero = NamedVolume(dict.fromkeys(capacity,__zero__))
+        self._zero = NamedVolume(dict.fromkeys(capacity, __zero__))
         self._capacity = NamedVolume(capacity)
         if not self._capacity > self._zero:
             raise ValueError('capacities must be greater than zero')
