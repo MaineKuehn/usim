@@ -11,8 +11,8 @@ env:
   - USIM_WAITQUEUE="SD"
   - USIM_WAITQUEUE="CY"
 before_script:
-  - pip install pip --upgrade
-  - python3 -m pip list
+  - python -m pip install pip --upgrade
+  - python -m pip list
   - export PYTHONHASHSEED=${PYTHONHASHSEED:-${RANDOM}}
   - echo "export PYTHONHASHSEED=${PYTHONHASHSEED}"
   - pip install .[contrib]
