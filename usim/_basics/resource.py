@@ -171,7 +171,9 @@ class Resources(BaseResources[T]):
         self._verify_arguments(**amounts)
         if not self._zero <= amounts:
             raise ValueError('cannot increase by negative amounts')
-        await self.__available__.set(NamedVolume(amounts))
+        new_levels = self.__available__.value.copy()
+        new_levels.update(amounts)
+        await self.__available__.set(NamedVolume(new_levels))
 
     async def increase(self, **amounts: T):
         self._verify_arguments(**amounts)
