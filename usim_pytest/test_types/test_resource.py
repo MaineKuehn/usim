@@ -6,7 +6,7 @@ from usim import Scope, time, until
 from usim.basics import Resources, Capacity
 from usim._basics.resource import BaseResources
 
-from ..utility import via_usim
+from ..utility import via_usim, assertion_mode
 
 
 class BaseResourceCase:
@@ -14,18 +14,22 @@ class BaseResourceCase:
 
     @via_usim
     async def test_misuse(self):
-        with pytest.raises(ValueError):
-            self.resource_type(a=10, b=-10)
         with pytest.raises(TypeError):
             self.resource_type()
+
+    @assertion_mode
+    @via_usim
+    async def test_debug_misuse(self):
+        with pytest.raises(AssertionError):
+            self.resource_type(a=10, b=-10)
         resources = Capacity(a=10, b=10)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(a=-1, b=-1):
                 pass
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(a=-1):
                 pass
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(b=-1):
                 pass
 
@@ -97,22 +101,23 @@ class BaseResourceCase:
 class TestCapacity(BaseResourceCase):
     resource_type = Capacity
 
+    @assertion_mode
     @via_usim
     async def test_borrow_exceed(self):
         resources = Capacity(a=10, b=10)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(a=11, b=11):
                 pass
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(a=11, b=10):
                 pass
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(a=10, b=11):
                 pass
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(a=11):
                 pass
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             async with resources.borrow(b=11):
                 pass
 
@@ -132,14 +137,15 @@ class TestResources(BaseResourceCase):
         async with resources.borrow(a=40, b=40):
             assert True
 
+    @assertion_mode
     @via_usim
     async def test_increase_misuse(self):
         resources = Resources(a=10, b=10)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.increase(a=-1, b=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.increase(a=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.increase(b=-1)
 
     @via_usim
@@ -158,17 +164,18 @@ class TestResources(BaseResourceCase):
                 assert False
         assert time == 20
 
+    @assertion_mode
     @via_usim
     async def test_decrease_misuse(self):
         resources = Resources(a=10, b=10)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.decrease(a=-1, b=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.decrease(a=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.decrease(b=-1)
         # decrease below zero
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.decrease(a=20, b=20)
 
     @via_usim
@@ -184,12 +191,13 @@ class TestResources(BaseResourceCase):
         async with resources.borrow(a=30, b=30):
             assert True
 
+    @assertion_mode
     @via_usim
     async def test_set_misuse(self):
         resources = Resources(a=10, b=10)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.set(a=-1, b=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.set(a=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             await resources.set(b=-1)

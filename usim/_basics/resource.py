@@ -76,7 +76,7 @@ class BaseResources(Generic[T]):
     Internal base class for resource types
     """
     def __init__(self, __zero__: Optional[T] = None, **capacity: T):
-        if not capacity:
+        if not capacity:  # Note: this should be a type-error not assert for consistency
             raise TypeError(
                 '%s requires at least 1 keyword-only argument' % self.__class__.__name__
             )
@@ -84,8 +84,8 @@ class BaseResources(Generic[T]):
             type(next(iter(capacity.values())))()  # bare type invocation must be zero
         self._zero = NamedVolume(dict.fromkeys(capacity, __zero__))
         self.__available__ = Tracked(NamedVolume(capacity))
-        if not self.__available__ > self._zero:
-            raise ValueError('initial capacities must be greater than zero')
+        assert self.__available__ > self._zero,\
+            'initial capacities must be greater than zero'
         self._verify_arguments = _kwarg_validator('borrow', arguments=capacity.keys())
 
     async def __insert_resources__(self, amounts: Dict[str, T]):
@@ -104,8 +104,8 @@ class BaseResources(Generic[T]):
         :return:
         """
         self._verify_arguments(**amounts)
-        if not self._zero <= amounts:
-            raise ValueError('cannot borrow negative amounts')
+        assert self._zero <= amounts,\
+            'cannot borrow negative amounts'
         return BorrowedResources(self, amounts)
 
 
@@ -137,8 +137,8 @@ class Capacity(BaseResources[T]):
 
     def borrow(self, **amounts: T) -> BorrowedResources[T]:
         borrowing = super().borrow(**amounts)
-        if not self._capacity >= amounts:
-            raise ValueError('cannot borrow beyond capacity')
+        assert self._capacity >= amounts,\
+            'cannot borrow beyond capacity'
         return borrowing
 
 
@@ -169,22 +169,22 @@ class Resources(BaseResources[T]):
     """
     async def set(self, **amounts: T):
         self._verify_arguments(**amounts)
-        if not self._zero <= amounts:
-            raise ValueError('cannot increase by negative amounts')
+        assert self._zero <= amounts,\
+            'cannot increase by negative amounts'
         new_levels = self.__available__.value.copy()
         new_levels.update(amounts)
         await self.__available__.set(NamedVolume(new_levels))
 
     async def increase(self, **amounts: T):
         self._verify_arguments(**amounts)
-        if not self._zero <= amounts:
-            raise ValueError('cannot increase by negative amounts')
+        assert self._zero <= amounts,\
+            'cannot increase by negative amounts'
         await self.__insert_resources__(amounts)
 
     async def decrease(self, **amounts: T):
         self._verify_arguments(**amounts)
-        if not self._zero <= amounts:
-            raise ValueError('cannot decrease by negative amounts')
-        if not self._zero <= (self.__available__.value - NamedVolume(amounts)):
-            raise ValueError('cannot decrease below zero')
+        assert self._zero <= amounts,\
+            'cannot decrease by negative amounts'
+        assert self._zero <= (self.__available__.value - NamedVolume(amounts)),\
+            'cannot decrease below zero'
         await self.__remove_resources__(amounts)
