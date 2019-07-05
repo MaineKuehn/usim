@@ -52,7 +52,7 @@ class NamedVolume(Dict[str, T]):
 
 
 class BorrowedResources(Generic[T]):
-    def __init__(self, resources: 'ConservedResources', amounts: Dict[str, T]):
+    def __init__(self, resources: 'BaseResources', amounts: Dict[str, T]):
         self._resources = resources
         self._requested = amounts
 
@@ -71,30 +71,9 @@ class BorrowedResources(Generic[T]):
             await self._resources.__insert_resources__(self._requested)
 
 
-class ConservedResources(Generic[T]):
+class BaseResources(Generic[T]):
     """
-    Fixed supply of named resources which can be temporarily borrowed
-
-    The resources and their maximum capacity are defined
-    when the resource supply is created.
-    Afterwards, it is only possible to temporarily :py:meth:`borrow`
-    resources:
-
-    .. code:: python3
-
-        # create a limited supply of resources
-        resources = ConservedResources(cores=8, memory=16000)
-
-        # temporarily remove resources
-        async with resources.borrow(cores=2, money=4000):
-            await computation
-
-    Individual resources are assumed to be indistinguishable,
-    i.e. there is merely an *amount* of each.
-    As a result, there is no order imposed for borrowing and returning
-    resources.
-    Resources are borrowed as soon as there are enough available,
-    and they are returned without regard to other borrowings.
+    Internal base class for resource types
     """
     def __init__(self, __zero__: Optional[T] = None, **capacity: T):
         if not capacity:
@@ -104,10 +83,9 @@ class ConservedResources(Generic[T]):
         __zero__ = __zero__ if __zero__ is not None else\
             type(next(iter(capacity.values())))()  # bare type invocation must be zero
         self._zero = NamedVolume(dict.fromkeys(capacity, __zero__))
-        self._capacity = NamedVolume(capacity)
-        if not self._capacity > self._zero:
-            raise ValueError('capacities must be greater than zero')
-        self.__available__ = Tracked(NamedVolume(capacity.copy()))
+        self.__available__ = Tracked(NamedVolume(capacity))
+        if not self.__available__ > self._zero:
+            raise ValueError('initial capacities must be greater than zero')
         self._verify_arguments = _kwarg_validator('borrow', arguments=capacity.keys())
 
     async def __insert_resources__(self, amounts: Dict[str, T]):
@@ -128,6 +106,40 @@ class ConservedResources(Generic[T]):
         self._verify_arguments(**amounts)
         if not self._zero <= amounts:
             raise ValueError('cannot borrow negative amounts')
+        return BorrowedResources(self, amounts)
+
+
+class Resources(BaseResources[T]):
+    """
+    Fixed supply of named resources which can be temporarily borrowed
+
+    The resources and their maximum capacity are defined
+    when the resource supply is created.
+    Afterwards, it is only possible to temporarily :py:meth:`borrow`
+    resources:
+
+    .. code:: python3
+
+        # create a limited supply of resources
+        resources = Resources(cores=8, memory=16000)
+
+        # temporarily remove resources
+        async with resources.borrow(cores=2, money=4000):
+            await computation
+
+    Individual resources are assumed to be indistinguishable,
+    i.e. there is merely an *amount* of each.
+    As a result, there is no order imposed for borrowing and returning
+    resources.
+    Resources are borrowed as soon as there are enough available,
+    and they are returned without regard to other borrowings.
+    """
+    def __init__(self, __zero__: Optional[T] = None, **capacity: T):
+        super().__init__(__zero__, **capacity)
+        self._capacity = NamedVolume(capacity)
+
+    def borrow(self, **amounts: T) -> BorrowedResources[T]:
+        borrowing = super().borrow(**amounts)
         if not self._capacity >= amounts:
             raise ValueError('cannot borrow beyond capacity')
-        return BorrowedResources(self, amounts)
+        return borrowing

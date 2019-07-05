@@ -2,7 +2,7 @@ import pytest
 import math
 
 from usim import Scope, time
-from usim.basics import ConservedResources
+from usim.basics import Resources
 
 from ..utility import via_usim
 
@@ -11,10 +11,10 @@ class TestConserveResources:
     @via_usim
     async def test_misuse(self):
         with pytest.raises(ValueError):
-            ConservedResources(a=10, b=-10)
+            Resources(a=10, b=-10)
         with pytest.raises(TypeError):
-            ConservedResources()
-        resources = ConservedResources(a=10, b=10)
+            Resources()
+        resources = Resources(a=10, b=10)
         with pytest.raises(ValueError):
             async with resources.borrow(a=-1, b=-1):
                 pass
@@ -27,7 +27,7 @@ class TestConserveResources:
 
     @via_usim
     async def test_borrow(self):
-        resources = ConservedResources(a=10, b=10)
+        resources = Resources(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             assert True
         async with resources.borrow(a=5):
@@ -41,7 +41,7 @@ class TestConserveResources:
 
     @via_usim
     async def test_nested_borrow(self):
-        resources = ConservedResources(a=10, b=10)
+        resources = Resources(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             async with resources.borrow(a=5, b=5):
                 assert True
@@ -57,7 +57,7 @@ class TestConserveResources:
 
     @via_usim
     async def test_borrow_exceed(self):
-        resources = ConservedResources(a=10, b=10)
+        resources = Resources(a=10, b=10)
         with pytest.raises(ValueError):
             async with resources.borrow(a=11, b=11):
                 pass
@@ -76,7 +76,7 @@ class TestConserveResources:
 
     @via_usim
     async def test_congested(self):
-        resources = ConservedResources(a=10, b=10)
+        resources = Resources(a=10, b=10)
 
         async def borrow(duration, **amounts):
             async with resources.borrow(**amounts):
@@ -92,7 +92,7 @@ class TestConserveResources:
     @via_usim
     async def test_release(self):
         """Release resources from cancelled tasks"""
-        resources = ConservedResources(a=10, b=10)
+        resources = Resources(a=10, b=10)
 
         async def block(**amounts):
             async with resources.borrow(**amounts):
