@@ -183,4 +183,6 @@ class Resources(BaseResources[T]):
         self._verify_arguments(**amounts)
         if not self._zero <= amounts:
             raise ValueError('cannot decrease by negative amounts')
+        if not self._zero <= (self.__available__.value - NamedVolume(amounts)):
+            raise ValueError('cannot decrease below zero')
         await self.__remove_resources__(amounts)
