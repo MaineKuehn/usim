@@ -2,7 +2,7 @@ import pytest
 import math
 from typing import Type
 
-from usim import Scope, time
+from usim import Scope, time, until
 from usim.basics import Resources, Capacity
 from usim._basics.resource import BaseResources
 
@@ -119,3 +119,77 @@ class TestCapacity(BaseResourceCase):
 
 class TestResources(BaseResourceCase):
     resource_type = Resources
+
+    @via_usim
+    async def test_increase(self):
+        resources = Resources(a=10, b=10)
+        async with resources.borrow(a=10, b=10):
+            await resources.increase(a=10, b=10)
+            async with resources.borrow(a=10, b=10):
+                await resources.increase(a=20, b=20)
+                async with resources.borrow(a=20, b=20):
+                    assert True
+        async with resources.borrow(a=40, b=40):
+            assert True
+
+    @via_usim
+    async def test_increase_misuse(self):
+        resources = Resources(a=10, b=10)
+        with pytest.raises(ValueError):
+            await resources.increase(a=-1, b=-1)
+        with pytest.raises(ValueError):
+            await resources.increase(a=-1)
+        with pytest.raises(ValueError):
+            await resources.increase(b=-1)
+
+    @via_usim
+    async def test_decrease(self):
+        resources = Resources(a=40, b=40)
+        async with resources.borrow(a=20, b=20):
+            await resources.decrease(a=10, b=10)
+            async with until(time == 10):
+                async with resources.borrow(a=20, b=20):
+                    assert False
+            assert time == 10
+        async with resources.borrow(a=30, b=30):
+            assert True
+        async with until(time == 20):
+            async with resources.borrow(a=40, b=40):
+                assert False
+        assert time == 20
+
+    @via_usim
+    async def test_decrease_misuse(self):
+        resources = Resources(a=10, b=10)
+        with pytest.raises(ValueError):
+            await resources.decrease(a=-1, b=-1)
+        with pytest.raises(ValueError):
+            await resources.decrease(a=-1)
+        with pytest.raises(ValueError):
+            await resources.decrease(b=-1)
+        # decrease below zero
+        with pytest.raises(ValueError):
+            await resources.decrease(a=20, b=20)
+
+    @via_usim
+    async def test_set(self):
+        resources = Resources(a=10, b=10)
+        await resources.set(a=20, b=20)
+        async with resources.borrow(a=20, b=20):
+            assert True
+        await resources.set(a=30)
+        async with resources.borrow(a=30, b=20):
+            assert True
+        await resources.set(b=30)
+        async with resources.borrow(a=30, b=30):
+            assert True
+
+    @via_usim
+    async def test_set_misuse(self):
+        resources = Resources(a=10, b=10)
+        with pytest.raises(ValueError):
+            await resources.set(a=-1, b=-1)
+        with pytest.raises(ValueError):
+            await resources.set(a=-1)
+        with pytest.raises(ValueError):
+            await resources.set(b=-1)
