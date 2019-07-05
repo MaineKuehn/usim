@@ -109,8 +109,8 @@ class BaseResources(Generic[T]):
         return BorrowedResources(self, amounts)
 
 
-class Resources(BaseResources[T]):
-    """
+class Capacity(BaseResources[T]):
+    r"""
     Fixed supply of named resources which can be temporarily borrowed
 
     The resources and their maximum capacity are defined
@@ -121,18 +121,15 @@ class Resources(BaseResources[T]):
     .. code:: python3
 
         # create a limited supply of resources
-        resources = Resources(cores=8, memory=16000)
+        resources = Capacity(cores=8, memory=16000)
 
         # temporarily remove resources
         async with resources.borrow(cores=2, money=4000):
             await computation
 
-    Individual resources are assumed to be indistinguishable,
-    i.e. there is merely an *amount* of each.
-    As a result, there is no order imposed for borrowing and returning
-    resources.
-    Resources are borrowed as soon as there are enough available,
-    and they are returned without regard to other borrowings.
+    A :py:class:`~.Capacity` guarantees that its resources are conserved and
+    cannot be leaked. Once resources are :py:meth:`~.borrow`\ ed, they can
+    always be returned promptly.
     """
     def __init__(self, __zero__: Optional[T] = None, **capacity: T):
         super().__init__(__zero__, **capacity)
@@ -143,3 +140,47 @@ class Resources(BaseResources[T]):
         if not self._capacity >= amounts:
             raise ValueError('cannot borrow beyond capacity')
         return borrowing
+
+
+class Resources(BaseResources[T]):
+    r"""
+    Supply of named resources which can be temporarily borrowed or produced/consumed
+
+    The resources and their initial capacity are defined
+    when the resource supply is created.
+    Afterwards, the level of resources can be permanently :py:meth:`~.increase`\ d or
+    :py:meth:`~.decrease`\ d as well as temporarily decreased by :py:meth:`borrow`\ ing:
+
+    .. code:: python3
+
+        # create an open supply of resources
+        resources = Resources(cores=8, memory=4000)
+
+        # increase the resource supply available
+        resources.increase(memory=2000)
+
+        # temporarily remove resources
+        async with resources.borrow(cores=2, memory=6000):
+            await computation
+
+        # decrease the resource supply available
+        resources.decrease(cores=4)
+
+    """
+    async def set(self, **amounts: T):
+        self._verify_arguments(**amounts)
+        if not self._zero <= amounts:
+            raise ValueError('cannot increase by negative amounts')
+        await self.__available__.set(NamedVolume(amounts))
+
+    async def increase(self, **amounts: T):
+        self._verify_arguments(**amounts)
+        if not self._zero <= amounts:
+            raise ValueError('cannot increase by negative amounts')
+        await self.__insert_resources__(amounts)
+
+    async def decrease(self, **amounts: T):
+        self._verify_arguments(**amounts)
+        if not self._zero <= amounts:
+            raise ValueError('cannot decrease by negative amounts')
+        await self.__remove_resources__(amounts)
