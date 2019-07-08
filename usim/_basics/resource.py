@@ -52,6 +52,12 @@ class NamedVolume(Dict[str, T]):
 
 
 class BorrowedResources(Generic[T]):
+    """
+    Fixed supply of named resources temporarily taken from a resource supply
+
+    :param resources: The resources to borrow from
+    :param amounts: resource levels to borrow
+    """
     def __init__(self, resources: 'BaseResources', amounts: Dict[str, T]):
         self._resources = resources
         self._requested = amounts
@@ -100,8 +106,8 @@ class BaseResources(Generic[T]):
         """
         Temporarily borrow resources for a given context
 
-        :param amounts:
-        :return:
+        :param amounts: resource levels to borrow
+        :return: async context to borrow resources
         """
         self._verify_arguments(**amounts)
         assert self._zero <= amounts,\
@@ -146,7 +152,7 @@ class Resources(BaseResources[T]):
     r"""
     Supply of named resources which can be temporarily borrowed or produced/consumed
 
-    The resources and their initial capacity are defined
+    The resources and their initial levels are defined
     when the resource supply is created.
     Afterwards, the level of resources can be permanently :py:meth:`~.increase`\ d or
     :py:meth:`~.decrease`\ d as well as temporarily decreased by :py:meth:`borrow`\ ing:
@@ -166,8 +172,22 @@ class Resources(BaseResources[T]):
         # decrease the resource supply available
         resources.decrease(cores=4)
 
+    A :py:class:`~.Capacity` guarantees that is always possible
+    to increase the level of available resources.
+    Once resources are :py:meth:`~.borrow`\ ed, they can
+    always be returned promptly.
     """
     async def set(self, **amounts: T):
+        """
+        Set the level of resources
+
+        :param amounts: resource levels to set
+
+        Only levels of resources that are already part of these
+        :py:class:`~.Resources` can be set. Levels cannot be set
+        below zero. If a resource is not specified, its level remains
+        unchanged.
+        """
         self._verify_arguments(**amounts)
         assert self._zero <= amounts,\
             'cannot increase by negative amounts'
@@ -176,12 +196,32 @@ class Resources(BaseResources[T]):
         await self.__available__.set(NamedVolume(new_levels))
 
     async def increase(self, **amounts: T):
+        """
+        Increase the level of resources
+
+        :param amounts: resource levels to increase
+
+        Only levels of resources that are already part of these
+        :py:class:`~.Resources` can be increased. Levels cannot be increased
+        by negative amounts. If a resource is not specified, its level remains
+        unchanged.
+        """
         self._verify_arguments(**amounts)
         assert self._zero <= amounts,\
             'cannot increase by negative amounts'
         await self.__insert_resources__(amounts)
 
     async def decrease(self, **amounts: T):
+        """
+        Decrease the level of resources
+
+        :param amounts: resource levels to decrease
+
+        Only levels of resources that are already part of these
+        :py:class:`~.Resources` can be decreased. Levels cannot be decreased
+        by negative amounts or below zero. If a resource is not specified, its
+        level remains unchanged.
+        """
         self._verify_arguments(**amounts)
         assert self._zero <= amounts,\
             'cannot decrease by negative amounts'
