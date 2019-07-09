@@ -64,6 +64,22 @@ class BaseResourceCase:
             assert True
 
     @via_usim
+    async def test_recursive_borrow(self):
+        resources = Capacity(a=10, b=10)
+        async with resources.borrow(a=5, b=5) as sub_resource:
+            async with sub_resource.borrow(a=5, b=5):
+                assert True
+            async with sub_resource.borrow(a=5):
+                assert True
+            async with sub_resource.borrow(b=5):
+                assert True
+        async with resources.borrow(a=7, b=7) as sub_resource:
+            async with sub_resource.borrow(a=3, b=3):
+                assert True
+        async with resources.borrow(a=10, b=10):
+            assert True
+
+    @via_usim
     async def test_congested(self):
         resources = Capacity(a=10, b=10)
 

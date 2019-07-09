@@ -24,32 +24,6 @@ def _kwarg_validator(name, arguments: Iterable[str]) -> Callable:
     return namespace[name]
 
 
-class BorrowedResources(Generic[T]):
-    """
-    Fixed supply of named resources temporarily taken from a resource supply
-
-    :param resources: The resources to borrow from
-    :param amounts: resource levels to borrow
-    """
-    def __init__(self, resources: 'BaseResources', amounts: ResourceLevels):
-        self._resources = resources
-        self._requested = amounts
-
-    async def __aenter__(self):
-        await (self._resources._available >= self._requested)
-        await self._resources.__remove_resources__(self._requested)
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is GeneratorExit:
-            # we are killed forcefully and cannot perform async operations
-            # dispatch a new activity to release our resources eventually
-            __LOOP_STATE__.LOOP.schedule(
-                self._resources.__insert_resources__(self._requested)
-            )
-        else:
-            await self._resources.__insert_resources__(self._requested)
-
-
 class BaseResources(Generic[T]):
     """
     Internal base class for resource types
@@ -79,7 +53,7 @@ class BaseResources(Generic[T]):
         new_levels = self._available.value - amounts
         await self._available.set(new_levels)
 
-    def borrow(self, **amounts: T) -> BorrowedResources[T]:
+    def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
         """
         Temporarily borrow resources for a given context
 
@@ -118,11 +92,43 @@ class Capacity(BaseResources[T]):
         super().__init__(__zero__, **capacity)
         self._capacity = self._levels_type(**capacity)
 
-    def borrow(self, **amounts: T) -> BorrowedResources[T]:
+    def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
         borrowing = super().borrow(**amounts)
         assert self._capacity >= self._levels_type(**amounts),\
             'cannot borrow beyond capacity'
         return borrowing
+
+
+class BorrowedResources(Capacity[T]):
+    """
+    Fixed supply of named resources temporarily taken from another resource supply
+
+    :param resources: The resources to borrow from
+    :param amounts: resource levels to borrow
+    """
+    @property
+    def _levels_type(self):
+        return self._resources._levels_type
+
+    def __init__(self, resources: 'BaseResources', capacity: ResourceLevels):
+        self._resources = resources
+        self._capacity = capacity
+        self._available = Tracked(capacity)
+
+    async def __aenter__(self):
+        await (self._resources._available >= self._capacity)
+        await self._resources.__remove_resources__(self._capacity)
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is GeneratorExit:
+            # we are killed forcefully and cannot perform async operations
+            # dispatch a new activity to release our resources eventually
+            __LOOP_STATE__.LOOP.schedule(
+                self._resources.__insert_resources__(self._capacity)
+            )
+        else:
+            await self._resources.__insert_resources__(self._capacity)
 
 
 class Resources(BaseResources[T]):
