@@ -8,22 +8,6 @@ from .tracked import Tracked
 T = TypeVar('T')
 
 
-def _kwarg_validator(name, arguments: Iterable[str]) -> Callable:
-    """
-    Create a validator for a function taking keyword ``arguments``
-
-    :param name: name to use when reporting a mismatch
-    :param arguments: names of arguments the function may receive
-    """
-    assert arguments
-    namespace = {}
-    exec("""def %s(*, %s=None):...""" % (
-        name,
-        '=None, '.join(arguments)
-    ), namespace)
-    return namespace[name]
-
-
 class BaseResources(Generic[T]):
     """
     Internal base class for resource types
