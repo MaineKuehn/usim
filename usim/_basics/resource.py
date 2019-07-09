@@ -1,4 +1,4 @@
-from typing import TypeVar, Dict, Iterable, Generic, Optional, Callable
+from typing import TypeVar, Generic, Optional
 
 from .._core.loop import __LOOP_STATE__
 from ._resource_level import __specialise__, ResourceLevels

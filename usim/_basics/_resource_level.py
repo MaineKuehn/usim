@@ -1,48 +1,51 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from weakref import WeakValueDictionary
-from typing import Iterable, Optional, Tuple, Type
+from typing import Iterable, Optional, Tuple, Type, Generic, TypeVar
 
 
-class ResourceLevels(ABC):
+T = TypeVar('T')
+
+
+class ResourceLevels(Generic[T]):
     """Base class for resource levels"""
     __slots__ = ()
     __fields__ = None  # type: Optional[Tuple[str]]
     __specialisation_cache__ = WeakValueDictionary()
     zero = None  # type: ResourceLevels
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: T):
         pass
 
     @abstractmethod
-    def __add__(self, other: 'ResourceLevels') -> 'ResourceLevels':
+    def __add__(self, other: 'ResourceLevels[T]') -> 'ResourceLevels[T]':
         pass
 
     @abstractmethod
-    def __sub__(self, other: 'ResourceLevels') -> 'ResourceLevels':
+    def __sub__(self, other: 'ResourceLevels[T]') -> 'ResourceLevels[T]':
         pass
 
     @abstractmethod
-    def __gt__(self, other: 'ResourceLevels') -> bool:
+    def __gt__(self, other: 'ResourceLevels[T]') -> bool:
         pass
 
     @abstractmethod
-    def __ge__(self, other: 'ResourceLevels') -> bool:
+    def __ge__(self, other: 'ResourceLevels[T]') -> bool:
         pass
 
     @abstractmethod
-    def __le__(self, other: 'ResourceLevels') -> bool:
+    def __le__(self, other: 'ResourceLevels[T]') -> bool:
         pass
 
     @abstractmethod
-    def __lt__(self, other: 'ResourceLevels') -> bool:
+    def __lt__(self, other: 'ResourceLevels[T]') -> bool:
         pass
 
     @abstractmethod
-    def __eq__(self, other: 'ResourceLevels') -> bool:
+    def __eq__(self, other: 'ResourceLevels[T]') -> bool:
         pass
 
     @abstractmethod
-    def __ne__(self, other: 'ResourceLevels') -> bool:
+    def __ne__(self, other: 'ResourceLevels[T]') -> bool:
         pass
 
     def __iter__(self):
@@ -55,11 +58,11 @@ class ResourceLevels(ABC):
             ', '.join(
                 '%s=%s' % (name, getattr(self, name))
                 for name in self.__fields__
-                )
+            )
         )
 
 
-def __specialise__(zero, names: Iterable[str]) -> Type[ResourceLevels]:
+def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
     fields = tuple(sorted(names))
     if not fields:
         return ResourceLevels
@@ -81,7 +84,7 @@ def __specialise__(zero, names: Iterable[str]) -> Type[ResourceLevels]:
         __ge__ = __make_comp__('__ge__', '>=', fields)
         __le__ = __make_comp__('__le__', '<=', fields)
         __lt__ = __make_comp__('__le__', '<', fields)
-        __eq__ = __make_comp__('__le__', '==', fields)
+        __eq__ = __make_comp__('__eq__', '==', fields)
 
         def __ne__(self, other):
             return not self == other
