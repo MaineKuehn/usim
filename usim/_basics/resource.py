@@ -1,6 +1,7 @@
 from typing import TypeVar, Dict, Iterable, Generic, Optional, Callable
 
 from .._core.loop import __LOOP_STATE__
+from ._resource_level import __specialise__, ResourceLevels
 from .tracked import Tracked
 
 
@@ -23,34 +24,6 @@ def _kwarg_validator(name, arguments: Iterable[str]) -> Callable:
     return namespace[name]
 
 
-class NamedVolume(Dict[str, T]):
-    """
-    Mapping that supports element-wise operations
-
-    :warning: This is for internal use only.
-    """
-    def __add__(self, other: 'Dict[str, T]'):
-        return self.__class__(
-            (key, self[key] + other.get(key, 0))
-            for key in self.keys()
-        )
-
-    def __sub__(self, other: 'Dict[str, T]'):
-        return self.__class__(
-            (key, self[key] - other.get(key, 0))
-            for key in self.keys()
-        )
-
-    def __ge__(self, other: 'Dict[str, T]') -> bool:
-        return all(self[key] >= value for key, value in other.items())
-
-    def __gt__(self, other: 'Dict[str, T]') -> bool:
-        return all(self[key] > value for key, value in other.items())
-
-    def __le__(self, other: 'Dict[str, T]') -> bool:
-        return all(self[key] <= value for key, value in other.items())
-
-
 class BorrowedResources(Generic[T]):
     """
     Fixed supply of named resources temporarily taken from a resource supply
@@ -58,12 +31,12 @@ class BorrowedResources(Generic[T]):
     :param resources: The resources to borrow from
     :param amounts: resource levels to borrow
     """
-    def __init__(self, resources: 'BaseResources', amounts: Dict[str, T]):
+    def __init__(self, resources: 'BaseResources', amounts: ResourceLevels):
         self._resources = resources
         self._requested = amounts
 
     async def __aenter__(self):
-        await (self._resources.__available__ >= self._requested)
+        await (self._resources._available >= self._requested)
         await self._resources.__remove_resources__(self._requested)
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -81,6 +54,11 @@ class BaseResources(Generic[T]):
     """
     Internal base class for resource types
     """
+    @property
+    def levels(self) -> ResourceLevels:
+        """Current levels of resources"""
+        return self._available.value
+
     def __init__(self, __zero__: Optional[T] = None, **capacity: T):
         if not capacity:  # Note: this should be a type-error not assert for consistency
             raise TypeError(
@@ -88,19 +66,18 @@ class BaseResources(Generic[T]):
             )
         __zero__ = __zero__ if __zero__ is not None else\
             type(next(iter(capacity.values())))()  # bare type invocation must be zero
-        self._zero = NamedVolume(dict.fromkeys(capacity, __zero__))
-        self.__available__ = Tracked(NamedVolume(capacity))
-        assert self.__available__ > self._zero,\
+        self._levels_type = __specialise__(__zero__, capacity.keys())
+        self._available = Tracked(self._levels_type(**capacity))
+        assert self._available > self._levels_type.zero,\
             'initial capacities must be greater than zero'
-        self._verify_arguments = _kwarg_validator('borrow', arguments=capacity.keys())
 
-    async def __insert_resources__(self, amounts: Dict[str, T]):
-        new_levels = self.__available__.value + NamedVolume(amounts)
-        await self.__available__.set(new_levels)
+    async def __insert_resources__(self, amounts: ResourceLevels):
+        new_levels = self._available.value + amounts
+        await self._available.set(new_levels)
 
-    async def __remove_resources__(self, amounts: Dict[str, T]):
-        new_levels = self.__available__.value - NamedVolume(amounts)
-        await self.__available__.set(new_levels)
+    async def __remove_resources__(self, amounts: ResourceLevels):
+        new_levels = self._available.value - amounts
+        await self._available.set(new_levels)
 
     def borrow(self, **amounts: T) -> BorrowedResources[T]:
         """
@@ -109,10 +86,10 @@ class BaseResources(Generic[T]):
         :param amounts: resource levels to borrow
         :return: async context to borrow resources
         """
-        self._verify_arguments(**amounts)
-        assert self._zero <= amounts,\
+        borrowed_levels = self._levels_type(**amounts)
+        assert self._levels_type.zero <= borrowed_levels,\
             'cannot borrow negative amounts'
-        return BorrowedResources(self, amounts)
+        return BorrowedResources(self, borrowed_levels)
 
 
 class Capacity(BaseResources[T]):
@@ -139,11 +116,11 @@ class Capacity(BaseResources[T]):
     """
     def __init__(self, __zero__: Optional[T] = None, **capacity: T):
         super().__init__(__zero__, **capacity)
-        self._capacity = NamedVolume(capacity)
+        self._capacity = self._levels_type(**capacity)
 
     def borrow(self, **amounts: T) -> BorrowedResources[T]:
         borrowing = super().borrow(**amounts)
-        assert self._capacity >= amounts,\
+        assert self._capacity >= self._levels_type(**amounts),\
             'cannot borrow beyond capacity'
         return borrowing
 
@@ -188,12 +165,11 @@ class Resources(BaseResources[T]):
         below zero. If a resource is not specified, its level remains
         unchanged.
         """
-        self._verify_arguments(**amounts)
-        assert self._zero <= amounts,\
+        assert self._levels_type.zero <= self._levels_type(**amounts),\
             'cannot increase by negative amounts'
-        new_levels = self.__available__.value.copy()
+        new_levels = dict(self._available.value).copy()
         new_levels.update(amounts)
-        await self.__available__.set(NamedVolume(new_levels))
+        await self._available.set(self._levels_type(**new_levels))
 
     async def increase(self, **amounts: T):
         """
@@ -206,10 +182,10 @@ class Resources(BaseResources[T]):
         by negative amounts. If a resource is not specified, its level remains
         unchanged.
         """
-        self._verify_arguments(**amounts)
-        assert self._zero <= amounts,\
+        delta = self._levels_type(**amounts)
+        assert self._levels_type.zero <= delta,\
             'cannot increase by negative amounts'
-        await self.__insert_resources__(amounts)
+        await self.__insert_resources__(delta)
 
     async def decrease(self, **amounts: T):
         """
@@ -222,9 +198,9 @@ class Resources(BaseResources[T]):
         by negative amounts or below zero. If a resource is not specified, its
         level remains unchanged.
         """
-        self._verify_arguments(**amounts)
-        assert self._zero <= amounts,\
+        delta = self._levels_type(**amounts)
+        assert self._levels_type.zero <= delta,\
             'cannot decrease by negative amounts'
-        assert self._zero <= (self.__available__.value - NamedVolume(amounts)),\
+        assert self._levels_type.zero <= (self._available.value - delta),\
             'cannot decrease below zero'
-        await self.__remove_resources__(amounts)
+        await self.__remove_resources__(delta)
