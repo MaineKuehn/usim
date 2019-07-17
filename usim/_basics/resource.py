@@ -55,11 +55,12 @@ class BorrowedResources(BaseResources[T]):
     def __init__(self, resources: 'BaseResources', capacity: ResourceLevels):
         self._resources = resources
         self._capacity = capacity
-        self._available = Tracked(capacity)
+        self._available = Tracked(self._levels_type.zero)
 
     async def __aenter__(self):
         await (self._resources._available >= self._capacity)
         await self._resources.__remove_resources__(self._capacity)
+        await self.__insert_resources__(self._capacity)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -69,8 +70,13 @@ class BorrowedResources(BaseResources[T]):
             __LOOP_STATE__.LOOP.schedule(
                 self._resources.__insert_resources__(self._capacity)
             )
+            __LOOP_STATE__.LOOP.schedule(
+                self.__remove_resources__(self._capacity)
+            )
         else:
             await self._resources.__insert_resources__(self._capacity)
+            await self.__remove_resources__(self._capacity)
+            # TODO: forcefully kill off anyone holding our resources?
 
     def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
         borrowing = super().borrow(**amounts)
