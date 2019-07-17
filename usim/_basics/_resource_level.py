@@ -1,20 +1,26 @@
 from abc import abstractmethod
 from weakref import WeakValueDictionary
-from typing import Iterable, Optional, Tuple, Type, Generic, TypeVar
+from typing import Iterable, Tuple, Type, Generic, TypeVar
 
 
 T = TypeVar('T')
 
 
 class ResourceLevels(Generic[T]):
-    """Base class for resource levels"""
+    """Base class for named resource levels"""
     __slots__ = ()
-    __fields__ = None  # type: Optional[Tuple[str]]
+    __fields__ = ()  # type: Tuple[str]
     __specialisation_cache__ = WeakValueDictionary()
     zero = None  # type: ResourceLevels
 
     def __init__(self, **kwargs: T):
-        pass
+        raise TypeError(
+            'Base class %r cannot be instantiated.' % self.__class__.__name__
+            +
+            'Use %s.%s to declare subtypes with valid resource level names.' % (
+                __specialise__.__module__, __specialise__.__name__
+            )
+        )
 
     @abstractmethod
     def __add__(self, other: 'ResourceLevels[T]') -> 'ResourceLevels[T]':
