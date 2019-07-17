@@ -16,9 +16,14 @@ class BaseResources(Generic[T]):
     _available = None  # type: Tracked[ResourceLevels[T]]
 
     @property
-    def levels(self) -> ResourceLevels:
+    def levels(self) -> ResourceLevels[T]:
         """Current levels of resources"""
         return self._available.value
+
+    @property
+    def resources_type(self) -> Type[ResourceLevels[T]]:
+        """Type of underlying resources"""
+        return self._levels_type
 
     async def __insert_resources__(self, amounts: ResourceLevels):
         new_levels = self._available.value + amounts
@@ -44,9 +49,6 @@ class BaseResources(Generic[T]):
 class BorrowedResources(BaseResources[T]):
     """
     Fixed supply of named resources temporarily taken from another resource supply
-
-    :param resources: The resources to borrow from
-    :param amounts: resource levels to borrow
     """
     @property
     def _levels_type(self):
@@ -85,7 +87,7 @@ class BorrowedResources(BaseResources[T]):
         return borrowing
 
 
-class Capacity(BorrowedResources[T]):
+class Capacities(BorrowedResources[T]):
     r"""
     Fixed supply of named resources which can be temporarily borrowed
 
@@ -97,13 +99,13 @@ class Capacity(BorrowedResources[T]):
     .. code:: python3
 
         # create a limited supply of resources
-        resources = Capacity(cores=8, memory=16000)
+        resources = Capacities(cores=8, memory=16000)
 
         # temporarily remove resources
         async with resources.borrow(cores=2, money=4000):
             await computation
 
-    A :py:class:`~.Capacity` guarantees that its resources are conserved and
+    A :py:class:`~.Capacities` guarantees that its resources are conserved and
     cannot be leaked. Once resources are :py:meth:`~.borrow`\ ed, they can
     always be returned promptly.
     """
@@ -137,7 +139,7 @@ class Resources(BaseResources[T]):
         # decrease the resource supply available
         resources.decrease(cores=4)
 
-    A :py:class:`~.Capacity` guarantees that is always possible
+    A :py:class:`~.Capacities` guarantees that is always possible
     to increase the level of available resources.
     Once resources are :py:meth:`~.borrow`\ ed, they can
     always be returned promptly.

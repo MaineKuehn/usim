@@ -3,7 +3,7 @@ import math
 from typing import Type
 
 from usim import Scope, time, until
-from usim.basics import Resources, Capacity
+from usim.basics import Resources, Capacities
 from usim._basics.resource import BaseResources
 
 from ..utility import via_usim, assertion_mode
@@ -22,7 +22,7 @@ class BaseResourceCase:
     async def test_debug_misuse(self):
         with pytest.raises(AssertionError):
             self.resource_type(a=10, b=-10)
-        resources = Capacity(a=10, b=10)
+        resources = Capacities(a=10, b=10)
         with pytest.raises(AssertionError):
             async with resources.borrow(a=-1, b=-1):
                 pass
@@ -35,7 +35,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_borrow(self):
-        resources = Capacity(a=10, b=10)
+        resources = Capacities(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             assert True
         async with resources.borrow(a=5):
@@ -49,7 +49,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_nested_borrow(self):
-        resources = Capacity(a=10, b=10)
+        resources = Capacities(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             async with resources.borrow(a=5, b=5):
                 assert True
@@ -65,7 +65,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_recursive_borrow(self):
-        resources = Capacity(a=10, b=10)
+        resources = Capacities(a=10, b=10)
         async with resources.borrow(a=5, b=5) as sub_resource:
             async with sub_resource.borrow(a=5, b=5):
                 assert True
@@ -81,7 +81,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_congested(self):
-        resources = Capacity(a=10, b=10)
+        resources = Capacities(a=10, b=10)
 
         async def borrow(duration, **amounts):
             async with resources.borrow(**amounts):
@@ -97,7 +97,7 @@ class BaseResourceCase:
     @via_usim
     async def test_release(self):
         """Release resources from cancelled tasks"""
-        resources = Capacity(a=10, b=10)
+        resources = Capacities(a=10, b=10)
 
         async def block(**amounts):
             async with resources.borrow(**amounts):
@@ -115,12 +115,12 @@ class BaseResourceCase:
 
 
 class TestCapacity(BaseResourceCase):
-    resource_type = Capacity
+    resource_type = Capacities
 
     @assertion_mode
     @via_usim
     async def test_borrow_exceed(self):
-        resources = Capacity(a=10, b=10)
+        resources = Capacities(a=10, b=10)
         with pytest.raises(AssertionError):
             async with resources.borrow(a=11, b=11):
                 pass
