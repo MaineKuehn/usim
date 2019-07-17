@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Optional
+from typing import TypeVar, Generic, Optional, Type
 
 from .._core.loop import __LOOP_STATE__
 from ._resource_level import __specialise__, ResourceLevels
@@ -12,22 +12,13 @@ class BaseResources(Generic[T]):
     """
     Internal base class for resource types
     """
+    _levels_type = None  # type: Type[ResourceLevels[T]]
+    _available = None  # type: Tracked[ResourceLevels[T]]
+
     @property
     def levels(self) -> ResourceLevels:
         """Current levels of resources"""
         return self._available.value
-
-    def __init__(self, __zero__: Optional[T] = None, **capacity: T):
-        if not capacity:  # Note: this should be a type-error not assert for consistency
-            raise TypeError(
-                '%s requires at least 1 keyword-only argument' % self.__class__.__name__
-            )
-        __zero__ = __zero__ if __zero__ is not None else\
-            type(next(iter(capacity.values())))()  # bare type invocation must be zero
-        self._levels_type = __specialise__(__zero__, capacity.keys())
-        self._available = Tracked(self._levels_type(**capacity))
-        assert self._available > self._levels_type.zero,\
-            'initial capacities must be greater than zero'
 
     async def __insert_resources__(self, amounts: ResourceLevels):
         new_levels = self._available.value + amounts
@@ -50,40 +41,7 @@ class BaseResources(Generic[T]):
         return BorrowedResources(self, borrowed_levels)
 
 
-class Capacity(BaseResources[T]):
-    r"""
-    Fixed supply of named resources which can be temporarily borrowed
-
-    The resources and their maximum capacity are defined
-    when the resource supply is created.
-    Afterwards, it is only possible to temporarily :py:meth:`borrow`
-    resources:
-
-    .. code:: python3
-
-        # create a limited supply of resources
-        resources = Capacity(cores=8, memory=16000)
-
-        # temporarily remove resources
-        async with resources.borrow(cores=2, money=4000):
-            await computation
-
-    A :py:class:`~.Capacity` guarantees that its resources are conserved and
-    cannot be leaked. Once resources are :py:meth:`~.borrow`\ ed, they can
-    always be returned promptly.
-    """
-    def __init__(self, __zero__: Optional[T] = None, **capacity: T):
-        super().__init__(__zero__, **capacity)
-        self._capacity = self._levels_type(**capacity)
-
-    def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
-        borrowing = super().borrow(**amounts)
-        assert self._capacity >= self._levels_type(**amounts),\
-            'cannot borrow beyond capacity'
-        return borrowing
-
-
-class BorrowedResources(Capacity[T]):
+class BorrowedResources(BaseResources[T]):
     """
     Fixed supply of named resources temporarily taken from another resource supply
 
@@ -113,6 +71,46 @@ class BorrowedResources(Capacity[T]):
             )
         else:
             await self._resources.__insert_resources__(self._capacity)
+
+    def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
+        borrowing = super().borrow(**amounts)
+        assert self._capacity >= self._levels_type(**amounts),\
+            'cannot borrow beyond capacity'
+        return borrowing
+
+
+class Capacity(BorrowedResources[T]):
+    r"""
+    Fixed supply of named resources which can be temporarily borrowed
+
+    The resources and their maximum capacity are defined
+    when the resource supply is created.
+    Afterwards, it is only possible to temporarily :py:meth:`borrow`
+    resources:
+
+    .. code:: python3
+
+        # create a limited supply of resources
+        resources = Capacity(cores=8, memory=16000)
+
+        # temporarily remove resources
+        async with resources.borrow(cores=2, money=4000):
+            await computation
+
+    A :py:class:`~.Capacity` guarantees that its resources are conserved and
+    cannot be leaked. Once resources are :py:meth:`~.borrow`\ ed, they can
+    always be returned promptly.
+    """
+    def __init__(self, __zero__: Optional[T] = None, **capacity: T):
+        resources = Resources(__zero__, **capacity)
+        super().__init__(resources, resources.levels)
+        self._available = Tracked(resources.levels)
+
+    def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
+        borrowing = super().borrow(**amounts)
+        assert self._capacity >= self._levels_type(**amounts),\
+            'cannot borrow beyond capacity'
+        return borrowing
 
 
 class Resources(BaseResources[T]):
@@ -144,6 +142,18 @@ class Resources(BaseResources[T]):
     Once resources are :py:meth:`~.borrow`\ ed, they can
     always be returned promptly.
     """
+    def __init__(self, __zero__: Optional[T] = None, **capacity: T):
+        if not capacity:  # Note: this should be a type-error not assert for consistency
+            raise TypeError(
+                '%s requires at least 1 keyword-only argument' % self.__class__.__name__
+            )
+        __zero__ = __zero__ if __zero__ is not None else\
+            type(next(iter(capacity.values())))()  # bare type invocation must be zero
+        self._levels_type = __specialise__(__zero__, capacity.keys())
+        self._available = Tracked(self._levels_type(**capacity))
+        assert self._available > self._levels_type.zero,\
+            'initial capacities must be greater than zero'
+
     async def set(self, **amounts: T):
         """
         Set the level of resources
