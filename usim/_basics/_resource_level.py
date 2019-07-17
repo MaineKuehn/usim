@@ -16,8 +16,7 @@ class ResourceLevels(Generic[T]):
     def __init__(self, **kwargs: T):
         raise TypeError(
             'Base class %r cannot be instantiated.' % self.__class__.__name__
-            +
-            'Use %s.%s to declare subtypes with valid resource level names.' % (
+            + 'Use %s.%s to declare subtypes with valid resource level names.' % (
                 __specialise__.__module__, __specialise__.__name__
             )
         )
