@@ -58,7 +58,7 @@ class TestTime:
     @via_usim
     async def test_before(self):
         start, delay = time.now, 20
-        for seq in range(5):
+        for seq in range(1, 5):
             await (time < start + seq * delay)
             assert start == time.now
         assert start == time.now
