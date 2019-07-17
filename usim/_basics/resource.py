@@ -80,7 +80,7 @@ class BorrowedResources(BaseResources[T]):
 
     def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
         borrowing = super().borrow(**amounts)
-        assert self._capacity >= self._levels_type(**amounts),\
+        assert self._capacity >= borrowing._capacity,\
             'cannot borrow beyond capacity'
         return borrowing
 
@@ -111,12 +111,6 @@ class Capacity(BorrowedResources[T]):
         resources = Resources(__zero__, **capacity)
         super().__init__(resources, resources.levels)
         self._available = Tracked(resources.levels)
-
-    def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
-        borrowing = super().borrow(**amounts)
-        assert self._capacity >= self._levels_type(**amounts),\
-            'cannot borrow beyond capacity'
-        return borrowing
 
 
 class Resources(BaseResources[T]):
