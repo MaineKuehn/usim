@@ -12,6 +12,15 @@ RT = TypeVar('RT')
 Turnstamp = namedtuple('Turnstamp', ('time', 'turn'))
 
 
+class UnfinishedTest(RuntimeError):
+    """A test did never finish"""
+    def __init__(self, test_case):
+        self.test_case = test_case
+        super().__init__('Test case %r did not finish' % getattr(
+            test_case, '__name__', test_case
+        ))
+
+
 def noop(*args, **kwargs):
     """Placeholder callable that does nothing for any input"""
     pass
@@ -59,13 +68,23 @@ def via_usim(test_case: Callable[..., Coroutine]):
     """
     @wraps(test_case)
     def run_test(*args, **kwargs):
+        test_completed = False
+
+        async def complete_test_case():
+            nonlocal test_completed
+            await test_case(*args, **kwargs)
+            test_completed = True
         # pytest currently ignores __tracebackhide__ if we re-raise
         # https://github.com/pytest-dev/pytest/issues/1904
         __tracebackhide__ = True
         # >>> This is not the frame you are looking for. Do read on. <<<
         try:
-            return run(test_case(*args, **kwargs))
+            result = run(complete_test_case())
         except ActivityError as err:
             # unwrap any exceptions
             raise err.__cause__
+        else:
+            if not test_completed:
+                raise UnfinishedTest(test_case)
+            return result
     return run_test
