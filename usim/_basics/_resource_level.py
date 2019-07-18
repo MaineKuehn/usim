@@ -10,7 +10,11 @@ class ResourceLevels(Generic[T]):
     """Base class for named resource levels"""
     __slots__ = ()
     __fields__ = ()  # type: Tuple[str]
+    #: cache of currently used specialisations to avoid
+    #: recreating/duplicating commonly used types
     __specialisation_cache__ = WeakValueDictionary()
+    #: instance of this specialisation
+    #: with all values as zero
     zero = None  # type: ResourceLevels
 
     def __init__(self, **kwargs: T):
@@ -68,6 +72,12 @@ class ResourceLevels(Generic[T]):
 
 
 def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
+    """
+    Create a specialisation of :py:class:`~.ResourceLevels`
+
+    :param zero: zero value for all fields
+    :param names: names of fields
+    """
     fields = tuple(sorted(names))
     if not fields:
         return ResourceLevels
@@ -82,14 +92,14 @@ def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
 
         __init__ = __make_init__(zero, fields)
 
-        __add__ = __make_bin_op__('__add__', '+', fields)
-        __sub__ = __make_bin_op__('__sub__', '-', fields)
+        __add__ = __binary_op__('__add__', '+', fields)
+        __sub__ = __binary_op__('__sub__', '-', fields)
 
-        __gt__ = __make_comp__('__gt__', '>', fields)
-        __ge__ = __make_comp__('__ge__', '>=', fields)
-        __le__ = __make_comp__('__le__', '<=', fields)
-        __lt__ = __make_comp__('__le__', '<', fields)
-        __eq__ = __make_comp__('__eq__', '==', fields)
+        __gt__ = __comparison_op__('__gt__', '>', fields)
+        __ge__ = __comparison_op__('__ge__', '>=', fields)
+        __le__ = __comparison_op__('__le__', '<=', fields)
+        __lt__ = __comparison_op__('__le__', '<', fields)
+        __eq__ = __comparison_op__('__eq__', '==', fields)
 
         def __ne__(self, other):
             return not self == other
@@ -101,7 +111,8 @@ def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
     return SpecialisedResourceLevels
 
 
-def __make_init__(zero, names: Tuple[str]):
+def __make_init__(zero, names: Tuple[str, ...]):
+    """Make an ``__init__`` with ``names`` as keywords and defaults of ``zero``"""
     namespace = {}
     exec(
         '\n'.join(
@@ -120,7 +131,20 @@ def __make_init__(zero, names: Tuple[str]):
     return namespace['__init__']
 
 
-def __make_bin_op__(op_name: str, op_symbol: str, names: Tuple[str]):
+def __binary_op__(op_name: str, op_symbol: str, names: Tuple[str, ...]):
+    """
+    Make an operator method ``op_name`` to apply ``op_symbol`` to all fields ``names``
+
+    .. code:: python3
+
+        __add__ = __make_binary_op__("__add__", '+', ('foo', 'bar'))
+
+        def __add__(self, other):
+            return type(self)(
+                foo = self.foo + other.foo,
+                bar = self.bar + other.bar,
+            )
+    """
     namespace = {}
     exec(
         '\n'.join(
@@ -146,7 +170,20 @@ def __make_bin_op__(op_name: str, op_symbol: str, names: Tuple[str]):
     return namespace[op_name]
 
 
-def __make_comp__(op_name: str, op_symbol: str, names: Tuple[str]):
+def __comparison_op__(op_name: str, op_symbol: str, names: Tuple[str]):
+    """
+    Make a comparison method ``op_name`` to apply ``op_symbol`` to all fields ``names``
+
+    .. code:: python3
+
+        __eq__ = __make_binary_op__("__eq__", '==', ('foo', 'bar'))
+
+        def __add__(self, other):
+            return (
+                self.foo + other.foo
+                and self.bar + other.bar
+            )
+    """
     namespace = {}
     exec(
         '\n'.join(
