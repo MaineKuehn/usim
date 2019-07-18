@@ -70,14 +70,14 @@ class BorrowedResources(BaseResources[T]):
             # we are killed forcefully and cannot perform async operations
             # dispatch a new activity to release our resources eventually
             __LOOP_STATE__.LOOP.schedule(
-                self._resources.__insert_resources__(self._capacity)
-            )
-            __LOOP_STATE__.LOOP.schedule(
                 self.__remove_resources__(self._capacity)
             )
+            __LOOP_STATE__.LOOP.schedule(
+                self._resources.__insert_resources__(self._capacity)
+            )
         else:
-            await self._resources.__insert_resources__(self._capacity)
             await self.__remove_resources__(self._capacity)
+            await self._resources.__insert_resources__(self._capacity)
             # TODO: forcefully kill off anyone holding our resources?
 
     def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
