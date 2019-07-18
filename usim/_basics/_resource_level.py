@@ -79,8 +79,6 @@ def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
     :param names: names of fields
     """
     fields = tuple(sorted(names))
-    if not fields:
-        return ResourceLevels
     try:
         return ResourceLevels.__specialisation_cache__[fields]
     except KeyError:
