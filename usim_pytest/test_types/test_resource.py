@@ -136,6 +136,9 @@ class TestCapacity(BaseResourceCase):
         with pytest.raises(AssertionError):
             async with resources.borrow(b=11):
                 pass
+        # check that borrowing does not always raise
+        async with resources.borrow(b=10, a=10):
+            assert True
 
 
 class TestResources(BaseResourceCase):
