@@ -21,7 +21,7 @@ class BaseResources(Generic[T]):
         return self._available.value
 
     @property
-    def resources_type(self) -> Type[ResourceLevels[T]]:
+    def resource_type(self) -> Type[ResourceLevels[T]]:
         """Type of underlying resources"""
         return self._levels_type
 
@@ -139,7 +139,7 @@ class Resources(BaseResources[T]):
         # decrease the resource supply available
         resources.decrease(cores=4)
 
-    A :py:class:`~.Capacities` guarantees that is always possible
+    A :py:class:`~.Capacities` guarantees that it is always possible
     to increase the level of available resources.
     Once resources are :py:meth:`~.borrow`\ ed, they can
     always be returned promptly.
