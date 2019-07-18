@@ -71,6 +71,9 @@ class After(Condition):
         super().__subscribe__(waiter, interrupt)
 
     def __repr__(self):
+        return '{self.__class__.__name__}({self.target})'.format(self=self)
+
+    def __str__(self):
         return 'usim.time >= {}'.format(self.target)
 
 
@@ -111,6 +114,9 @@ class Before(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
+        return '{self.__class__.__name__}({self.target})'.format(self=self)
+
+    def __str__(self):
         return 'usim.time < {}'.format(self.target)
 
 
@@ -167,6 +173,9 @@ class Moment(Condition):
         self._transition.__unsubscribe__(waiter, interrupt)
 
     def __repr__(self):
+        return '{self.__class__.__name__}({self.target})'.format(self=self)
+
+    def __str__(self):
         return 'usim.time == {}'.format(self.target)
 
 
@@ -196,6 +205,9 @@ class Eternity(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
+        return '{self.__class__.__name__}()'.format(self=self)
+
+    def __str__(self):
         return 'usim.eternity'
 
 
@@ -224,6 +236,9 @@ class Instant(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
+        return '{self.__class__.__name__}()'.format(self=self)
+
+    def __str__(self):
         return 'usim.instant'
 
 
@@ -258,6 +273,9 @@ class Delay(Notification):
         __LOOP_STATE__.LOOP.schedule(waiter, interrupt, delay=self.duration)
 
     def __repr__(self):
+        return '{self.__class__.__name__}({self.duration})'.format(self=self)
+
+    def __str__(self):
         return 'usim.time + {}'.format(self.duration)
 
 
