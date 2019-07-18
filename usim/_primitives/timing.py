@@ -319,7 +319,18 @@ class Time:
                 "* 'await (time < date)' to not wait before a point in time\n"
                 "* 'await (time >= date)' to not wait after or at a point in time\n"
                 "\n"
-                "To check if time is before or at a point, use 'time.now <= date'"
+                "To test 'now is before or at a point in time', use 'time.now <= date'"
+            ) % type(other).__name__)
+
+        def __gt__(self, other):
+            raise TypeError((
+                "'>' not supported between 'time' and instances of '%s'\n\n"
+                "Only 'before' (time < date) is well-defined,\n"
+                "but 'after' (time > date) is not. Use instead:\n"
+                "* 'await (time < date)' to not wait before a point in time\n"
+                "* 'await (time >= date)' to not wait after or at a point in time\n"
+                "\n"
+                "To test 'now is after a point in time', use 'time.now > date'"
             ) % type(other).__name__)
 
         def __await__(self):
