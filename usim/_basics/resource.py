@@ -54,15 +54,15 @@ class BorrowedResources(BaseResources[T]):
     def _levels_type(self):
         return self._resources._levels_type
 
-    def __init__(self, resources: 'BaseResources', capacity: ResourceLevels):
+    def __init__(self, resources: 'BaseResources', debits: ResourceLevels):
         self._resources = resources
-        self._capacity = capacity
+        self._debits = debits
         self._available = Tracked(self._levels_type.zero)
 
     async def __aenter__(self):
-        await (self._resources._available >= self._capacity)
-        await self._resources.__remove_resources__(self._capacity)
-        await self.__insert_resources__(self._capacity)
+        await (self._resources._available >= self._debits)
+        await self._resources.__remove_resources__(self._debits)
+        await self.__insert_resources__(self._debits)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -70,19 +70,19 @@ class BorrowedResources(BaseResources[T]):
             # we are killed forcefully and cannot perform async operations
             # dispatch a new activity to release our resources eventually
             __LOOP_STATE__.LOOP.schedule(
-                self.__remove_resources__(self._capacity)
+                self.__remove_resources__(self._debits)
             )
             __LOOP_STATE__.LOOP.schedule(
-                self._resources.__insert_resources__(self._capacity)
+                self._resources.__insert_resources__(self._debits)
             )
         else:
-            await self.__remove_resources__(self._capacity)
-            await self._resources.__insert_resources__(self._capacity)
+            await self.__remove_resources__(self._debits)
+            await self._resources.__insert_resources__(self._debits)
             # TODO: forcefully kill off anyone holding our resources?
 
     def borrow(self, **amounts: T) -> 'BorrowedResources[T]':
         borrowing = super().borrow(**amounts)
-        assert self._capacity >= borrowing._capacity,\
+        assert self._debits >= borrowing._debits,\
             'cannot borrow beyond capacity'
         return borrowing
 
