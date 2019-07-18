@@ -71,7 +71,7 @@ class After(Condition):
         super().__subscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.target)
+        return 'usim.time >= {}'.format(self.target)
 
 
 class Before(Condition):
@@ -111,7 +111,7 @@ class Before(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.target)
+        return 'usim.time < {}'.format(self.target)
 
 
 class Moment(Condition):
@@ -167,7 +167,7 @@ class Moment(Condition):
         self._transition.__unsubscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.target)
+        return 'usim.time == {}'.format(self.target)
 
 
 class Eternity(Condition):
@@ -195,6 +195,9 @@ class Eternity(Condition):
         yield from __HIBERNATE__
         return True  # noqa: B901
 
+    def __repr__(self):
+        return 'usim.eternity'
+
 
 class Instant(Condition):
     r"""
@@ -219,6 +222,9 @@ class Instant(Condition):
     def __await__(self) -> Generator[Any, None, bool]:
         yield from postpone().__await__()
         return True  # noqa: B901
+
+    def __repr__(self):
+        return 'usim.instant'
 
 
 class Delay(Notification):
@@ -252,7 +258,7 @@ class Delay(Notification):
         __LOOP_STATE__.LOOP.schedule(waiter, interrupt, delay=self.duration)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.duration)
+        return 'usim.time + {}'.format(self.duration)
 
 
 class Time:
@@ -327,6 +333,14 @@ class Time:
                 "\n"
                 "To get the current time, use 'time.now'"
             )
+
+    def __repr__(self):
+        try:
+            now = self.now
+        except RuntimeError:
+            return '<detached handle usim.time>'
+        else:
+            return '<attached handle usim.time @ {now}>'.format(now=now)
 
 
 time = Time()
