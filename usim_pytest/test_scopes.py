@@ -145,7 +145,7 @@ class TestNested:
 async def test_representable():
     async with Scope() as scope:
         str(scope), repr(scope)
-    async  with until(time == 200) as scope:
+    async with until(time == 200) as scope:
         str(scope), repr(scope)
 
 
