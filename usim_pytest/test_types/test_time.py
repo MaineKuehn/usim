@@ -9,6 +9,11 @@ from ..utility import via_usim
 
 class TestTime:
     @via_usim
+    async def test_representable(self):
+        for case in (time, time < 1, time >= 1, time + 1, eternity, instant):
+            str(case), repr(case)
+
+    @via_usim
     async def test_misuse(self):
         with pytest.raises(TypeError):
             await time
