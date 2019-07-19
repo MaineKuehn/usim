@@ -30,6 +30,11 @@ comparison_operators = (
 
 class TestTracked:
     @via_usim
+    async def test_representable(self):
+        for case in (Tracked(1138), Tracked(1138) > Tracked(1), Tracked(1138) + 1):
+            str(case), repr(case)
+
+    @via_usim
     async def test_misuse(self):
         tracked = Tracked(1137)
         with pytest.raises(TypeError):
