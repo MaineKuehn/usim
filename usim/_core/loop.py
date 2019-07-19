@@ -52,10 +52,10 @@ class MissingLoop:
     without starting its event loop. If you encounter this class unexpectedly,
     see 'https://usim.readthedocs.io' for details.
     """
-    __slots__ = ('_run_qname',)
+    __slots__ = ('_entry_point',)
 
-    def __init__(self, run_qname: str = 'usim.run'):
-        self._run_qname = run_qname
+    def __init__(self, entry_point: str = 'usim.run'):
+        self._entry_point = entry_point
 
     def __getattr__(self, field: str):
         raise RuntimeError((
@@ -65,7 +65,12 @@ class MissingLoop:
             "async framework. You must run usim's async features as part of\n"
             "an active usim simulation.\n\n"
             "Use '%s' to start an appropriate simulation."
-        ) % (field, self._run_qname))
+        ) % (field, self._entry_point))
+
+    def __repr__(self):
+        return '{self.__class__.__name__}(entry_point={self._entry_point})'.format(
+            self=self,
+        )
 
 
 __LOOP_STATE__ = threading.local()
