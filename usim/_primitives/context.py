@@ -196,6 +196,19 @@ class Scope:
         r"""Handle the exception of :py:mod:`~.__aexit__` and signal completion"""
         return False
 
+    def __repr__(self):
+        return (
+            '<{self.__class__.__name__}, children={children}, volatile={volatile}'
+            ', done={done}'
+            ' @ {address}>'
+        ).format(
+            self=self,
+            done=bool(self._done),
+            children=len(self._children),
+            volatile=len(self._volatile_children),
+            address=id(self),
+        )
+
 
 class InterruptScope(Scope):
     r"""
@@ -220,7 +233,18 @@ class InterruptScope(Scope):
         return exc_val is self._interrupt
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self._notification)
+        return (
+            '<{self.__class__.__name__}, children={children}, volatile={volatile}'
+            ', done={done}'
+            ', notification={self._notification}'
+            ' @ {address}>'
+        ).format(
+            self=self,
+            done=bool(self._done),
+            children=len(self._children),
+            volatile=len(self._volatile_children),
+            address=id(self),
+        )
 
 
 def until(notification: Notification):

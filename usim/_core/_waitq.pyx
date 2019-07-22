@@ -98,7 +98,7 @@ cdef class CyWaitQueue:
         return key, self._data.pop(key)
 
     def __repr__(self):
-        return '[%s]' % ''.join(
+        return '<CyWaitQueue [%s]>' % ''.join(
             '%s: %s' % (key, self._data[key])
             for key in self._keys
         )

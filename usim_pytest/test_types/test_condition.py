@@ -5,6 +5,18 @@ from ..utility import via_usim
 
 class TestChainedCondition:
     @via_usim
+    async def test_representable(self):
+        for case in (
+                Flag() | Flag(),
+                Flag() | Flag() | Flag(),
+                Flag() & Flag(),
+                Flag() & Flag() & Flag(),
+                Flag() | Flag() & Flag(),
+                Flag() & Flag() | Flag(),
+        ):
+            str(case), repr(case)
+
+    @via_usim
     async def test_chain_and(self):
         a, b, c = Flag(), Flag(), Flag()
         assert not a and not b and not c

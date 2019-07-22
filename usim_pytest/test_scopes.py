@@ -142,6 +142,14 @@ class TestNested:
 
 
 @via_usim
+async def test_representable():
+    async with Scope() as scope:
+        str(scope), repr(scope)
+    async with until(time == 200) as scope:
+        str(scope), repr(scope)
+
+
+@via_usim
 async def test_until():
     async def scheduler():
         async with Scope() as scope:

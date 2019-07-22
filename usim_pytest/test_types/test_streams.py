@@ -12,6 +12,11 @@ class Base1to1Stream:
     stream_type = None  # type: Type[Stream]
 
     @via_usim
+    async def test_representable(self):
+        case = self.stream_type()
+        str(case), repr(case)
+
+    @via_usim
     async def test_close(self):
         stream = self.stream_type()
         await stream.close()

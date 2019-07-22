@@ -36,7 +36,7 @@ class HQWaitQueue(Generic[K, V]):
         return key, self._data.pop(key)
 
     def __repr__(self):
-        return '[%s]' % ''.join(
+        return '<HQWaitQueue [%s]>' % ''.join(
             '%s: %s' % (key, self._data[key])
             for key in self._keys
         )
@@ -65,7 +65,7 @@ class SDWaitQueue(Generic[K, V]):
         return self._data.popitem(0)
 
     def __repr__(self):
-        return '[%s]' % ''.join(
+        return '<SDWaitQueue [%s]>' % ''.join(
             '%s: %s' % (key, value)
             for key, value in self._data.items()
         )

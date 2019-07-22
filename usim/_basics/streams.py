@@ -108,6 +108,14 @@ class Channel(AsyncIterable, Generic[ST]):
         self._notification.__awake_all__()
         await postpone()
 
+    def __repr__(self):
+        return (
+            '<{self.__class__.__name__}, consumers={consumers}, closed={self._closed}>'
+        ).format(
+            self=self,
+            consumers=len(self._consumer_buffers),
+        )
+
 
 class ChannelAsyncIterator(AsyncIterator, Generic[ST]):
     def __init__(self, channel: Channel[ST]):
@@ -193,6 +201,11 @@ class Queue(AsyncIterable, Generic[ST]):
         except NoSubscribers:
             pass
         await postpone()
+
+    def __repr__(self):
+        return '<{self.__class__.__name__}, buffer={self._buffer}>'.format(
+            self=self,
+        )
 
 
 class QueueAsyncIterator(AsyncIterator, Generic[ST]):

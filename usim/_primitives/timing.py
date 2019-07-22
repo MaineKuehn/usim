@@ -71,7 +71,10 @@ class After(Condition):
         super().__subscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.target)
+        return '{self.__class__.__name__}({self.target})'.format(self=self)
+
+    def __str__(self):
+        return 'usim.time >= {}'.format(self.target)
 
 
 class Before(Condition):
@@ -111,7 +114,10 @@ class Before(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.target)
+        return '{self.__class__.__name__}({self.target})'.format(self=self)
+
+    def __str__(self):
+        return 'usim.time < {}'.format(self.target)
 
 
 class Moment(Condition):
@@ -167,7 +173,10 @@ class Moment(Condition):
         self._transition.__unsubscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.target)
+        return '{self.__class__.__name__}({self.target})'.format(self=self)
+
+    def __str__(self):
+        return 'usim.time == {}'.format(self.target)
 
 
 class Eternity(Condition):
@@ -195,6 +204,12 @@ class Eternity(Condition):
         yield from __HIBERNATE__
         return True  # noqa: B901
 
+    def __repr__(self):
+        return '{self.__class__.__name__}()'.format(self=self)
+
+    def __str__(self):
+        return 'usim.eternity'
+
 
 class Instant(Condition):
     r"""
@@ -219,6 +234,12 @@ class Instant(Condition):
     def __await__(self) -> Generator[Any, None, bool]:
         yield from postpone().__await__()
         return True  # noqa: B901
+
+    def __repr__(self):
+        return '{self.__class__.__name__}()'.format(self=self)
+
+    def __str__(self):
+        return 'usim.instant'
 
 
 class Delay(Notification):
@@ -252,7 +273,10 @@ class Delay(Notification):
         __LOOP_STATE__.LOOP.schedule(waiter, interrupt, delay=self.duration)
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.duration)
+        return '{self.__class__.__name__}({self.duration})'.format(self=self)
+
+    def __str__(self):
+        return 'usim.time + {}'.format(self.duration)
 
 
 class Time:
@@ -313,7 +337,18 @@ class Time:
                 "* 'await (time < date)' to not wait before a point in time\n"
                 "* 'await (time >= date)' to not wait after or at a point in time\n"
                 "\n"
-                "To check if time is before or at a point, use 'time.now <= date'"
+                "To test 'now is before or at a point in time', use 'time.now <= date'"
+            ) % type(other).__name__)
+
+        def __gt__(self, other):
+            raise TypeError((
+                "'>' not supported between 'time' and instances of '%s'\n\n"
+                "Only 'before' (time < date) is well-defined,\n"
+                "but 'after' (time > date) is not. Use instead:\n"
+                "* 'await (time < date)' to not wait before a point in time\n"
+                "* 'await (time >= date)' to not wait after or at a point in time\n"
+                "\n"
+                "To test 'now is after a point in time', use 'time.now > date'"
             ) % type(other).__name__)
 
         def __await__(self):
@@ -327,6 +362,14 @@ class Time:
                 "\n"
                 "To get the current time, use 'time.now'"
             )
+
+    def __repr__(self):
+        try:
+            now = self.now
+        except RuntimeError:
+            return '<detached handle usim.time>'
+        else:
+            return '<attached handle usim.time @ {now}>'.format(now=now)
 
 
 time = Time()
