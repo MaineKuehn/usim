@@ -1,8 +1,8 @@
 import pytest
 
-from usim import Scope
+from usim import Scope, eternity
 
-from .utility import via_usim
+from .utility import via_usim, UnfinishedTest
 
 
 async def a_raise(exc: BaseException):
@@ -23,3 +23,8 @@ class TestTests:
     async def test_scoped(self):
         async with Scope() as scope:
             scope.do(a_raise(KeyError()))
+
+    @pytest.mark.xfail(raises=UnfinishedTest, strict=True)
+    @via_usim
+    async def test_hanging(self):
+        await eternity
