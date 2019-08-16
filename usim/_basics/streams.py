@@ -30,9 +30,8 @@ A channel cannot be used in an ``async with until(...):`` statement.
 from collections import deque
 
 from typing import Generic, TypeVar, Dict, List, Deque,\
-    Union, AsyncIterable, AsyncIterator, Generator, Any
+    Union, AsyncIterable, Generator, Any
 
-from .._core.loop import __LOOP_STATE__
 from .._primitives.notification import postpone, Notification, NoSubscribers
 from .._primitives.locks import Lock
 
