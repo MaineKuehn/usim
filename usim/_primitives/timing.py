@@ -395,6 +395,40 @@ async def each_delay(delay: float):
 def each(
         *, delay: float = None, interval: float = None
 ) -> AsyncIterable[float]:
+    """
+    Iterate through time by either ``delay`` or ``interval``
+
+    :param delay: on each step, pause for ``delay``
+    :param interval: on each step, pause until ``interval`` since the last step
+    :raises TypeError: if both ``delay`` and ``interval`` are provided
+
+    Asynchronous iteration pauses and provides the current time at each step.
+
+    .. code:: python3
+
+        print('It was', time.now)  # 0
+        async for now in each(delay=10):
+            print('It is', now)  # 10, 20, 30, ...
+
+    The first pause occurs *before* entering the loop body.
+
+    Setting `delay`` causes iteration to always *pause for* the same time,
+    even if the current activity is :term:`suspended <Suspension>`
+    in the loop body.
+    Setting ``interval`` causes iteration to *resume at* regular times,
+    even if the current activity is :term:`suspended <Suspension>`
+    in the loop body - the pause is shortened if necessary.
+
+    .. code:: python3
+
+        async for now in each(interval=10):
+            await (time + 1)
+            print(now, time.now)  # (10, 11), (20, 21), (30, 31), ...
+
+        async for now in each(delay=10):
+            await (time + 1)
+            print(now, time.now)  # (10, 11), (21, 22), (32, 33), ...
+    """
     if delay is not None and interval is None:
         return each_delay(delay)
     elif interval is not None and delay is None:
