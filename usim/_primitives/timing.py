@@ -377,7 +377,7 @@ time = Time()
 
 async def each_interval(interval: float):
     loop = __LOOP_STATE__.LOOP
-    last_time = loop.time - interval
+    last_time = loop.time
     while True:
         await (time == last_time + interval)
         last_time = loop.time
