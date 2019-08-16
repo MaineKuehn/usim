@@ -86,7 +86,7 @@ class Channel(AsyncIterable, Generic[ST]):
         try:
             yield from self._notification.__await__()
         finally:
-            self._consumer_buffers.pop(sentinel)
+            del self._consumer_buffers[sentinel]
         if not buffer and self._closed:
             raise StreamClosed(self)
         return buffer[0]  # noqa: B901
