@@ -1,7 +1,8 @@
+dist: xenial
 language: python
 python:
-  - "3.5"
   - "3.6"
+  - "3.7"
   - "pypy3"
 os:
   - linux
@@ -9,7 +10,6 @@ env:
   - USIM_WAITQUEUE="" DEBUG="-O"
   - USIM_WAITQUEUE=""
   - USIM_WAITQUEUE="SD"
-  - USIM_WAITQUEUE="CY"
 before_script:
   - python -m pip install pip --upgrade
   - python -m pip list
@@ -17,8 +17,6 @@ before_script:
   - echo "export PYTHONHASHSEED=${PYTHONHASHSEED}"
   - pip install .[contrib]
   - pip install codecov
-  - |
-    [ "$USIM_WAITQUEUE" == "CY" ] && pip install cython || true
   - export COVERAGE_PROCESS_START=$(pwd)/.coveragerc
   - export PYTEST_ADDOPTS=-v
 script:

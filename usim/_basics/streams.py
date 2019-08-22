@@ -29,10 +29,9 @@ A channel cannot be used in an ``async with until(...):`` statement.
 """
 from collections import deque
 
-from typing import Generic, TypeVar, Dict, List, Coroutine,\
-    Union, AsyncIterable, AsyncIterator, Generator, Any
+from typing import Generic, TypeVar, Dict, List, Deque,\
+    Union, AsyncIterable, Generator, Any
 
-from .._core.loop import __LOOP_STATE__
 from .._primitives.notification import postpone, Notification, NoSubscribers
 from .._primitives.locks import Lock
 
@@ -58,7 +57,7 @@ class Channel(AsyncIterable, Generic[ST]):
     def __init__(self):
         super().__init__()
         self._consumer_buffers = {}  \
-            # type: Dict[Union[Coroutine, ChannelAsyncIterator], List[ST]]
+            # type: Dict[Any, Union[List[ST], Deque[ST]]]
         self._notification = Notification()
         self._closed = False
 
@@ -81,18 +80,26 @@ class Channel(AsyncIterable, Generic[ST]):
     def __await__(self) -> Generator[Any, None, ST]:
         if self._closed:
             raise StreamClosed(self)
-        activity = __LOOP_STATE__.LOOP.activity
-        self._consumer_buffers[activity] = buffer = []  # type: List[ST]
+        sentinel = object()
+        self._consumer_buffers[sentinel] = buffer = []  # type: List[ST]
         try:
             yield from self._notification.__await__()
         finally:
-            self._consumer_buffers.pop(activity)
+            del self._consumer_buffers[sentinel]
         if not buffer and self._closed:
             raise StreamClosed(self)
         return buffer[0]  # noqa: B901
 
-    def __aiter__(self):
-        return ChannelAsyncIterator(self)
+    async def __aiter__(self):
+        sentinel = object()
+        self._consumer_buffers[sentinel] = buffer = deque()  # type: Deque[ST]
+        while True:
+            while buffer:
+                yield buffer.popleft()
+            if self._closed:
+                break
+            await self._notification
+        del self._consumer_buffers[sentinel]
 
     async def put(self, item: ST):
         r"""
@@ -115,22 +122,6 @@ class Channel(AsyncIterable, Generic[ST]):
             self=self,
             consumers=len(self._consumer_buffers),
         )
-
-
-class ChannelAsyncIterator(AsyncIterator, Generic[ST]):
-    def __init__(self, channel: Channel[ST]):
-        self._channel = channel
-        self._buffer = channel._consumer_buffers[self] = []  # type: List[ST]
-
-    async def __anext__(self) -> ST:
-        while not self._buffer:
-            if self._channel.closed:
-                raise StopAsyncIteration
-            await self._channel._notification
-        return self._buffer.pop()
-
-    def __aiter__(self):
-        return self
 
 
 class Queue(AsyncIterable, Generic[ST]):
@@ -183,8 +174,12 @@ class Queue(AsyncIterable, Generic[ST]):
                 raise StreamClosed(self)
             return self._buffer.popleft()
 
-    def __aiter__(self):
-        return QueueAsyncIterator(self)
+    async def __aiter__(self):
+        while True:
+            try:
+                yield await self
+            except StreamClosed:
+                break
 
     async def put(self, item: ST):
         r"""
@@ -208,19 +203,4 @@ class Queue(AsyncIterable, Generic[ST]):
         )
 
 
-class QueueAsyncIterator(AsyncIterator, Generic[ST]):
-    def __init__(self, queue: Queue[ST]):
-        self._queue = queue
-
-    async def __anext__(self) -> ST:
-        try:
-            return await self._queue
-        except StreamClosed:
-            raise StopAsyncIteration
-
-    def __aiter__(self):
-        return self
-
-
 Stream = Union[Channel, Queue]
-StreamAsyncIterator = Union[ChannelAsyncIterator, QueueAsyncIterator]

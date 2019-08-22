@@ -12,7 +12,7 @@ time can represent more than 285 million years of time accurately.
        it is still not possible to reach :py:class:`Eternity`.
        This may change in the future.
 """
-from typing import Coroutine, Union, Generator, Any
+from typing import Coroutine, Generator, Any, AsyncIterable
 
 from .._core.loop import __LOOP_STATE__, __HIBERNATE__, Interrupt as CoreInterrupt
 from .notification import postpone, Notification
@@ -375,44 +375,63 @@ class Time:
 time = Time()
 
 
-class IntervalIter:
-    __slots__ = ('_interval', '_last')
-
-    def __init__(self, interval: float):
-        self._interval = interval
-        self._last = None
-
-    async def __anext__(self):
-        if self._last is None:
-            self._last = __LOOP_STATE__.LOOP.time - self._interval
-        await (time == self._last + self._interval)
-        self._last = time.now
-        return self._last
-
-    def __aiter__(self):
-        return self
+async def each_interval(interval: float):
+    loop = __LOOP_STATE__.LOOP
+    last_time = loop.time
+    while True:
+        await (time == last_time + interval)
+        last_time = loop.time
+        yield last_time
 
 
-class DurationIter:
-    __slots__ = ('_delay',)
-
-    def __init__(self, delay: float):
-        self._delay = delay
-
-    async def __anext__(self):
-        await (time + self._delay)
-        return time.now
-
-    def __aiter__(self):
-        return self
+async def each_delay(delay: float):
+    loop = __LOOP_STATE__.LOOP
+    waiter = time + delay
+    while True:
+        await waiter
+        yield loop.time
 
 
 def each(
         *, delay: float = None, interval: float = None
-) -> Union[DurationIter, IntervalIter]:
+) -> AsyncIterable[float]:
+    """
+    Iterate through time by either ``delay`` or ``interval``
+
+    :param delay: on each step, pause for ``delay``
+    :param interval: on each step, pause until ``interval`` since the last step
+    :raises TypeError: if both ``delay`` and ``interval`` are provided
+
+    Asynchronous iteration pauses and provides the current time at each step.
+
+    .. code:: python3
+
+        print('It was', time.now)  # 0
+        async for now in each(delay=10):
+            print('It is', now)  # 10, 20, 30, ...
+
+    The first pause occurs *before* entering the loop body.
+
+    Setting `delay`` causes iteration to always *pause for* the same time,
+    even if the current activity is :term:`suspended <Suspension>`
+    in the loop body.
+    Setting ``interval`` causes iteration to *resume at* regular times,
+    even if the current activity is :term:`suspended <Suspension>`
+    in the loop body - the pause is shortened if necessary.
+
+    .. code:: python3
+
+        async for now in each(interval=10):
+            await (time + 1)
+            print(now, time.now)  # (10, 11), (20, 21), (30, 31), ...
+
+        async for now in each(delay=10):
+            await (time + 1)
+            print(now, time.now)  # (10, 11), (21, 22), (32, 33), ...
+    """
     if delay is not None and interval is None:
-        return DurationIter(delay)
+        return each_delay(delay)
     elif interval is not None and delay is None:
-        return IntervalIter(interval)
+        return each_interval(interval)
     else:
         raise TypeError("each() got conflicting arguments 'delay' and 'interval'")
