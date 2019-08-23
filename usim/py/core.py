@@ -1,5 +1,5 @@
 from typing import Optional, List, Tuple, Coroutine, Generator, TypeVar, Iterable,\
-    NoReturn, Union
+    Union
 from .._core.loop import __LOOP_STATE__, Loop
 from .. import time, run as usim_run
 from .. import Scope
@@ -20,10 +20,67 @@ class Environment:
     """
     SimPy Environment compatibility layer embedded in a ``usim`` simulation
 
+    This environment can be constructed in any ``usim`` :term:`Activity`.
+    It exposes most of the :py:class:`simpy.Environment` interface, with
+    the exception of :py:meth:`simpy.Environment.run`. To avoid errors,
+    the environment must be run in a context.
+
+    .. code:: python3
+
+        def car(env):
+            while True:
+                print('Start parking at %s' % env.now)
+                yield env.timeout(5)
+                print('Start driving at %s' % env.now)
+                yield env.timeout(2)
+
+        async def legacy_simulation():
+            async with Environment() as env:
+                env.process(car(env))
+
+    In order to run until a point in time or event, use :py:meth:`~.until`.
+
     .. code:: python3
 
         async def legacy_simulation():
-            async with EmbeddedEnvironment() as env:
+            env = Environment()
+            env.process(car(env))
+            await env.until(15)
+
+    .. warning:
+
+        Unlike a :py:class:`simpy.Environment`, this environment
+        *cannot* resume after running ``until`` some point.
+        However, you can have an arbitrary number of :term:`Activity`
+        running concurrently.
+
+    Migrating to ``usim``
+    ---------------------
+
+    There is no explicit environment in ``usim``;
+    its functionality is split across several types, and
+    the event loop spawned by :py:func:`usim.run` is implicitly available.
+
+    **starting a simulation**
+        Call :py:func:`usim.run` with an initial set of activities.
+
+    **spawning new processes** (:py:meth:`~.process`)
+        Open a :py:class:`usim.Scope` which can :py:meth:`~.usim.Scope.do`
+        several activities at once.
+        An opened :py:class:`~usim.Scope` can be passed to other activities,
+        similar to an environment.
+
+    **timeout after a delay** (:py:meth:`~.timeout`)
+        Use ``await (time + delay)``, or one of its variant such
+        as ``await (time == deadline)``.
+
+    **creating an event** (:py:meth:`~.event`)
+        Create a new :py:class:`usim.Flag`, and ``await flag`` to be notified
+        once it is :py:meth:`~usim.Flag.set`.
+
+    **combining events** (:py:meth:`~.all_of` and :py:meth:`~.any_of`)
+        Use the operators ``|`` ("any"), ``&`` ("all") or ``~`` ("not") to
+        combine events, as in ``flag1 & flag2 | ~flag3``.
     """
     def __init__(self, initial_time=0):
         self._initial_time = initial_time
@@ -47,8 +104,18 @@ class Environment:
         return await self._scope.__aexit__(exc_type, exc_val, exc_tb)
 
     async def until(self, until=None):
+        """Asynchronous version of the :py:meth:`~.run` method"""
+        async with self:
+            if until is not None:
+                if isinstance(until, Event):
+                    await until
+                else:
+                    await (time >= until)
+                raise StopSimulation
+
+    def run(self, until=None):
         """
-        Asynchronous version of the ``env.run`` method
+        Run the simulation of this environment synchronously
 
         If ``until`` is...
 
@@ -62,27 +129,23 @@ class Environment:
         otherwise
             The sub-simulation last until its time equals ``until``.
         """
-        async with self:
-            if until is not None:
-                if isinstance(until, Event):
-                    await until
-                else:
-                    await (time >= until)
-                raise StopSimulation
+        try:
+            # test whether we are contained in an active usim loop
+            __LOOP_STATE__.LOOP.time
+        except RuntimeError:
+            usim_run(self.until(until))
+        else:
+            raise CompatibilityError(
+                "'env.run' is not supported inside a 'usim' simulation\n"
+                "\n"
+                "Synchronous running blocks the event loop. Use instead\n"
+                "* 'await env.until()' to block only the current activity\n"
+                "* 'async with env:' to concurrently run the environment\n"
+                "\n"
+                "You can 'env.run' outside of a 'usim' simulation"
+            )
 
-    def run(self, until=None) -> NoReturn:
-        """
-        'env.run' is not supported by the 'usim.py' compatibility layer
-
-        An environment cannot be run synchronously. Use instead:
-        * 'await env' to run the environment, blocking the current activity
-        * 'async with env:' to run both the environment and the current activity
-
-        To run until some time or event, use 'env.until(toe)' instead of 'env'
-        """
-        raise CompatibilityError(self.run.__doc__)
-
-    def exit(self, value=None) -> NoReturn:
+    def exit(self, value=None):
         """
         'env.exit' is not supported by the 'usim.py' compatibility layer
 
@@ -92,18 +155,39 @@ class Environment:
         raise CompatibilityError(self.exit.__doc__)
 
     @property
-    def now(self):
+    def now(self) -> float:
+        """
+        The current time of the simulation
+
+        .. hint::
+
+            Migrate by using ``usim.time.now`` instead.
+        """
         if self._loop is None:
             return self._initial_time
         return self._loop.time
 
     def schedule(self, event: 'Union[Event, Coroutine]', priority=1, delay=0):
+        """
+        Schedule a :py:class:`~.Event` to be triggered after ``delay``
+
+        .. note::
+
+            Setting the parameter ``priority`` is not supported.
+
+        .. hint::
+
+            Events of ``usim`` are not scheduled but directly triggered,
+            for example :py:meth:`usim.Flag.set`.
+        """
         if priority != 1:
-            raise NotImplementedError('Only the default priority=1 is supported')
+            raise CompatibilityError('Only the default priority=1 is supported')
         if isinstance(event, Event):
             event = event.__usimpy_schedule__()
         if delay == 0:
             delay = None
+        # We may get called before the loop has started.
+        # Queue events until the loop starts.
         if self._loop is None:
             self._startup.append((event, delay))
         else:
@@ -113,26 +197,58 @@ class Environment:
         self._scope.do(coroutine, after=delay)
 
     def process(self, generator: Generator[Event, Event, V]) -> 'Process[V]':
-        """Create a new :py:class:`~.Process` for ``generator``"""
+        """
+        Create a new :py:class:`~.Process` for ``generator``
+
+        .. hint::
+
+            Migrate by using a :py:class:`usim.Scope` and its
+            :py:meth:`~.usim.Scope.do` method instead.
+        """
         return Process(self, generator)
 
     def timeout(self, delay, value: Optional[V] = None) -> 'Timeout[V]':
-        """Create a new :py:class:`~.Timeout` that triggers after ``delay``"""
+        """
+        Create a new :py:class:`~.Timeout` that triggers after ``delay``
+
+        .. hint::
+
+            Migrate by using :py:data:`usim.time`, e.g.
+            as ``await (time + delay)`` or ``await (time == deadline)``.
+        """
         return Timeout(self, delay, value)
 
     def event(self) -> 'Event':
+        """
+        Create a new :py:class:`~.Event` that can be manually triggered
+
+        .. hint::
+
+            Migrate by using :py:class:`usim.Flag` instead.
+        """
         return Event(self)
 
     def all_of(self, events: 'Iterable[Event]') -> 'AllOf':
+        """
+        Create a new :py:class:`~.AllOf` that triggers on all ``events``
+
+        .. hint::
+
+            Migrate by combining :py:class:`usim.typing.Condition`
+            using ``&`` instead, e.g. ``flag1 & flag2``.
+        """
         return AllOf(self, events)
 
     def any_of(self, events: 'Iterable[Event]') -> 'AnyOf':
+        """
+        Create a new :py:class:`~.AllOf` that triggers on each ``events``
+
+        .. hint::
+
+            Migrate by combining :py:class:`usim.typing.Condition`
+            using ``|`` instead, e.g. ``flag1 | flag2``.
+        """
         return AnyOf(self, events)
-
-
-class Environment(EmbeddedEnvironment):
-    def run(self, until=None):
-        usim_run(self.until(until))
 
 
 from .events import Timeout, Process, Event, AnyOf, AllOf
