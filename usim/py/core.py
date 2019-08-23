@@ -251,4 +251,4 @@ class Environment:
         return AnyOf(self, events)
 
 
-from .events import Timeout, Process, Event, AnyOf, AllOf
+from .events import Timeout, Process, Event, AnyOf, AllOf  # noqa: E402

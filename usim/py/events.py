@@ -10,7 +10,9 @@ if TYPE_CHECKING:
 
 T = TypeVar('T')
 
-__all__ = ['Event', 'Process', 'Condition', 'ConditionValue', 'AllOf', 'AnyOf']
+__all__ = [
+    'Event', 'Timeout', 'Process', 'Condition', 'ConditionValue', 'AllOf', 'AnyOf'
+]
 
 
 class Event(Generic[T]):
@@ -25,7 +27,7 @@ class Event(Generic[T]):
 
     def __await__(self):
         result = yield from self._flag.__await__()
-        return result
+        return result  # noqa: B901
 
     async def _invoke_callbacks(self):
         # simpy does this in core.Environment.step
@@ -206,7 +208,10 @@ class Process(Event[T]):
         return self._value is not None
 
     def __repr__(self):
-        return f'<{self.__class__.__name__} object of {self._generator.__name__!r} at {id(self)}>'
+        return (
+            f'<{self.__class__.__name__} object'
+            f' of {self._generator.__name__!r} at {id(self)}>'
+        )
 
 
 class ConditionValue:
@@ -279,7 +284,7 @@ class Condition(Event[ConditionValue]):
                     self.fail(event.value)
                     return
         if self._evaluate(self._events, len(observed)):
-            self.succeed(ConditionValue(self._flatten_values(self._events)))
+            self.succeed(ConditionValue(*self._flatten_values(self._events)))
 
     @classmethod
     def _flatten_values(cls, events) -> List[Event]:
