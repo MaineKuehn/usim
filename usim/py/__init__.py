@@ -1,2 +1,2 @@
-from .core import EmbeddedEnvironment, Environment
+from .core import Environment
 from .exceptions import Interrupt

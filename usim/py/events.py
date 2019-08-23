@@ -5,7 +5,7 @@ from .._primitives.condition import Any as AnyFlag
 
 from .exceptions import CompatibilityError, Interrupt
 if TYPE_CHECKING:
-    from .core import EmbeddedEnvironment
+    from .core import Environment
 
 
 T = TypeVar('T')
@@ -16,7 +16,7 @@ __all__ = ['Event', 'Process', 'Condition', 'ConditionValue', 'AllOf', 'AnyOf']
 class Event(Generic[T]):
     __slots__ = 'env', 'callbacks', '_flag', '_value', 'defused'
 
-    def __init__(self, env: 'EmbeddedEnvironment'):
+    def __init__(self, env: 'Environment'):
         self._flag = Flag()
         self.env = env
         self.callbacks = []  # type: List[Event]
@@ -166,7 +166,7 @@ class InterruptQueue:
 class Process(Event[T]):
     __slots__ = '_generator', '_interrupts'
 
-    def __init__(self, env: 'EmbeddedEnvironment', generator: Generator[None, Event, T]):
+    def __init__(self, env: 'Environment', generator: Generator[None, Event, T]):
         super().__init__(env)
         self._generator = generator
         self._interrupts = InterruptQueue()

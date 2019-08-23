@@ -16,7 +16,7 @@ class EnvironmentScope(Scope):
 V = TypeVar('V')
 
 
-class EmbeddedEnvironment:
+class Environment:
     """
     SimPy Environment compatibility layer embedded in a ``usim`` simulation
 
