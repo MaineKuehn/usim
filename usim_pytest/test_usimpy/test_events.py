@@ -1,6 +1,9 @@
 import pytest
 
 
+from usim.py import Interrupt
+from usim.py.events import ConditionValue, Condition
+
 from .utility import via_usimpy
 
 
@@ -64,6 +67,95 @@ class TestEvent:
         env.process(receiver(env, event))
         env.run()
         assert env.now == 10
+
+    @via_usimpy
+    def test_callbacks(self, env):
+        head = env.event()
+        tail = env.event()
+        head.callbacks.append(tail)
+        head.succeed('Done')
+        yield tail
+        assert tail.value == head.value
+
+    def test_fail_teardown(self, env):
+        """Unhandled failure destroys the environment"""
+        event = env.event()
+        event.fail(KeyError())
+        with pytest.raises(KeyError):
+            env.run()
+
+    def test_fail_defuse(self, env):
+        """Defused failure preserves the environment"""
+        event = env.event()
+        event.fail(KeyError())
+        event.defused = True
+        env.run()
+        assert type(event.value) == KeyError
+
+    def test_misuse(self, env):
+        event = env.event()
+        event.succeed()
+        with pytest.raises(RuntimeError):
+            event.succeed()
+        with pytest.raises(RuntimeError):
+            event.fail(KeyError())
+        event = env.event()
+        with pytest.raises(ValueError):
+            event.fail('Not an Exception')
+
+
+class TestTimeout:
+    def test_misuse(self, env):
+        with pytest.raises(ValueError):
+            env.timeout(-1)
+        env.timeout(0)
+        env.timeout(200)
+
+
+class TestProess:
+    @via_usimpy
+    def test_waitfor_passed_event(self, env):
+        """Wait for an event that has passed already"""
+        event = env.event()
+        event.succeed()
+        yield env.timeout(1)
+        assert event.processed
+        yield event
+
+    def test_interrupt(self, env):
+        def proc(env):
+            with pytest.raises(Interrupt):
+                yield env.timeout(1)
+
+        process = env.process(proc(env))
+        process.interrupt('interrupt')
+        env.run()
+
+    def test_interrupt_many(self, env):
+        def proc(env):
+            for _ in range(3):
+                with pytest.raises(Interrupt):
+                    yield env.timeout(1)
+
+        process = env.process(proc(env))
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        env.run()
+
+
+class TestConditionValue:
+    def test_operations(self, env):
+        events = env.event().succeed(0), env.event().succeed(1)
+        values = ConditionValue(*events)
+        assert all(event in values for event in events)
+        assert all(values[event] == event.value for event in events)
+        for value, event in zip(values.values(), events):
+            assert value == event.value
+        with pytest.raises(KeyError):
+            values[0]
+        assert values == ConditionValue(*events)
+        assert values == ConditionValue(*events).todict()
 
 
 class TestCondition:
@@ -136,3 +228,19 @@ class TestCondition:
         assert not condition.ok
         assert type(event.value) == KeyError
         assert event.value == condition.value
+
+    @via_usimpy
+    def test_fail_immediately(self, env):
+        event = env.event()
+        condition = env.timeout(5) & event & env.timeout(2000)
+        event.fail(KeyError())  # fail before yielding control
+        with pytest.raises(KeyError):
+            yield condition
+
+    @via_usimpy
+    def test_succeed_never(self, env):
+        events = tuple(env.event() for _ in range(4))
+        condition = Condition(env, lambda events, count: False, events)
+        assert not condition.triggered
+        yield env.timeout(10)
+        assert not condition.triggered
