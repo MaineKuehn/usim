@@ -28,12 +28,14 @@ V = TypeVar('V')
 
 class Environment:
     """
-    SimPy Environment compatibility layer embedded in a ``usim`` simulation
+    SimPy Environment compatibility layer embedded in a μSim simulation
 
-    This environment can be constructed in any ``usim`` :term:`Activity`.
-    It exposes most of the :py:class:`simpy.Environment` interface, with
-    the exception of :py:meth:`simpy.Environment.run`. To avoid errors,
-    the environment must be run in a context.
+    This environment can be run by itself or in any μSim :term:`Activity`.
+    It exposes most of the :py:class:`simpy.Environment` interface, skipping
+    methods meant for internal usage such as :py:meth:`simpy.Environment.step`.
+    To avoid errors, the environment can be :py:meth:`~.run` only *outside*
+    of a μSim simulation. Use the environment as an ``async with`` context
+    or ``await env.until()`` to run it in a μSim simulation.
 
     .. code:: python3
 
@@ -44,7 +46,7 @@ class Environment:
                 print('Start driving at %s' % env.now)
                 yield env.timeout(2)
 
-        async def legacy_simulation():
+        async def wrapped_simulation():
             async with Environment() as env:
                 env.process(car(env))
 
@@ -64,33 +66,34 @@ class Environment:
         However, you can have an arbitrary number of :term:`Activity`
         running concurrently.
 
-    Migrating to ``usim``
-    ---------------------
+    .. hint::
 
-    There is no explicit environment in ``usim``;
-    its functionality is split across several types, and
-    the event loop spawned by :py:func:`usim.run` is implicitly available.
+        **Migrating to μSim**
 
-    **starting a simulation**
-        Call :py:func:`usim.run` with an initial set of activities.
+        There is no explicit environment in ``usim``;
+        its functionality is split across several types, and
+        the event loop spawned by :py:func:`usim.run` is implicitly available.
 
-    **spawning new processes** (:py:meth:`~.process`)
-        Open a :py:class:`usim.Scope` which can :py:meth:`~.usim.Scope.do`
-        several activities at once.
-        An opened :py:class:`~usim.Scope` can be passed to other activities,
-        similar to an environment.
+        **starting a simulation**
+            Call :py:func:`usim.run` with an initial set of activities.
 
-    **timeout after a delay** (:py:meth:`~.timeout`)
-        Use ``await (time + delay)``, or one of its variant such
-        as ``await (time == deadline)``.
+        **spawning new processes** (:py:meth:`~.process`)
+            Open a :py:class:`usim.Scope` which can :py:meth:`~.usim.Scope.do`
+            several activities at once.
+            An opened :py:class:`~usim.Scope` can be passed to other activities,
+            similar to an environment.
 
-    **creating an event** (:py:meth:`~.event`)
-        Create a new :py:class:`usim.Flag`, and ``await flag`` to be notified
-        once it is :py:meth:`~usim.Flag.set`.
+        **timeout after a delay** (:py:meth:`~.timeout`)
+            Use ``await (time + delay)``, or one of its variant such
+            as ``await (time == deadline)``.
 
-    **combining events** (:py:meth:`~.all_of` and :py:meth:`~.any_of`)
-        Use the operators ``|`` ("any"), ``&`` ("all") or ``~`` ("not") to
-        combine events, as in ``flag1 & flag2 | ~flag3``.
+        **creating an event** (:py:meth:`~.event`)
+            Create a new :py:class:`usim.Flag`, and ``await flag`` to be notified
+            once it is :py:meth:`~usim.Flag.set`.
+
+        **combining events** (:py:meth:`~.all_of` and :py:meth:`~.any_of`)
+            Use the operators ``|`` ("any"), ``&`` ("all") or ``~`` ("not") to
+            combine events, as in ``flag1 & flag2 | ~flag3``.
     """
     def __init__(self, initial_time=0):
         self._initial_time = initial_time
