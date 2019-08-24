@@ -13,6 +13,16 @@ class EnvironmentScope(Scope):
         return isinstance(exc_val, StopSimulation)
 
 
+def _inside_usim():
+    """Whether the current stack is run by ``usim``"""
+    try:
+        __LOOP_STATE__.LOOP.time
+    except RuntimeError:
+        return False
+    else:
+        return True
+
+
 V = TypeVar('V')
 
 
@@ -133,10 +143,7 @@ class Environment:
         otherwise
             The sub-simulation last until its time equals ``until``.
         """
-        try:
-            # test whether we are contained in an active usim loop
-            __LOOP_STATE__.LOOP.time
-        except RuntimeError:
+        if not _inside_usim():
             try:
                 usim_run(self.until(until))
             except ActivityError as err:
