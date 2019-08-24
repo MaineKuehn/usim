@@ -144,7 +144,9 @@ class Environment:
                 raise err.__cause__
             else:
                 if isinstance(until, Event):
-                    return until.value
+                    if until.processed:
+                        return until.value
+                    raise RuntimeError("'until' event was not triggered")
         else:
             raise CompatibilityError(
                 "'env.run' is not supported inside a 'usim' simulation\n"

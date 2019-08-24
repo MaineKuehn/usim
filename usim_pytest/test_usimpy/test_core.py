@@ -32,3 +32,8 @@ class TestEnvironment:
         result = env.run(timeout)
         assert env.now == 1
         assert result == 'Hello World'
+
+    def test_until_not_triggered(self, env):
+        event = env.event()
+        with pytest.raises(RuntimeError):
+            env.run(event)
