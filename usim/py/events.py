@@ -101,7 +101,7 @@ class Event(Generic[V]):
         for callback in callbacks:  # type: Event
             callback.trigger(self)
         value, exception = self._value
-        if exception is not None:
+        if exception is not None and not self.defused:
             raise exception
 
     async def __usimpy_schedule__(self):

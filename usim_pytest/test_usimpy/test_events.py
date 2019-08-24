@@ -19,3 +19,20 @@ class TestEvent:
         assert event.triggered
         assert event.processed
         assert event.ok
+
+    @via_usimpy
+    def test_event_lifetime_failure(self, env):
+        event = env.event()
+        assert not event.triggered
+        assert not event.processed
+        assert not event.ok
+        event.fail(KeyError())
+        event.defused = True
+        assert event.triggered
+        assert not event.processed
+        assert not event.ok
+        with pytest.raises(KeyError):
+            yield event
+        assert event.triggered
+        assert event.processed
+        assert not event.ok
