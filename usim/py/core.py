@@ -115,7 +115,9 @@ class Environment:
                     await (time >= until)
                 raise StopSimulation
 
-    def run(self, until=None):
+    def run(
+        self, until: 'Union[None, float, Event[V]]' = None
+    ) -> Union[None, V, Exception]:
         """
         Run the simulation of this environment synchronously
 
@@ -140,6 +142,9 @@ class Environment:
             except ActivityError as err:
                 # unwrap any exceptions
                 raise err.__cause__
+            else:
+                if isinstance(until, Event):
+                    return until.value
         else:
             raise CompatibilityError(
                 "'env.run' is not supported inside a 'usim' simulation\n"
