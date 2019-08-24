@@ -197,6 +197,14 @@ class TestCondition:
         assert env.now == 4
 
     @via_usimpy
+    def test_env_operator(self, env):
+        assert env.now == 0
+        yield env.any_of(env.timeout(delay) for delay in range(5, 11))
+        assert env.now == 5
+        yield env.all_of(env.timeout(delay) for delay in range(5, 11))
+        assert env.now == 15
+
+    @via_usimpy
     def test_value_flat(self, env):
         timeouts = env.timeout(1, 1), env.timeout(2, 2)
         result = yield (timeouts[0] | timeouts[1])

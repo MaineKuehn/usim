@@ -1,5 +1,10 @@
 import pytest
 
+from usim.py import Environment
+from usim.py.exceptions import CompatibilityError
+
+from ..utility import via_usim
+
 
 class TestEnvironment:
     def test_events_done(self, env):
@@ -37,3 +42,18 @@ class TestEnvironment:
         event = env.event()
         with pytest.raises(RuntimeError):
             env.run(event)
+
+    def test_inital_time(self):
+        env = Environment(25)
+        assert env.now == 25
+        env.run(50)
+        assert env.now == 50
+        env = Environment(25)
+        assert env.now == 25
+        with pytest.raises(ValueError):
+            env.run(10)
+
+    @via_usim
+    async def test_inside_usim(self, env):
+        with pytest.raises(CompatibilityError):
+            env.run()
