@@ -176,6 +176,23 @@ class TestProcess:
         env.run(5)
         assert process.value == 42
 
+    def test_generator(self, env):
+        with pytest.raises(ValueError):
+            env.process(lambda: None)
+        with pytest.raises(ValueError):
+            env.process(42)
+        with pytest.raises(ValueError):
+            env.process({'throw': True, 'send': True})
+
+        class CustomGenerator:
+            def throw(self, exception):
+                return env.event()
+
+            def send(self, value):
+                return env.event()
+
+        env.process(CustomGenerator())
+
 
 class TestConditionValue:
     def test_operations(self, env):

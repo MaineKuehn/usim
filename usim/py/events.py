@@ -377,6 +377,10 @@ class Process(Event[V]):
     __slots__ = '_generator', '_interrupts', 'target'
 
     def __init__(self, env: 'Environment', generator: Generator[None, Event, V]):
+        if not hasattr(generator, 'send') and not hasattr(generator, 'throw'):
+            raise ValueError(
+                f"'generator' argument must implement 'throw' and 'send'"
+            )
         super().__init__(env)
         self._generator = generator
         self._interrupts = InterruptQueue()
