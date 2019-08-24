@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple, Coroutine, Generator, TypeVar, Iterable,\
     Union
-from .._core.loop import __LOOP_STATE__, Loop
+from .._core.loop import __LOOP_STATE__, Loop, ActivityError
 from .. import time, run as usim_run
 from .. import Scope
 
@@ -133,7 +133,11 @@ class Environment:
             # test whether we are contained in an active usim loop
             __LOOP_STATE__.LOOP.time
         except RuntimeError:
-            usim_run(self.until(until))
+            try:
+                usim_run(self.until(until))
+            except ActivityError as err:
+                # unwrap any exceptions
+                raise err.__cause__
         else:
             raise CompatibilityError(
                 "'env.run' is not supported inside a 'usim' simulation\n"
