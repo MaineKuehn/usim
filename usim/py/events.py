@@ -7,6 +7,19 @@ from .exceptions import CompatibilityError, Interrupt
 if TYPE_CHECKING:
     from .core import Environment
 
+import inspect
+
+
+# Implementation Note
+# All of simpy's calls are sync, meaning we often *cannot* invoke
+# the proper usim interfaces. Instead of recreating the usim primitives
+# we use them anyways and directly manipulate them when required.
+# For the most part, this means we use a ``usim.Flag`` for synchronisation.
+# All ``async`` code uses its public interface, while compatiblity code directly
+# accesses its internals.
+#
+# This is an ugly hack. Wherever possible, use the proper usim interfaces!
+
 
 V = TypeVar('V')
 
