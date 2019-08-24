@@ -263,5 +263,14 @@ class Environment:
         """
         return AnyOf(self, events)
 
+    def __del__(self):
+        # simpy requires us to register callback handlers
+        # on instantiation or success. This can happen even
+        # though the event loop is never run.
+        # Clean up our internal callbacks to avoid resource
+        # leak warnings.
+        for event, _ in self._startup:
+            event.close()
+
 
 from .events import Timeout, Process, Event, AnyOf, AllOf  # noqa: E402
