@@ -5,7 +5,7 @@ from .. import time, run as usim_run
 from .. import Scope
 
 from .events import Event
-from .exceptions import CompatibilityError, StopSimulation, StopProcess
+from .exceptions import NotEmulatedError, StopSimulation, StopProcess
 
 
 class EnvironmentScope(Scope):
@@ -95,11 +95,14 @@ class Environment:
             Use the operators ``|`` ("any"), ``&`` ("all") or ``~`` ("not") to
             combine events, as in ``flag1 & flag2 | ~flag3``.
     """
+    __slots__ = '_initial_time', '_startup', '_loop', '_scope', 'active_process'
+
     def __init__(self, initial_time=0):
         self._initial_time = initial_time
         self._startup = []  # type: List[Tuple[Coroutine, float]]
         self._loop = None  # type: Optional[Loop]
         self._scope = EnvironmentScope()
+        #: The currently active process
         self.active_process = None  # type: Optional[Process]
 
     async def __aenter__(self):
@@ -159,7 +162,7 @@ class Environment:
                         return until.value
                     raise RuntimeError("'until' event was not triggered")
         else:
-            raise CompatibilityError(
+            raise NotEmulatedError(
                 "'env.run' is not supported inside a 'usim' simulation\n"
                 "\n"
                 "Synchronous running blocks the event loop. Use instead\n"
@@ -187,7 +190,7 @@ class Environment:
         The μSim compatibility layer uses the regular μSim event loop.
         There is no public alternative to 'Environment.step'.
         """
-        raise CompatibilityError(self.step.__doc__)
+        raise NotEmulatedError(self.step.__doc__)
 
     def peek(self):
         """
@@ -196,7 +199,7 @@ class Environment:
         The μSim compatibility layer uses the regular μSim event loop.
         There is no public alternative to 'Environment.peek'.
         """
-        raise CompatibilityError(self.step.__doc__)
+        raise NotEmulatedError(self.step.__doc__)
 
     @property
     def now(self) -> float:
@@ -205,7 +208,7 @@ class Environment:
 
         .. hint::
 
-            Migrate by using ``usim.time.now`` instead.
+            Migrate by using :py:attr:`usim.time.now` instead.
         """
         if self._loop is None:
             return self._initial_time
@@ -213,11 +216,11 @@ class Environment:
 
     def schedule(self, event: 'Union[Event, Coroutine]', priority=1, delay=0):
         """
-        Schedule a :py:class:`~.Event` to be triggered after ``delay``
+        Schedule an :py:class:`~.Event` to be triggered after ``delay``
 
-        .. note::
-
-            Setting the parameter ``priority`` is not supported.
+        Setting the parameter ``priority`` to anything but the default
+        is not supported. It only exists for compatibility with the
+        :py:mod:`simpy` API.
 
         .. hint::
 
@@ -225,7 +228,7 @@ class Environment:
             for example :py:meth:`usim.Flag.set`.
         """
         if priority != 1:
-            raise CompatibilityError('Only the default priority=1 is supported')
+            raise NotEmulatedError('Only the default priority=1 is supported')
         if isinstance(event, Event):
             event = event.__usimpy_schedule__()
         if delay == 0:

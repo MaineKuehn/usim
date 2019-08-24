@@ -1,7 +1,7 @@
 import pytest
 
 from usim.py import Environment
-from usim.py.exceptions import CompatibilityError
+from usim.py.exceptions import NotEmulatedError
 
 from ..utility import via_usim
 
@@ -55,5 +55,5 @@ class TestEnvironment:
 
     @via_usim
     async def test_inside_usim(self, env):
-        with pytest.raises(CompatibilityError):
+        with pytest.raises(NotEmulatedError):
             env.run()

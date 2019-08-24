@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, TypeVar, Generic, Union, Tuple, Optional, Generator,\
-    List, Iterable
+    List, Iterable, Callable
 from .. import Flag, time
 from .._primitives.condition import Any as AnyFlag
 
-from .exceptions import CompatibilityError, Interrupt, StopProcess
+from .exceptions import NotEmulatedError, Interrupt, StopProcess
 if TYPE_CHECKING:
     from .core import Environment
 
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 # This is an ugly hack. Wherever possible, use the proper usim interfaces!
 
 
+E = TypeVar('E')
 V = TypeVar('V')
 
 __all__ = [
@@ -33,7 +34,7 @@ class Event(Generic[V]):
     An :py:class:`~.Event` is triggered by :py:meth:`~.succeed` or :py:meth:`~.fail`.
     Triggering wakes up every :py:class:`~.Process` or :py:class:`~usim.typing.Task`
     that is suspended waiting for the event. In addition, a :py:class:`~.Process` may
-    add to the events :py:attr:`~.callbacks` to trigger actions alongside the event.
+    add to an event's :py:attr:`~.callbacks` to trigger actions alongside the event.
 
     .. code:: python3
 
@@ -46,42 +47,63 @@ class Event(Generic[V]):
             event.success("Jolly Good!")
 
     Once triggered, :py:attr:`~.value` is set either to the result or failure reason.
+    Use :py:attr:`~.triggered`, :py:attr:`~.processed` and :py:attr:`~.ok` to inspect
+    what state an event is in.
 
-    Migrating to ``usim``
-    ---------------------
+    .. hint::
 
-    When migrating from :py:class:`~.Process` to :py:class:`~usim.typing.Task`,
-    both can wait for an event. Simply ``await event`` from inside a :term:`Activity`:
+        **Migrating to μSim**
 
-        async def track(event: Event):
-            print(f'Waiting for {event}')
-            await event
-            print(f'Notified by {event}')
+        When migrating from :py:class:`~.Process` to :py:class:`~usim.typing.Task`,
+        both can wait for an event. Use ``await event`` inside an :term:`Activity`:
 
-    When migrating the :py:class:`~.Event`, the best match is :py:class:`usim.Flag`.
-    A flag has no dedicated :py:attr:`~.value`, but represents a boolean.
+        .. code:: python3
 
-    .. code:: python3
+            async def track(event: Event):
+                print(f'Waiting for {event}')
+                await event
+                print(f'Notified by {event}')
 
-        async def track(flag: Flag):
-            print(f'Waiting for {flag}')
-            await flag
-            print(f'Notified by {flag}')
+        When migrating the :py:class:`~.Event`, the best match is :py:class:`usim.Flag`.
+        A flag has no dedicated :py:attr:`~.value`, but represents a boolean.
 
-        async def trigger(flag: Flag):
-            await event.set()
+        .. code:: python3
 
-    There is no concept for :py:attr:``~.callbacks`` and :py:attr:``~.defused``
-    in ``usim``. Exceptions are propagated between activities and should be handled
-    using ``try``/``except`` error handlers.
+            async def track(flag: Flag):
+                print(f'Waiting for {flag}')
+                await flag
+                print(f'Notified by {flag}')
+
+            async def trigger(flag: Flag):
+                await event.set()
+
+        In order to send values between activities, use a :py:class:`usim.basics.Queue`
+        or :py:class:`usim.basics.Channel`. These allow to send and wait for messages.
+
+        .. code:: python3
+
+            async def receiver(queue: Queue):
+                print('Waiting for a message to reach us...')
+                message = await queue
+                print(f'And the message is: {message}')
+
+            async def sender(queue: Queue):
+                await queue.put('Hello World')
+
+        There is no concept for :py:attr:``~.callbacks`` and :py:attr:``~.defused``
+        in μSim. Exceptions are propagated between activities and should be handled
+        using ``try``/``except`` error handlers.
     """
     __slots__ = 'env', 'callbacks', '_flag', '_value', 'defused'
 
-    def __init__(self, env: 'Environment'):
+    def __init__(self: E, env: 'Environment'):
         self._flag = Flag()
+        #: The environment to which this event belongs
         self.env = env
-        self.callbacks = []  # type: List[Event]
+        #: List of callbacks to run when the event is triggered
+        self.callbacks = []  # type: List[Callable[[E], None]]
         self._value = None  # type: Optional[Tuple[V, Optional[BaseException]]]
+        #: Whether a failure of this event has been handled
         self.defused = False
 
     # Implementation Note
@@ -142,7 +164,13 @@ class Event(Generic[V]):
 
     @property
     def ok(self) -> bool:
-        """Whether this event has been triggered successfully"""
+        """
+        Whether this event has been processed successfully
+
+        .. hint::
+
+            Migrate by using ``bool(flag)`` instead.
+        """
         return self._value is not None and self._value[1] is None
 
     @property
@@ -161,7 +189,10 @@ class Event(Generic[V]):
         """
         Trigger this event to match the state of ``event``
 
-        :note: This method is invoked internally when running callbacks.
+        .. note::
+
+            This method is invoked internally when running callbacks.
+            Avoid using it manually.
         """
         assert self._value is None, 'cannot trigger already triggered event'
         self._value = event._value
@@ -169,7 +200,13 @@ class Event(Generic[V]):
         return self  # simpy.Event docs say this, code does not
 
     def succeed(self, value=None) -> 'Event':
-        """Trigger this event as successful with ``value``"""
+        """
+        Trigger this event as successful with ``value``
+
+        .. hint::
+
+            Migrate by using ``flag.set()`` instead.
+        """
         if self._value is not None:
             raise RuntimeError(f'{self} has already been triggered')
         self._value = value, None
@@ -194,19 +231,23 @@ class Timeout(Event[V]):
     """
     Automatically triggered Event that processes can wait for
 
+    This event does automatically :py:meth:`~.succeed` after ``delay``
+    has passed. It should not be triggered manually.
+
     :param delay: time until the event is triggered
     :param value: value of the event when triggered
 
-    Migrating to ``usim``
-    ---------------------
+    .. hint::
 
-    Time related notifications can be created using :py:data:`usim.time`.
+        **Migrating to μSim**
 
-    **timeout**
-        Use ``await (time + delay)``.
+        Time related notifications can be created using :py:data:`usim.time`.
 
-    **deadline**
-        Use ``await (time >= delay)`` or ``await (time == delay)``.
+        **timeout**
+            Use ``await (time + delay)``.
+
+        **deadline**
+            Use ``await (time >= deadline)`` or ``await (time == deadline)``.
     """
     __slots__ = '_fixed_value', '_delay'
 
@@ -235,23 +276,27 @@ class Initialize:
     unconditionally raises an error.
     """
     def __init__(self, *args, **kwargs):
-        raise CompatibilityError(self.__doc__)
+        raise NotEmulatedError(self.__doc__)
 
 
 class InterruptQueue:
     """
     Internal helper to manage interrupts for :py:class:`~.Process`
     """
+    __slots__ = '_flag', '_causes', 'ok', 'defused'
+
     def __init__(self):
         self._flag = Flag()
         self._causes = []
         self.ok = False
+        self.defused = True
 
     def __bool__(self):
         return bool(self._causes)
 
     @property
     def value(self):
+        """The next :py:exc:`Interrupt`; this is a destructive action"""
         return Interrupt(self.pop())
 
     def push(self, cause):
@@ -289,42 +334,45 @@ class Process(Event[V]):
             env.process('tack')
             yield env.process('TOCK')
 
-    Migrating to ``usim``
-    ---------------------
+    .. hint::
 
-    When migrating from :py:class:`~.Process`, activities are expressed as
-    ``async def`` coroutines instead of generators. Activities do not need
-    an environment - it is implicitly available. An activity can ``await``
-    a :term:`notification`, and concurrently iterate using ``async for``
-    and manage resources using ``async with``.
+        **Migrating to μSim**
 
-    .. code:: python3
+        When migrating from :py:class:`~.Process`, activities are expressed as
+        ``async def`` coroutines instead of generators. Activities do not need
+        an environment - it is implicitly available. An activity can ``await``
+        a :term:`notification`, concurrently iterate using ``async for``
+        and manage resources using ``async with``.
 
-        async def clock(sound):
-            for _ in range(60):
-                print(sound)
-                await (time + 1)
+        .. code:: python3
 
-    To run an activity, one must distinguish between a concurrent
-    :py:class:`~usim.typing.Task` and a nested activity. When an activity
-    exclusively waits for another activity, this can be done directly using ``await``.
+            async def clock(sound):
+                for _ in range(60):
+                    print(sound)
+                    await (time + 1)
 
-    .. code:: python3
+        To run an activity, one must distinguish between a concurrent
+        :py:class:`~usim.typing.Task` and a nested activity. When an activity
+        exclusively waits for another activity, it can ``await`` it.
 
-        async def double_clock(sound):
-            await clock(sound)
-            await clock(sound)
+        .. code:: python3
 
-    Only concurrent activities must be handled as a :py:class:`~usim.typing.Task`.
-    Use a :py:class:`usim.Scope` to open new tasks and manage their lifetime:
+            async def double_clock(sound):
+                "A clock of double duration"
+                await clock(sound)
+                await clock(sound)
 
-    .. code:: python3
+        Only concurrent activities must be handled as a :py:class:`~usim.typing.Task`.
+        Use a :py:class:`usim.Scope` to open new tasks and manage their lifetime:
 
-        async def multi_clock():
-            async for Scope() as scope:
-                scope.do(clock('tick'))
-                scope.do(clock('tack'))
-                scope.do(clock('TOCK'))
+        .. code:: python3
+
+            async def multi_clock():
+                "A clock of making multiple sounds"
+                async for Scope() as scope:
+                    scope.do(clock('tick'))
+                    scope.do(clock('tack'))
+                    scope.do(clock('TOCK'))
     """
     __slots__ = '_generator', '_interrupts', 'target'
 
@@ -332,11 +380,13 @@ class Process(Event[V]):
         super().__init__(env)
         self._generator = generator
         self._interrupts = InterruptQueue()
+        #: Event this process is waiting for, or :py:const:`None` if
+        #: the process is starting, stopping or about to be interrupted
         self.target = None  # type: Optional[Event]
         env.schedule(self._run_payload(), delay=0)
 
     def interrupt(self, cause=None):
-        """Interrupt the process by raising a :py:exc:`Interrupt`"""
+        """Interrupt the process by raising an :py:exc:`Interrupt`"""
         if self._value is None:
             self._interrupts.push(cause)
 
@@ -462,18 +512,19 @@ class Condition(Event[ConditionValue]):
         trigger. This means that ``evaluate`` should not depend on external,
         mutable objects.
 
-    Migrating to ``usim``
-    ---------------------
+    .. hint::
 
-    Since conditions, such as a :py:class:`~.Flag`, may change their value,
-    ``usim`` does not support arbitrary comparisons. The common and well-defined
-    :py:meth:`~.all_of` and :py:meth:`~.any_of` correspond to the ``&`` and ``|``
-    operators.
+        **Migrating to μSim**
 
-    .. code:: python3
+        Since conditions, such as a :py:class:`~.Flag`, may change their value,
+        μSim does not support arbitrary comparisons. The common and well-defined
+        :py:meth:`~.all_of` and :py:meth:`~.any_of` correspond to the ``&`` and ``|``
+        operators.
 
-        all_events = flag1 & flag2 & flag3
-        any_events = flag1 | flag2 | flag3
+        .. code:: python3
+
+            all_events = flag1 & flag2 & flag3
+            any_events = flag1 | flag2 | flag3
     """
     __slots__ = '_evaluate', '_events', '_processed'
 
@@ -550,6 +601,8 @@ class AllOf(Condition):
 
     Shorthand for ``Condition(Condition.all_events, events)``.
     """
+    __slots__ = ()
+
     def __init__(self, env, events):
         super().__init__(env, self.all_events, events)
 
@@ -560,5 +613,7 @@ class AnyOf(Condition):
 
     Shorthand for ``Condition(Condition.any_events, events)``.
     """
+    __slots__ = ()
+
     def __init__(self, env, events):
         super().__init__(env, self.any_events, events)
