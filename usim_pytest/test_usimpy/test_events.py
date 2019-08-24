@@ -76,7 +76,6 @@ class TestCondition:
             | env.timeout(3)
             | env.timeout(4)
         )
-        assert len(timeouts._events) == 5
         assert env.now == 0
         yield timeouts
         assert env.now == 1
@@ -90,7 +89,6 @@ class TestCondition:
             & env.timeout(3)
             & env.timeout(4)
         )
-        assert len(timeouts._events) == 5
         assert env.now == 0
         yield timeouts
         assert env.now == 4

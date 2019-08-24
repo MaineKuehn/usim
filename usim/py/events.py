@@ -84,17 +84,21 @@ class Event(Generic[V]):
         self._value = None  # type: Optional[Tuple[V, Optional[BaseException]]]
         self.defused = False
 
+    # Implementation Note
+    # ``usim`` would flatten Conditions of the same type here. With the
+    # ``simpy`` model, this does not work well. The problem is that events
+    # are active components that may fail the Environment.
+    # If we flatten conditions, we end up with intermediate objects even in
+    # trivial cases - a & b & c creates an intermediate pair of a & b. This
+    # pair will evaluate concurrently, and is *not* defused on error.
+    # So we *must* preserve all intermediate events to defuse them in one go.
     def __or__(self, other):
         if isinstance(other, Event):
-            if isinstance(other, AnyOf):
-                return AnyOf(self.env, (self, *other._events))
             return AnyOf(self.env, (self, other))
         return NotImplemented
 
     def __and__(self, other):
         if isinstance(other, Event):
-            if isinstance(other, AllOf):
-                return AllOf(self.env, (self, *other._events))
             return AllOf(self.env, (self, other))
         return NotImplemented
 
@@ -526,13 +530,6 @@ class AllOf(Condition):
     def __init__(self, env, events):
         super().__init__(env, self.all_events, events)
 
-    def __and__(self, other):
-        if isinstance(other, Event):
-            if isinstance(other, AllOf):
-                return AllOf(self.env, (*self._events, *other._events))
-            return AllOf(self.env, (*self._events, other))
-        return NotImplemented
-
 
 class AnyOf(Condition):
     """
@@ -542,10 +539,3 @@ class AnyOf(Condition):
     """
     def __init__(self, env, events):
         super().__init__(env, self.any_events, events)
-
-    def __or__(self, other):
-        if isinstance(other, Event):
-            if isinstance(other, AnyOf):
-                return AnyOf(self.env, (*self._events, *other._events))
-            return AnyOf(self.env, (*self._events, other))
-        return NotImplemented
