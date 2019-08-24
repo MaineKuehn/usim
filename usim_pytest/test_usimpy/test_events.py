@@ -94,6 +94,17 @@ class TestCondition:
         assert env.now == 4
 
     @via_usimpy
+    def test_operator_inplace(self, env):
+        timeouts = env.timeout(4)
+        timeouts &= env.timeout(2)
+        timeouts &= env.timeout(1)
+        timeouts &= env.timeout(3)
+        timeouts &= env.timeout(4)
+        assert env.now == 0
+        yield timeouts
+        assert env.now == 4
+
+    @via_usimpy
     def test_value_flat(self, env):
         timeouts = env.timeout(1, 1), env.timeout(2, 2)
         result = yield (timeouts[0] | timeouts[1])
