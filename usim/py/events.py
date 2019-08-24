@@ -223,7 +223,7 @@ class Timeout(Event[V]):
         self.succeed(self._fixed_value)
 
     def __repr__(self):
-        return f'<{self.__class__.__name__} delay={self._delay}>'
+        return f'<usim.py.{self.__class__.__name__} delay={self._delay}>'
 
 
 class Initialize:
@@ -372,7 +372,7 @@ class Process(Event[V]):
 
     def __repr__(self):
         return (
-            f'<{self.__class__.__name__} object'
+            f'<usim.py.{self.__class__.__name__} object'
             f' of {self._generator.__name__!r} at {id(self)}>'
         )
 
@@ -405,7 +405,10 @@ class ConditionValue:
         return self.todict() == other
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({", ".join(map(str, self.events))})'
+        return (
+            f'usim.py-events{self.__class__.__name__}'
+            f'({", ".join(map(str, self.events))})'
+        )
 
     def __iter__(self):
         yield from self.events
@@ -519,6 +522,17 @@ class Condition(Event[ConditionValue]):
         """Use as ``evaluate`` to test that any events have triggered"""
         # TODO: taken from simpy - this is inconsistent with any([])
         return count or not events
+
+    def __repr__(self):
+        result = '' if self._value is None else (
+            f', value={self._value[0]!r}' if self._value[1] is None else
+            f', fail={self._value[1]!r}'
+        )
+        return (
+            f'<usim.py.{self.__class__.__name__}'
+            f' events=({", ".join(map(str, self._events))}){result}'
+            f' at {id(self)}>'
+        )
 
 
 class AllOf(Condition):
