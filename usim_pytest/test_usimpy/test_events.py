@@ -64,3 +64,33 @@ class TestEvent:
         env.process(receiver(env, event))
         env.run()
         assert env.now == 10
+
+
+class TestCondition:
+    @via_usimpy
+    def test_operator_or(self, env):
+        timeouts = (
+            env.timeout(4)
+            | env.timeout(2)
+            | env.timeout(1)
+            | env.timeout(3)
+            | env.timeout(4)
+        )
+        assert len(timeouts._events) == 5
+        assert env.now == 0
+        yield timeouts
+        assert env.now == 1
+
+    @via_usimpy
+    def test_operator_and(self, env):
+        timeouts = (
+            env.timeout(4)
+            & env.timeout(2)
+            & env.timeout(1)
+            & env.timeout(3)
+            & env.timeout(4)
+        )
+        assert len(timeouts._events) == 5
+        assert env.now == 0
+        yield timeouts
+        assert env.now == 4

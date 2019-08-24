@@ -7,8 +7,6 @@ from .exceptions import CompatibilityError, Interrupt
 if TYPE_CHECKING:
     from .core import Environment
 
-import inspect
-
 
 # Implementation Note
 # All of simpy's calls are sync, meaning we often *cannot* invoke
@@ -85,6 +83,20 @@ class Event(Generic[V]):
         self.callbacks = []  # type: List[Event]
         self._value = None  # type: Optional[Tuple[V, Optional[BaseException]]]
         self.defused = False
+
+    def __or__(self, other):
+        if isinstance(other, Event):
+            if isinstance(other, Condition):
+                return AnyOf(self.env, (self, *other._events))
+            return AnyOf(self.env, (self, other))
+        return NotImplemented
+
+    def __and__(self, other):
+        if isinstance(other, Event):
+            if isinstance(other, Condition):
+                return AllOf(self.env, (self, *other._events))
+            return AllOf(self.env, (self, other))
+        return NotImplemented
 
     def __await__(self):
         result = yield from self._flag.__await__()
@@ -456,6 +468,20 @@ class Condition(Event[ConditionValue]):
         if any(event.env != env for event in self._events):
             raise ValueError('Events from multiple environments cannot be mixed')
         env.schedule(self._check_events(), delay=0)
+
+    def __or__(self, other):
+        if isinstance(other, Event):
+            if isinstance(other, Condition):
+                return AnyOf(self.env, (*self._events, *other._events))
+            return AnyOf(self.env, (*self._events, other))
+        return NotImplemented
+
+    def __and__(self, other):
+        if isinstance(other, Event):
+            if isinstance(other, Condition):
+                return AllOf(self.env, (*self._events, *other._events))
+            return AllOf(self.env, (*self._events, other))
+        return NotImplemented
 
     async def _check_events(self):
         observed = [event for event in self._events if event._flag]
