@@ -93,8 +93,13 @@ class Event(Generic[V]):
 
     async def __usimpy_schedule__(self):
         """Coroutine to schedule this Event in ``usim.py``"""
-        await self._flag.set()
         await self._invoke_callbacks()
+
+    def _trigger(self):
+        """Awake all waiting tasks and schedule the event itself"""
+        self._flag._value = True
+        self._flag.__trigger__()
+        self.env.schedule(self)
 
     @property
     def triggered(self) -> bool:
@@ -131,7 +136,7 @@ class Event(Generic[V]):
         """
         assert self._value is None, 'cannot trigger already triggered event'
         self._value = event._value
-        self.env.schedule(self)
+        self._trigger()
         return self  # simpy.Event docs say this, code does not
 
     def succeed(self, value=None) -> 'Event':
@@ -139,7 +144,7 @@ class Event(Generic[V]):
         if self._value is not None:
             raise RuntimeError(f'{self} has already been triggered')
         self._value = value, None
-        self.env.schedule(self)
+        self._trigger()
         return self
 
     def fail(self, exception: BaseException):
@@ -152,7 +157,7 @@ class Event(Generic[V]):
                 f' not {exception.__class__.__name__!r}'
             )
         self._value = None, exception
-        self.env.schedule(self)
+        self._trigger()
         return self
 
 
