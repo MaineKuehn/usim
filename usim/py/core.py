@@ -110,6 +110,8 @@ class Environment:
                 if isinstance(until, Event):
                     await until
                 else:
+                    if until <= time.now:
+                        raise ValueError('until must be in the future')
                     await (time >= until)
                 raise StopSimulation
 
