@@ -109,3 +109,19 @@ class TestCondition:
             timeouts[0]: 1,
             timeouts[1]: 2,
         }
+
+    @via_usimpy
+    def test_error(self, env):
+        def fail_after(env, event, delay):
+            yield env.timeout(delay)
+            event.fail(KeyError())
+        event = env.event()
+        condition = env.timeout(5) & event & env.timeout(2000)
+        env.process(fail_after(env, event, 1))
+        with pytest.raises(KeyError):
+            yield condition
+        assert env.now == 1
+        assert condition.triggered
+        assert not condition.ok
+        assert type(event.value) == KeyError
+        assert event.value == condition.value
