@@ -36,3 +36,31 @@ class TestEvent:
         assert event.triggered
         assert event.processed
         assert not event.ok
+
+    def test_event_value(self, env):
+        event = env.event()
+        with pytest.raises(AttributeError):
+            event.value
+        event.succeed('Success!')
+        assert event.value == 'Success!'
+        event = env.event()
+        event.fail(KeyError())
+        event.defused = True
+        assert type(event.value) == KeyError
+
+    def test_notification(self, env):
+        event = env.event()
+
+        def sender(env, event):
+            yield env.timeout(5)
+            event.succeed('done')
+
+        def receiver(env, event):
+            value = yield event
+            assert value == 'done'
+            yield env.timeout(5)
+
+        env.process(sender(env, event))
+        env.process(receiver(env, event))
+        env.run()
+        assert env.now == 10
