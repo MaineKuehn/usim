@@ -112,7 +112,7 @@ class TestTimeout:
         env.timeout(200)
 
 
-class TestProess:
+class TestProcess:
     @via_usimpy
     def test_waitfor_passed_event(self, env):
         """Wait for an event that has passed already"""
@@ -142,6 +142,39 @@ class TestProess:
         process.interrupt('interrupt')
         process.interrupt('interrupt')
         env.run()
+
+    @via_usimpy
+    def test_active_process(self, env):
+        def proc(env):
+            assert env.active_process is process
+            yield env.timeout(1)
+            assert env.active_process is process
+            yield env.timeout(1)
+            assert env.active_process is process
+
+        def watcher(env):
+            assert env.active_process is not process
+            yield env.timeout(1)
+            assert env.active_process is not process
+            yield env.timeout(1)
+            assert env.active_process is not process
+
+        process = env.process(proc(env))
+        env.process(watcher(env))
+        yield env.timeout(1)
+        assert process.is_alive
+        yield process
+        assert not process.is_alive
+        assert env.active_process is not process
+
+    def test_env_exit(self, env):
+        def proc(env):
+            yield env.timeout(1)
+            env.exit(42)
+
+        process = env.process(proc(env))
+        env.run(5)
+        assert process.value == 42
 
 
 class TestConditionValue:

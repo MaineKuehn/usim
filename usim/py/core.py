@@ -5,7 +5,7 @@ from .. import time, run as usim_run
 from .. import Scope
 
 from .events import Event
-from .exceptions import CompatibilityError, StopSimulation
+from .exceptions import CompatibilityError, StopSimulation, StopProcess
 
 
 class EnvironmentScope(Scope):
@@ -100,6 +100,7 @@ class Environment:
         self._startup = []  # type: List[Tuple[Coroutine, float]]
         self._loop = None  # type: Optional[Loop]
         self._scope = EnvironmentScope()
+        self.active_process = None  # type: Optional[Process]
 
     async def __aenter__(self):
         if self._loop is not None:
@@ -170,12 +171,32 @@ class Environment:
 
     def exit(self, value=None):
         """
-        'env.exit' is not supported by the 'usim.py' compatibility layer
+        Stop the current process, optionally providing a ``value``
 
-        Use instead:
-        * 'return value' inside the process
+        .. warning::
+
+            This method exists for historical compatibility only.
+            Use ``return value`` instead.
         """
-        raise CompatibilityError(self.exit.__doc__)
+        raise StopProcess(value)
+
+    def step(self):
+        """
+        'Environment.step' is not implemented by the μSim compatibility layer
+
+        The μSim compatibility layer uses the regular μSim event loop.
+        There is no public alternative to 'Environment.step'.
+        """
+        raise CompatibilityError(self.step.__doc__)
+
+    def peek(self):
+        """
+        'Environment.peek' is not implemented by the μSim compatibility layer
+
+        The μSim compatibility layer uses the regular μSim event loop.
+        There is no public alternative to 'Environment.peek'.
+        """
+        raise CompatibilityError(self.step.__doc__)
 
     @property
     def now(self) -> float:

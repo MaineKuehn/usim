@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, TypeVar, Generic, Union, Tuple, Optional, Gene
 from .. import Flag, time
 from .._primitives.condition import Any as AnyFlag
 
-from .exceptions import CompatibilityError, Interrupt
+from .exceptions import CompatibilityError, Interrupt, StopProcess
 if TYPE_CHECKING:
     from .core import Environment
 
@@ -326,12 +326,13 @@ class Process(Event[V]):
                 scope.do(clock('tack'))
                 scope.do(clock('TOCK'))
     """
-    __slots__ = '_generator', '_interrupts'
+    __slots__ = '_generator', '_interrupts', 'target'
 
     def __init__(self, env: 'Environment', generator: Generator[None, Event, V]):
         super().__init__(env)
         self._generator = generator
         self._interrupts = InterruptQueue()
+        self.target = None  # type: Optional[Event]
         env.schedule(self._run_payload(), delay=0)
 
     def interrupt(self, cause=None):
@@ -342,7 +343,10 @@ class Process(Event[V]):
     async def _run_payload(self):
         generator = self._generator
         interrupts = self._interrupts
-        event = generator.send(None)  # type: Event
+        env = self.env
+        env.active_process = self
+        self.target = event = generator.send(None)  # type: Event
+        env.active_process = None
         while True:
             assert isinstance(event, Event),\
                 f'process must yield an Event, not {event.__class__.__name__}'
@@ -350,14 +354,19 @@ class Process(Event[V]):
                 await (event._flag | interrupts._flag)
             if interrupts:
                 event = interrupts
+                self.target = None
             try:
                 if event.ok:
-                    event = generator.send(event.value)
+                    env.active_process = self
+                    self.target = event = generator.send(event.value)
+                    env.active_process = None
                 else:
                     # the process will handle the exception - or raise a new one
                     event.defused = True
-                    event = generator.throw(event.value)
-            except StopIteration as err:
+                    env.active_process = self
+                    self.target = event = generator.throw(event.value)
+                    env.active_process = None
+            except (StopIteration, StopProcess) as err:
                 value = err.args[0] if err.args else None
                 self.succeed(value)
                 break
@@ -368,7 +377,7 @@ class Process(Event[V]):
     @property
     def is_alive(self):
         """Whether the process is still running"""
-        return self._value is not None
+        return self._value is None
 
     def __repr__(self):
         return (
