@@ -94,3 +94,20 @@ class TestCondition:
         assert env.now == 0
         yield timeouts
         assert env.now == 4
+
+    @via_usimpy
+    def test_value_flat(self, env):
+        timeouts = env.timeout(1, 1), env.timeout(2, 2)
+        result = yield (timeouts[0] | timeouts[1])
+        assert result.todict() == {
+            timeouts[0]: 1,
+        }
+
+    @via_usimpy
+    def test_value_nested(self, env):
+        timeouts = env.timeout(1, 1), env.timeout(2, 2), env.timeout(3, 3)
+        result = yield ((timeouts[0] | timeouts[2]) & timeouts[1])
+        assert result.todict() == {
+            timeouts[0]: 1,
+            timeouts[1]: 2,
+        }

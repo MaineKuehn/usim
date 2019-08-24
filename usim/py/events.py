@@ -86,14 +86,14 @@ class Event(Generic[V]):
 
     def __or__(self, other):
         if isinstance(other, Event):
-            if isinstance(other, Condition):
+            if isinstance(other, AnyOf):
                 return AnyOf(self.env, (self, *other._events))
             return AnyOf(self.env, (self, other))
         return NotImplemented
 
     def __and__(self, other):
         if isinstance(other, Event):
-            if isinstance(other, Condition):
+            if isinstance(other, AllOf):
                 return AllOf(self.env, (self, *other._events))
             return AllOf(self.env, (self, other))
         return NotImplemented
@@ -469,20 +469,6 @@ class Condition(Event[ConditionValue]):
             raise ValueError('Events from multiple environments cannot be mixed')
         env.schedule(self._check_events(), delay=0)
 
-    def __or__(self, other):
-        if isinstance(other, Event):
-            if isinstance(other, Condition):
-                return AnyOf(self.env, (*self._events, *other._events))
-            return AnyOf(self.env, (*self._events, other))
-        return NotImplemented
-
-    def __and__(self, other):
-        if isinstance(other, Event):
-            if isinstance(other, Condition):
-                return AllOf(self.env, (*self._events, *other._events))
-            return AllOf(self.env, (*self._events, other))
-        return NotImplemented
-
     async def _check_events(self):
         observed = [event for event in self._events if event._flag]
         unobserved = [event for event in self._events if not event._flag]
@@ -515,7 +501,7 @@ class Condition(Event[ConditionValue]):
         for event in events:
             if isinstance(event, Condition):
                 result.extend(cls._flatten_values(event._events))
-            elif event.processed:
+            elif event.ok:
                 result.append(event)
         return result
 
@@ -540,6 +526,13 @@ class AllOf(Condition):
     def __init__(self, env, events):
         super().__init__(env, self.all_events, events)
 
+    def __and__(self, other):
+        if isinstance(other, Event):
+            if isinstance(other, AllOf):
+                return AllOf(self.env, (*self._events, *other._events))
+            return AllOf(self.env, (*self._events, other))
+        return NotImplemented
+
 
 class AnyOf(Condition):
     """
@@ -549,3 +542,10 @@ class AnyOf(Condition):
     """
     def __init__(self, env, events):
         super().__init__(env, self.any_events, events)
+
+    def __or__(self, other):
+        if isinstance(other, Event):
+            if isinstance(other, AnyOf):
+                return AnyOf(self.env, (*self._events, *other._events))
+            return AnyOf(self.env, (*self._events, other))
+        return NotImplemented
