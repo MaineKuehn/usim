@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-μSim - Simulations for Humans
-=============================
+μSim - lightweight concurrent Simulations
+=========================================
 
 .. toctree::
    :maxdepth: 1
@@ -15,10 +15,14 @@
    source/glossary
    source/api/modules
 
-μSim offers a lightweight and expressive user interface,
+μSim is a discrete-event simulation framework
+using the asynchronous programming features of Python.
+It offers a lightweight and expressive user interface,
 built on top of a powerful and robust simulation framework.
+
 Using the ``async``/``await`` capabilities of Python3,
-μSim allows you to both quickly and reliably build even complex simulations.
+μSim allows you to both quickly and reliably build simulations,
+no matter if they are small and simple or large and complex.
 
 .. code:: python3
 
@@ -37,10 +41,14 @@ Using the ``async``/``await`` capabilities of Python3,
    tick @ 4
    tick @ 5
 
+To get started with some examples, check out the :doc:`source/tutorial/overview`.
+If you have previously worked with SimPy_,
+use our :doc:`source/topics/simpy` layer to quickly migrate your simulation.
+
 Simple User Interface
 ---------------------
 
-Writing simulations with μSim should burden users with as little technical jargon as possible.
+Writing simulations should burden users with as little technical jargon as possible.
 We want you to focus on your simulation, not on our implementation.
 You can do most things with regular operations and expressions.
 Using ``await`` and ``async`` is only needed to synchronise activities.
@@ -69,6 +77,9 @@ All hard-to-use functionality is automatically scoped and managed, making it nat
       async for message in stream:
          scope.do(handle(message))
 
+To learn more about the μSim user interface,
+check out the :doc:`source/api/usim` documentation.
+
 Powerful Foundation
 -------------------
 
@@ -83,3 +94,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _SimPy: https://simpy.readthedocs.io/
