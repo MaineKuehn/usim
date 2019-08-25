@@ -6,7 +6,11 @@ class StopSimulation(BaseException):
     """Signal to stop a simulation"""
 
 
-class StopProcess(BaseException):
+class SimPyException(Exception):
+    """Base case for all exceptions of ``usim.py`` that can safely be handled"""
+
+
+class StopProcess(SimPyException):
     """
     Signal to stop a process
 
@@ -20,7 +24,7 @@ class StopProcess(BaseException):
         self.value = value
 
 
-class Interrupt(BaseException):
+class Interrupt(SimPyException):
     """Exception used to :py:meth:`~usim.py.events.Process.interrupt` a process"""
     @property
     def cause(self):

@@ -1,8 +1,8 @@
 SimPy Compatibility
 ===================
 
-> SimPy_ is a process-based discrete-event simulation framework
-> based on standard Python.
+    SimPy_ is a process-based discrete-event simulation framework
+    based on standard Python.
 
 Both μSim and SimPy are discrete, event-based simulation frameworks.
 Whereas SimPy is built on generators and callbacks, μSim relies exclusively
