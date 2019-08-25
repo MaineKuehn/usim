@@ -64,6 +64,8 @@ class Event(Generic[V]):
                 await event
                 print(f'Notified by {event}')
 
+        The value is returned on success of the event, and raised on failure.
+
         When migrating the :py:class:`~.Event`, the best match is :py:class:`usim.Flag`.
         A flag has no dedicated :py:attr:`~.value`, but represents a boolean.
 
@@ -125,8 +127,14 @@ class Event(Generic[V]):
         return NotImplemented
 
     def __await__(self):
-        result = yield from self.__usimpy_flag__.__await__()
-        return result  # noqa: B901
+        yield from self.__usimpy_flag__.__await__()
+        result, error = self._value
+        if error is not None:
+            # the waiter will handle our exception
+            self.defused = True
+            raise error
+        else:
+            return result  # noqa: B901
 
     async def _invoke_callbacks(self):
         # simpy does this in core.Environment.step

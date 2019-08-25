@@ -1,9 +1,11 @@
 import pytest
 
 
-from usim.py import Interrupt
+from usim import Scope, instant
+from usim.py import Interrupt, Event
 from usim.py.events import ConditionValue, Condition
 
+from ..utility import via_usim
 from .utility import via_usimpy
 
 
@@ -302,3 +304,36 @@ class TestCondition:
         assert not condition.triggered
         yield env.timeout(10)
         assert not condition.triggered
+
+
+class TestUsim:
+    @via_usim
+    async def test_await_event_success(self, env):
+        async def receiver(signal: Event):
+            assert (await signal) == 42
+            return True
+
+        async with Scope() as scope:
+            async with env:
+                event = env.event()
+                recv = scope.do(receiver(event))
+                await instant
+                event.succeed(42)
+                received = await recv
+                assert received
+
+    @via_usim
+    async def test_await_event_failure(self, env):
+        async def receiver(signal: Event):
+            with pytest.raises(KeyError):
+                await signal
+            return True
+
+        async with Scope() as scope:
+            async with env:
+                event = env.event()
+                recv = scope.do(receiver(event))
+                await instant
+                event.fail(KeyError())
+                received = await recv
+                assert received
