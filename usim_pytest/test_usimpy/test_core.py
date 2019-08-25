@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time, instant
+from usim import Scope, time
 from usim.py import Environment
 from usim.py.exceptions import NotEmulatedError
 
