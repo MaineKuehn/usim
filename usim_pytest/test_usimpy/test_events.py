@@ -151,7 +151,7 @@ class TestProcess:
             for _ in range(3):
                 with pytest.raises(Interrupt):
                     yield env.timeout(1)
-            return True
+            return True  # noqa: B901
 
         process = env.process(proc(env))
         process.interrupt('interrupt')
