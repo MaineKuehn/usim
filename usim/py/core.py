@@ -125,7 +125,7 @@ class Environment:
         async with self:
             if until is not None:
                 if isinstance(until, Event):
-                    await until
+                    await until.__usimpy_flag__
                 else:
                     if until <= time.now:
                         raise ValueError('until must be in the future')
