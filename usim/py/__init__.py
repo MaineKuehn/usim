@@ -82,45 +82,45 @@ def _api_table(*members: Tuple[Union[type, str], str, str]):
 
 
 __doc__ = __doc__.format(
-        environments_table=_api_table(
-            (Environment, '(initial_time=0)', 'Execution environment for a simulation'),
-            ('RealtimeEnvironment', '(...)', 'Not supported by μSim'),
+    environments_table=_api_table(
+        (Environment, '(initial_time=0)', 'Execution environment for a simulation'),
+        ('RealtimeEnvironment', '(...)', 'Not supported by μSim'),
+    ),
+    events_table=_api_table(
+        (Event, '(env)', 'Event that is manually triggered'),
+        (
+            Timeout, '(env, delay, value=None)',
+            'Event that triggers after a ``delay``',
         ),
-        events_table=_api_table(
-            (Event, '(env)', 'Event that is manually triggered'),
-            (
-                Timeout, '(env, delay, value=None)',
-                'Event that triggers after a ``delay``',
-            ),
-            (
-                Process, '(env, generator)',
-                'Active event that processes an event yielding generator',
-            ),
-            (
-                AllOf, '(env, events)',
-                'Event that triggers once all ``events`` succeed',
-            ),
-            (
-                AnyOf, '(env, events)',
-                'Event that triggers once any ``events`` succeed',
-            ),
-            (
-                Interrupt, '(cause)',
-                'Exception to :py:meth:`~usim.py.events.Process.interrupt` a Process',
-            ),
+        (
+            Process, '(env, generator)',
+            'Active event that processes an event yielding generator',
         ),
-        exceptions_table=_api_table(
-            (
-                SimPyException, '()',
-                'Base case for all non-internal exceptions',
-            ),
-            (
-                Interrupt, '(cause)',
-                'Exception to :py:meth:`~usim.py.events.Process.interrupt` a Process',
-            ),
-            (
-                StopProcess, '(value)',
-                'Exception to :py:meth:`~usim.py.core.Environment.exit` a Process',
-            ),
+        (
+            AllOf, '(env, events)',
+            'Event that triggers once all ``events`` succeed',
         ),
-    )
+        (
+            AnyOf, '(env, events)',
+            'Event that triggers once any ``events`` succeed',
+        ),
+        (
+            Interrupt, '(cause)',
+            'Exception to :py:meth:`~usim.py.events.Process.interrupt` a Process',
+        ),
+    ),
+    exceptions_table=_api_table(
+        (
+            SimPyException, '()',
+            'Base case for all non-internal exceptions',
+        ),
+        (
+            Interrupt, '(cause)',
+            'Exception to :py:meth:`~usim.py.events.Process.interrupt` a Process',
+        ),
+        (
+            StopProcess, '(value)',
+            'Exception to :py:meth:`~usim.py.core.Environment.exit` a Process',
+        ),
+    ),
+)
