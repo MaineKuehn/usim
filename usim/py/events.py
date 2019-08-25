@@ -94,10 +94,10 @@ class Event(Generic[V]):
         in μSim. Exceptions are propagated between activities and should be handled
         using ``try``/``except`` error handlers.
     """
-    __slots__ = 'env', 'callbacks', '_flag', '_value', 'defused'
+    __slots__ = 'env', 'callbacks', '__usimpy_flag__', '_value', 'defused'
 
     def __init__(self: E, env: 'Environment'):
-        self._flag = Flag()
+        self.__usimpy_flag__ = Flag()
         #: The environment to which this event belongs
         self.env = env
         #: List of callbacks to run when the event is triggered
@@ -125,7 +125,7 @@ class Event(Generic[V]):
         return NotImplemented
 
     def __await__(self):
-        result = yield from self._flag.__await__()
+        result = yield from self.__usimpy_flag__.__await__()
         return result  # noqa: B901
 
     async def _invoke_callbacks(self):
@@ -148,14 +148,14 @@ class Event(Generic[V]):
 
     def _trigger(self):
         """Awake all waiting tasks and schedule the event itself"""
-        self._flag._value = True
-        self._flag.__trigger__()
+        self.__usimpy_flag__._value = True
+        self.__usimpy_flag__.__trigger__()
         self.env.schedule(self)
 
     @property
     def triggered(self) -> bool:
         """Whether this event is being or has been processed"""
-        return bool(self._flag)
+        return bool(self.__usimpy_flag__)
 
     @property
     def processed(self) -> bool:
@@ -283,10 +283,10 @@ class InterruptQueue:
     """
     Internal helper to manage interrupts for :py:class:`~.Process`
     """
-    __slots__ = '_flag', '_causes', 'ok', 'defused'
+    __slots__ = '__usimpy_flag__', '_causes', 'ok', 'defused'
 
     def __init__(self):
-        self._flag = Flag()
+        self.__usimpy_flag__ = Flag()
         self._causes = []
         self.ok = False
         self.defused = True
@@ -302,14 +302,14 @@ class InterruptQueue:
     def push(self, cause):
         """Add a new interrupt with ``cause``"""
         self._causes.append(cause)
-        if not self._flag:
-            self._flag._value = True
-            self._flag.__trigger__()
+        if not self.__usimpy_flag__:
+            self.__usimpy_flag__._value = True
+            self.__usimpy_flag__.__trigger__()
 
     def pop(self):
         result = self._causes.pop(0)
         if not self._causes:
-            self._flag._value = False
+            self.__usimpy_flag__._value = False
         return result
 
 
@@ -405,7 +405,7 @@ class Process(Event[V]):
             assert isinstance(event, Event),\
                 f'process must yield an Event, not {event.__class__.__name__}'
             if not event.processed:
-                await (event._flag | interrupts._flag)
+                await (event.__usimpy_flag__ | interrupts.__usimpy_flag__)
             if interrupts:
                 event = interrupts
                 self.target = None
@@ -541,8 +541,8 @@ class Condition(Event[ConditionValue]):
         env.schedule(self._check_events(), delay=0)
 
     async def _check_events(self):
-        observed = [event for event in self._events if event._flag]
-        unobserved = [event for event in self._events if not event._flag]
+        observed = [event for event in self._events if event.__usimpy_flag__]
+        unobserved = [event for event in self._events if not event.__usimpy_flag__]
         for event in observed:
             if not event.ok:
                 # TODO: taken from simpy - this might swallow exceptions
@@ -551,9 +551,9 @@ class Condition(Event[ConditionValue]):
                 self.fail(event.value)
                 return
         while unobserved and not self._evaluate(self._events, len(observed)):
-            await AnyFlag(*(event._flag for event in unobserved))
+            await AnyFlag(*(event.__usimpy_flag__ for event in unobserved))
             for event in unobserved[:]:
-                if not event._flag:
+                if not event.__usimpy_flag__:
                     continue
                 elif event.ok:
                     unobserved.remove(event)
