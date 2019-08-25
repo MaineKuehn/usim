@@ -1,5 +1,6 @@
 import pytest
 
+from usim import Scope, time, instant
 from usim.py import Environment
 from usim.py.exceptions import NotEmulatedError
 
@@ -57,3 +58,22 @@ class TestEnvironment:
     async def test_inside_usim(self, env):
         with pytest.raises(NotEmulatedError):
             env.run()
+
+    @via_usim
+    async def test_no_duplication(self, env):
+        async def run_env():
+            async with env:
+                await (time + 10)
+
+        async def fail_env():
+            with pytest.raises(RuntimeError):
+                async with env:
+                    await (time + 10)
+
+        async with Scope() as scope:
+            run = scope.do(run_env())
+            fail = scope.do(fail_env())
+            await fail
+            assert time.now == 0
+            await run
+            assert time.now == 10
