@@ -146,6 +146,25 @@ class TestProcess:
         env.run()
 
     @via_usimpy
+    def test_interrupt_late(self, env):
+        def proc(env):
+            for _ in range(3):
+                with pytest.raises(Interrupt):
+                    yield env.timeout(1)
+            return True
+
+        process = env.process(proc(env))
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        yield process
+        assert process.value is True
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        assert process.value is True
+
+    @via_usimpy
     def test_active_process(self, env):
         def proc(env):
             assert env.active_process is process
