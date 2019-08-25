@@ -197,6 +197,17 @@ class TestProcess:
         env.run(5)
         assert process.value == 42
 
+    def test_error_raised(self, env):
+        def proc(env):
+            yield env.timeout(1)
+            raise KeyError()
+
+        process = env.process(proc(env))
+        with pytest.raises(KeyError):
+            env.run()
+        assert env.now == 1
+        assert type(process.value) == KeyError
+
     def test_generator(self, env):
         with pytest.raises(ValueError):
             env.process(lambda: None)
