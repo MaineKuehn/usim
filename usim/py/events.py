@@ -1,3 +1,14 @@
+"""
+This module provides the fundamental event types of SimPy:
+:py:class:`~usim.py.events.Event`, :py:class:`~usim.py.events.Timeout` and
+:py:class:`~usim.py.events.Process`.
+All events are subclasses of :py:class:`~usim.py.events.Event`.
+
+Simulations react to events by adding :py:attr:`~usim.py.events.Event.callbacks`
+or by having a :py:class:`~usim.py.events.Process` ``yield`` an event to wait for.
+A native μSim simulation can react to events by having an :term:`activity`
+``await`` an event.
+"""
 from typing import TYPE_CHECKING, TypeVar, Generic, Union, Tuple, Optional, Generator,\
     List, Iterable, Callable
 from .. import Flag, time
