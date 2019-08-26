@@ -15,8 +15,8 @@ it is sufficient to import ``usim.py`` in place of ``simpy``.
 The ``usim.py`` package itself provides direct access to the most relevant objects.
 However, they can be fetched from their respective submodules as well.
 
-Environments
-------------
+Environments (:py:mod:`usim.py.core`)
+-------------------------------------
 
 {environments_table}
 
@@ -24,8 +24,8 @@ Environments
 
     μSim simulations are started by :py:func:`usim.run`.
 
-Events
-------
+Events (:py:mod:`usim.py.events`)
+---------------------------------
 
 {events_table}
 
@@ -41,8 +41,8 @@ Resources
 
 ``usim.py`` implements no resources yet.
 
-Exceptions
-----------
+Exceptions (:py:mod:`usim.py.exceptions`)
+-----------------------------------------
 
 {exceptions_table}
 """

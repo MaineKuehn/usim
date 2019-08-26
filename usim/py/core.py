@@ -1,3 +1,12 @@
+"""
+This module provides the :py:class:`~usim.py.core.Environment`,
+which hosts any SimPy simulation. In order to create new events,
+components of the simulation need access to the current environment
+- it is customary to pass this as the parameter ``env``.
+
+An environment can be run standalone, or embedded into a μSim simulation.
+The latter allows interactions between the μSim and SimPy components.
+"""
 from typing import Optional, List, Tuple, Coroutine, Generator, TypeVar, Iterable,\
     Union
 from .._core.loop import __LOOP_STATE__, Loop, ActivityError
@@ -33,7 +42,7 @@ class Environment:
     This environment can be run by itself or in any μSim :term:`Activity`.
     It exposes most of the :py:class:`simpy.Environment` interface, skipping
     methods meant for internal usage such as :py:meth:`simpy.Environment.step`.
-    To avoid errors, the environment can be :py:meth:`~.run` only *outside*
+    To avoid errors, the :py:meth:`~.run` method can be used only *outside*
     of a μSim simulation. Use the environment as an ``async with`` context
     or ``await env.until()`` to run it in a μSim simulation.
 

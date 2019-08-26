@@ -1,3 +1,11 @@
+"""
+This module defines the exceptions exclusive to the SimPy compatibility layer.
+These are used as shutdown signals between the environment and processes.
+Note that with the exception of :py:exc:`~usim.py.exceptions.Interrupt`,
+all signals should be considered internal and not meant to be handled manually.
+"""
+
+
 class NotEmulatedError(NotImplementedError):
     """An operation of the 'simpy' API is not emulated by the 'usim.py' API"""
 
