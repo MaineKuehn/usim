@@ -1,9 +1,12 @@
 from functools import wraps
 import enum
-from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List
+from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List,\
+    TYPE_CHECKING
 
 from .._core.loop import __LOOP_STATE__, Interrupt
 from .condition import Condition
+if TYPE_CHECKING:
+    from .context import Scope
 
 
 RT = TypeVar('RT')
@@ -60,8 +63,8 @@ class Task(Awaitable[RT]):
     """
     Concurrently running activity
 
-    A :py:class:`Task` wraps an :term:`activity` that is
-    concurrently run in a :py:class:`~.Scope`.
+    A :py:class:`Task` wraps a ``payload`` :term:`activity` that is
+    concurrently run in a ``parent`` :py:class:`~.Scope`.
     This allows to store or pass on the :py:class:`Task`
     in order to control the underlying activity.
     Other activities can ``await`` a :py:class:`Task`
@@ -90,9 +93,9 @@ class Task(Awaitable[RT]):
     :note: This class should not be instantiated directly.
            Always use a :py:class:`~.Scope` to create it.
     """
-    __slots__ = ('payload', '_result', '__runner__', '_cancellations', '_done')
+    __slots__ = ('payload', '_result', '__runner__', '_cancellations', '_done', 'parent')
 
-    def __init__(self, payload: Coroutine[Any, Any, RT]):
+    def __init__(self, payload: Coroutine[Any, Any, RT], parent: 'Scope'):
         @wraps(payload)
         async def payload_wrapper():
             # check for a pre-run cancellation
@@ -108,6 +111,15 @@ class Task(Awaitable[RT]):
                     self, err.subject
                 )
                 self._result = None, err.__transcript__
+            except GeneratorExit:
+                # We are NOT allowed to do any async once the generator
+                # exits forcefully.
+                # We should only receive GeneratorExit due to a forceful
+                # termination in self.__close__ or during cleanup.
+                pass
+            except BaseException as err:
+                self._result = None, err
+                self.parent.__cancel__()
             else:
                 self._result = result, None
             for cancellation in self._cancellations:
@@ -117,6 +129,7 @@ class Task(Awaitable[RT]):
         self._result = None  \
             # type: Optional[Tuple[Optional[RT], Optional[BaseException]]]
         self.payload = payload
+        self.parent = parent
         self._done = Done(self)
         self.__runner__ = payload_wrapper()  # type: Coroutine[Any, Any, RT]
 
@@ -160,10 +173,13 @@ class Task(Awaitable[RT]):
         This is similar to calling :py:meth:`Coroutine.close`,
         but ensures that waiting activities are properly notified.
         """
+        # we have not FINISHED running yet
         if self._result is None:
-            self.__runner__.close()
             self._result = None, reason
-            self._done.__set_done__()
+            # we have not STARTED running yet
+            if self.__runner__.cr_frame.f_lasti == -1:
+                self._done.__set_done__()
+            self.__runner__.close()
 
     def cancel(self, *token) -> None:
         """

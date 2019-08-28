@@ -125,7 +125,7 @@ class Scope:
         :py:class:`GeneratorExit` is raised in the activity,
         which must exit without `await`\ ing or `yield`\ ing anything.
         """
-        child_task = Task(payload)
+        child_task = Task(payload, self)
         __LOOP_STATE__.LOOP.schedule(
             child_task.__runner__,
             delay=after, at=at
