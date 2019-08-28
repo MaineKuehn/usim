@@ -1,4 +1,4 @@
-from typing import Coroutine, List, TypeVar, Any
+from typing import Coroutine, List, TypeVar, Any, Optional
 
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification
@@ -75,13 +75,14 @@ class Scope:
             do_some(scope)  # pass scope around to do activities in it
             on_done(scope)  # pass scope around to await its end
     """
-    __slots__ = ('_children', '_done', '_activity', '_volatile_children')
+    __slots__ = '_children', '_done', '_activity', '_volatile_children', '_cancel_self'
 
     def __init__(self):
         self._children = []  # type: List[Task]
         self._volatile_children = []  # type: List[Task]
         self._done = Flag()
-        self._activity = None
+        self._activity = None  # type: Optional[Coroutine]
+        self._cancel_self = CancelScope(self)
 
     def __await__(self):
         yield from self._done.__await__()
@@ -134,6 +135,10 @@ class Scope:
         else:
             self._volatile_children.append(child_task)
         return child_task
+
+    def __cancel__(self):
+        """Cancel this scope"""
+        __LOOP_STATE__.LOOP.schedule(self._activity, self._cancel_self)
 
     async def _await_children(self):
         for child in self._children:
@@ -194,7 +199,7 @@ class Scope:
 
     def _handle_exception(self, exc_val) -> bool:
         r"""Handle the exception of :py:mod:`~.__aexit__` and signal completion"""
-        return False
+        return exc_val is self._cancel_self
 
     def __repr__(self):
         return (
@@ -230,7 +235,7 @@ class InterruptScope(Scope):
 
     def _handle_exception(self, exc_val) -> bool:
         self._notification.__unsubscribe__(self._activity, self._interrupt)
-        return exc_val is self._interrupt
+        return exc_val is self._interrupt or super()._handle_exception(exc_val)
 
     def __repr__(self):
         return (
