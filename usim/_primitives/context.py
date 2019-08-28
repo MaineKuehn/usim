@@ -3,7 +3,7 @@ from typing import Coroutine, List, TypeVar, Any, Optional
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification
 from .flag import Flag
-from .task import Task, TaskExit
+from .task import Task, TaskExit, TaskState
 
 
 RT = TypeVar('RT')
@@ -144,6 +144,12 @@ class Scope:
         for child in self._children:
             await child.done
 
+    async def _reraise_children(self):
+        for child in self._children:
+            print('inspect', child)
+            if child.status is TaskState.FAILED:
+                await child
+
     def _cancel_children(self):
         for child in self._children:
             child.cancel(self)
@@ -179,6 +185,7 @@ class Scope:
                 exc_type, exc_val = type(err), err
             else:
                 self._close_volatile()
+                await self._reraise_children()
                 return self._handle_exception(exc_val)
         # there was an exception, we have to abandon the scope
         if exc_type is GeneratorExit:
@@ -189,6 +196,7 @@ class Scope:
         if exc_type is GeneratorExit:
             return self._handle_close(exc_val)
         self._close_volatile()
+        await self._reraise_children()
         return self._handle_exception(exc_val)
 
     def _handle_close(self, exc_val: GeneratorExit) -> bool:
