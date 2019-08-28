@@ -93,7 +93,7 @@ class Task(Awaitable[RT]):
     :note: This class should not be instantiated directly.
            Always use a :py:class:`~.Scope` to create it.
     """
-    __slots__ = ('payload', '_result', '__runner__', '_cancellations', '_done', 'parent')
+    __slots__ = 'payload', '_result', '__runner__', '_cancellations', '_done', 'parent'
 
     def __init__(self, payload: Coroutine[Any, Any, RT], parent: 'Scope'):
         @wraps(payload)
