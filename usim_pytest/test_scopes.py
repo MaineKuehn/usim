@@ -71,7 +71,7 @@ class TestDo:
             activity = scope.do(payload(), volatile=True)
         with pytest.raises(VolatileTaskExit):
             assert await activity
-        assert activity.status == TaskState.FAILED
+        assert activity.status == TaskState.CANCELLED
 
     @assertion_mode
     @via_usim

@@ -144,7 +144,7 @@ class Task(Awaitable[RT]):
             if error is not None:
                 return (
                     TaskState.CANCELLED
-                    if isinstance(error, TaskCancelled)
+                    if isinstance(error, (TaskCancelled, TaskExit))
                     else TaskState.FAILED
                 )
             return TaskState.SUCCESS
