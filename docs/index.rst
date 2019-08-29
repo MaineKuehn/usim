@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-μSim - lightweight concurrent Simulations
+μSim - Lightweight Concurrent Simulations
 =========================================
 
 .. toctree::
@@ -22,7 +22,7 @@ built on top of a powerful and robust simulation framework.
 
 Using the ``async``/``await`` capabilities of Python3,
 μSim allows you to both quickly and reliably build simulations,
-no matter if they are small and simple or large and complex.
+no matter if they are small and simple, or large and complex.
 
 .. code:: python3
 
@@ -48,7 +48,7 @@ use our :doc:`source/topics/simpy` layer to quickly migrate your simulation.
 Simple User Interface
 ---------------------
 
-Writing simulations should burden users with as little technical jargon as possible.
+Writing simulations should not burden users with much technical jargon.
 We want you to focus on your simulation, not on our implementation.
 You can do most things with regular operations and expressions.
 Using ``await`` and ``async`` is only needed to synchronise activities.

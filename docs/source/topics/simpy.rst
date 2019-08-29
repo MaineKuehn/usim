@@ -7,7 +7,7 @@ SimPy Compatibility
     --- The SimPy Documentation
 
 Both μSim and SimPy are discrete, event-based simulation frameworks.
-Whereas SimPy is built on generators and callbacks, μSim relies exclusively
+While SimPy is built on generators and callbacks, μSim relies exclusively
 on the ``async``/``await`` coroutine support introduced in Python 3.5.
 This makes a difference both in the usage, as well as supported features.
 
@@ -64,8 +64,8 @@ only the single line previously used to ``import simpy``.
     Start driving at 12
     Start parking at 14
 
-The ``usim.py`` layer not only emulates SimPy - it can also be used from native
-μSim simulations. This allows to combine simulations from μSim and SimPy, and
+The ``usim.py`` layer not only emulates SimPy - it can even be used from native
+μSim simulations. This allows combining simulations from μSim and SimPy, and
 to gradually convert simulations.
 
 .. hint::
@@ -76,10 +76,10 @@ to gradually convert simulations.
 Migrating from SimPy to μSim
 ----------------------------
 
-To access the full capabilities of μSim, one should write native μSim simulations.
+To access the full capabilities of μSim, you should write native μSim simulations.
 Due to the compatibility layer, it is possible to migrate individual pieces.
-The most import difference is that μSim activities are ``async def`` coroutines
-which ``await`` events. In addition, there is not environment that must be passed
+The most important difference is that μSim activities are ``async def`` coroutines
+which ``await`` events. In addition, there is no environment that must be passed
 around; various helpers work automatically.
 
 .. code:: python3

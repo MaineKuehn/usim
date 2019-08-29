@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 # Implementation Note
-# All of simpy's calls are sync, meaning we often *cannot* invoke
+# All of simpy's calls are synchronous, meaning we often *cannot* invoke
 # the proper usim interfaces. Instead of recreating the usim primitives
 # we use them anyways and directly manipulate them when required.
 # For the most part, this means we use a ``usim.Flag`` for synchronisation.
@@ -58,7 +58,7 @@ class Event(Generic[V]):
             event.success("Jolly Good!")
 
     Once triggered, :py:attr:`~.value` is set either to the result or failure reason.
-    Use :py:attr:`~.triggered`, :py:attr:`~.processed` and :py:attr:`~.ok` to inspect
+    Use :py:attr:`~.triggered`, :py:attr:`~.processed`, and :py:attr:`~.ok` to inspect
     what state an event is in.
 
     .. hint::
@@ -121,8 +121,8 @@ class Event(Generic[V]):
 
     # Implementation Note
     # ``usim`` would flatten Conditions of the same type here. With the
-    # ``simpy`` model, this does not work well. The problem is that events
-    # are active components that may fail the Environment.
+    # ``simpy`` model, this does not work. The problem is that events
+    # are active components that make the Environment fail.
     # If we flatten conditions, we end up with intermediate objects even in
     # trivial cases - a & b & c creates an intermediate pair of a & b. This
     # pair will evaluate concurrently, and is *not* defused on error.
@@ -377,7 +377,7 @@ class Process(Event[V]):
         .. code:: python3
 
             async def double_clock(sound):
-                "A clock of double duration"
+                '''A clock of double duration'''
                 await clock(sound)
                 await clock(sound)
 
@@ -387,7 +387,7 @@ class Process(Event[V]):
         .. code:: python3
 
             async def multi_clock():
-                "A clock of making multiple sounds"
+                "A clock making multiple sounds"
                 async for Scope() as scope:
                     scope.do(clock('tick'))
                     scope.do(clock('tack'))
@@ -461,7 +461,7 @@ class Process(Event[V]):
 
 class ConditionValue:
     """
-    ``dict``-like view to the events used in a condition and their value
+    ``dict``-like view to the events used in a condition and their values
 
     .. note::
 
@@ -519,7 +519,7 @@ class Condition(Event[ConditionValue]):
     .. code:: python3
 
         def most(events, count):
-            "Test that at least 50% of events have triggered"
+            '''Test that at least 50% of events have triggered'''
             return count * 2 >= len(events)
 
         majority = Condition(most, events)

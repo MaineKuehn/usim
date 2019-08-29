@@ -2,7 +2,7 @@
 This module defines the exceptions exclusive to the SimPy compatibility layer.
 These are used as shutdown signals between the environment and processes.
 Note that with the exception of :py:exc:`~usim.py.exceptions.Interrupt`,
-all signals should be considered internal and not meant to be handled manually.
+all signals are considered internal and are not meant to be handled manually.
 """
 
 
@@ -24,7 +24,7 @@ class StopProcess(SimPyException):
 
     .. warning::
 
-        This exceptions exists for historical compatibility only.
+        This exception exists for historical compatibility only.
         See :py:meth:`usim.py.Environment.exit` for details.
     """
     def __init__(self, value):

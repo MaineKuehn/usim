@@ -2,7 +2,7 @@
 This module provides the :py:class:`~usim.py.core.Environment`,
 which hosts any SimPy simulation. In order to create new events,
 components of the simulation need access to the current environment
-- it is customary to pass this as the parameter ``env``.
+- it is common to pass this as the parameter ``env``.
 
 An environment can be run standalone, or embedded into a μSim simulation.
 The latter allows interactions between the μSim and SimPy components.
@@ -43,8 +43,8 @@ class Environment:
     It exposes most of the :py:class:`simpy.Environment` interface, skipping
     methods meant for internal usage such as :py:meth:`simpy.Environment.step`.
     To avoid errors, the :py:meth:`~.run` method can be used only *outside*
-    of a μSim simulation. Use the environment as an ``async with`` context
-    or ``await env.until()`` to run it in a μSim simulation.
+    a μSim simulation. Use the environment as an ``async with`` context
+    or ``await env.until()`` to run it *inside* a μSim simulation.
 
     .. code:: python3
 
@@ -93,7 +93,7 @@ class Environment:
             similar to an environment.
 
         **timeout after a delay** (:py:meth:`~.timeout`)
-            Use ``await (time + delay)``, or one of its variant such
+            Use ``await (time + delay)``, or one of its variants such
             as ``await (time == deadline)``.
 
         **creating an event** (:py:meth:`~.event`)
@@ -153,11 +153,11 @@ class Environment:
             The sub-simulation lasts until no more internal events exist.
 
         an :py:class:`~.Event`
-            The sub-simulations last until the event is triggered.
+            The sub-simulation lasts until the event is triggered.
             It is a :py:exc:`RuntimeError` if the event never triggers.
 
         otherwise
-            The sub-simulation last until its time equals ``until``.
+            The sub-simulation lasts until simulation time equals ``until``.
         """
         if not _inside_usim():
             try:
@@ -174,7 +174,7 @@ class Environment:
             raise NotEmulatedError(
                 "'env.run' is not supported inside a 'usim' simulation\n"
                 "\n"
-                "Synchronous running blocks the event loop. Use instead\n"
+                "Synchronous 'run' blocks the event loop. Use instead:\n"
                 "* 'await env.until()' to block only the current activity\n"
                 "* 'async with env:' to concurrently run the environment\n"
                 "\n"
@@ -213,7 +213,7 @@ class Environment:
     @property
     def now(self) -> float:
         """
-        The current time of the simulation
+        Current time of the simulation
 
         .. hint::
 
@@ -297,7 +297,7 @@ class Environment:
 
     def any_of(self, events: 'Iterable[Event]') -> 'AnyOf':
         """
-        Create a new :py:class:`~.AllOf` that triggers on each ``events``
+        Create a new :py:class:`~.AnyOf` that triggers on the first of ``events``
 
         .. hint::
 

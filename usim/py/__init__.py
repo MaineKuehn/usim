@@ -94,7 +94,7 @@ __doc__ = __doc__.format(
         ),
         (
             Process, '(env, generator)',
-            'Active event that processes an event yielding generator',
+            'Active event that processes an event-yielding generator',
         ),
         (
             AllOf, '(env, events)',
