@@ -38,8 +38,8 @@ Otherwise, import objects from ``usim.py`` instead of ``usim``.
 +------------------------------------+--------------------------------------+
 
 Changing imports is all that is required to switch from SimPy to the μSim
-compatibility layer. The following runs the first SimPy example by changing
-only the single line previously used to ``import simpy``.
+compatibility layer. The core of the `first SimPy example`_ is exactly the
+same for the μSim compatibility layer:
 
 .. code:: python3
 
@@ -53,6 +53,12 @@ only the single line previously used to ``import simpy``.
     ...         trip_duration = 2
     ...         yield env.timeout(trip_duration)
     ...
+
+Running this example is *almost* the same as for SimPy:
+only the single line previously used to ``import simpy`` needs changing.
+
+.. code:: python3
+
     >>> import usim.py as simpy  # import usim.py instead of simpy
     >>> env = simpy.Environment()
     >>> env.process(car(env))
@@ -101,3 +107,4 @@ around; various helpers work automatically.
     # Start parking at 14
 
 .. _SimPy: https://simpy.readthedocs.io/
+.. _first SimPy example: https://simpy.readthedocs.io/en/latest/simpy_intro/basic_concepts.html
