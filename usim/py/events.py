@@ -560,28 +560,31 @@ class Condition(Event[ConditionValue]):
         env.schedule(self._check_events(), delay=0)
 
     async def _check_events(self):
-        observed = [event for event in self._events if event.__usimpy_flag__]
-        unobserved = [event for event in self._events if not event.__usimpy_flag__]
-        for event in observed:
-            if not event.ok:
+        observed, unobserved = 0, []
+        for event in self._events:
+            if not event.__usimpy_flag__:
+                unobserved.append(event)
+            elif not event.ok:
                 # TODO: taken from simpy - this might swallow exceptions
                 #       if event is awaited but self is not awaited
                 event.defused = True
                 self.fail(event.value)
                 return
-        while unobserved and not self._evaluate(self._events, len(observed)):
+            else:
+                observed += 1
+        while unobserved and not self._evaluate(self._events, observed):
             await AnyFlag(*(event.__usimpy_flag__ for event in unobserved))
             for event in unobserved[:]:
                 if not event.__usimpy_flag__:
                     continue
                 elif event.ok:
                     unobserved.remove(event)
-                    observed.append(event)
+                    observed += 1
                 else:
                     event.defused = True
                     self.fail(event.value)
                     return
-        if self._evaluate(self._events, len(observed)):
+        if self._evaluate(self._events, observed):
             self.succeed(ConditionValue(*self._flatten_values(self._events)))
 
     @classmethod
