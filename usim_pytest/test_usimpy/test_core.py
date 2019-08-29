@@ -33,6 +33,11 @@ class TestEnvironment:
         env.run(15)
         assert env.now == 15
 
+    def test_until_now(self, env):
+        assert env.now == 0
+        env.run(0)
+        assert env.now == 0
+
     def test_until_event(self, env):
         timeout = env.timeout(1, 'Hello World')
         result = env.run(timeout)

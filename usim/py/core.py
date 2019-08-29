@@ -136,7 +136,7 @@ class Environment:
                 if isinstance(until, Event):
                     await until.__usimpy_flag__
                 else:
-                    if until <= time.now:
+                    if until < time.now:
                         raise ValueError('until must be in the future')
                     await (time >= until)
                 raise StopSimulation
