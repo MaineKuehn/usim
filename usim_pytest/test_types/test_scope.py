@@ -1,6 +1,7 @@
 import pytest
 
 from usim import Scope, time, instant
+from usim._primitives.concurrent_exception import Concurrent
 
 from ..utility import via_usim
 
@@ -8,11 +9,6 @@ from ..utility import via_usim
 async def async_raise(exc: BaseException):
     """Raise an exception in an ``await`` or ``scope.do`` context"""
     raise exc
-
-
-class MultiError(Exception):
-    # FAKE until this actually exists
-    ...
 
 
 class TestExceptions:
@@ -68,7 +64,7 @@ class TestExceptions:
             await (time + after)
             observations += 1
 
-        with pytest.raises(MultiError[KeyError, IndexError]):
+        with pytest.raises(Concurrent[KeyError, IndexError]):
             async with Scope() as scope:
                 scope.do(observe(5))
                 await instant
