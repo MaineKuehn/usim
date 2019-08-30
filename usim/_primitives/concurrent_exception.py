@@ -168,6 +168,10 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
             print('Failed key lookup and something else')
 
     """
+    def __new__(cls: 'Type[Concurrent]', *children):
+        specialisation = cls[tuple(type(child) for child in children)]
+        return super().__new__(specialisation, *children)
+
     def __init__(self, *children):
         super().__init__(children)
         self.children = children
