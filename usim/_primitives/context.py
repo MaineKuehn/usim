@@ -1,7 +1,7 @@
 from typing import Coroutine, List, TypeVar, Any, Optional
 
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
-from .notification import Notification, postpone
+from .notification import Notification
 from .flag import Flag
 from .task import Task, TaskExit, TaskState
 
@@ -75,17 +75,21 @@ class Scope:
             do_some(scope)  # pass scope around to do activities in it
             on_done(scope)  # pass scope around to await its end
     """
-    __slots__ = '_children', '_done', '_activity', '_volatile_children', '_cancel_self'
+    __slots__ = '_children', '_body_done', '_activity', '_volatile_children',\
+                '_cancel_self', '_interruptable'
 
     def __init__(self):
         self._children = []  # type: List[Task]
         self._volatile_children = []  # type: List[Task]
-        self._done = Flag()
+        # the scope body is finished and we do/did __aexit__
+        self._body_done = Flag()
+        # we can still be cancelled/interrupted asynchronously
+        self._interruptable = True
         self._activity = None  # type: Optional[Coroutine]
         self._cancel_self = CancelScope(self, 'Scope._cancel_self')
 
     def __await__(self):
-        yield from self._done.__await__()
+        yield from self._body_done.__await__()
 
     def do(
             self,
@@ -138,7 +142,11 @@ class Scope:
 
     def __cancel__(self):
         """Cancel this scope"""
-        __LOOP_STATE__.LOOP.schedule(self._activity, self._cancel_self)
+        if self._interruptable:
+            __LOOP_STATE__.LOOP.schedule(self._activity, self._cancel_self)
+
+    def _disable_interrupts(self):
+        self._interruptable = False
 
     async def _await_children(self):
         for child in self._children:
@@ -146,7 +154,6 @@ class Scope:
 
     async def _reraise_children(self):
         for child in self._children:
-            print('inspect', child)
             if child.status is TaskState.FAILED:
                 await child
 
@@ -166,6 +173,8 @@ class Scope:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            self._disable_interrupts()
         # receiving GeneratorExit means our coroutine is .closed'd
         # This is forceful, and we are not allowed to await anything
         # since it can happen on any await, we check multiple times
@@ -177,7 +186,12 @@ class Scope:
             "Instances of %s cannot be shared between activities" %
             self.__class__.__name__
         )
-        await self._done.set()
+        try:
+            # inform everyone that we are shutting down
+            # we may receive any shutdown signal here
+            await self._body_done.set()
+        except BaseException as err:
+            exc_type, exc_val = type(err), err
         if exc_type is None:
             return await self._aexit_graceful()
         # there was an exception, we have to abandon the scope
@@ -185,6 +199,8 @@ class Scope:
 
     async def _aexit_forceful(self, exc_type, exc_val):
         """Exit with exception"""
+        # we already handle an exception, supress
+        self._disable_interrupts()
         if exc_type is GeneratorExit:
             return self._handle_close(exc_val)
         # reap all children now
@@ -203,6 +219,8 @@ class Scope:
             return await self._aexit_forceful(type(err), err)
         else:
             self._close_volatile()
+            # everybody is dead - we just handle the cleanup
+            self._disable_interrupts()
             await self._reraise_children()
             return self._handle_exception(None)
 
@@ -223,7 +241,7 @@ class Scope:
             ' @ {address}>'
         ).format(
             self=self,
-            done=bool(self._done),
+            done=bool(self._body_done),
             children=len(self._children),
             volatile=len(self._volatile_children),
             address=id(self),
@@ -260,7 +278,7 @@ class InterruptScope(Scope):
             ' @ {address}>'
         ).format(
             self=self,
-            done=bool(self._done),
+            done=bool(self._body_done),
             children=len(self._children),
             volatile=len(self._volatile_children),
             address=id(self),
