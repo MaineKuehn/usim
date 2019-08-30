@@ -110,3 +110,20 @@ class TestExceptions:
                 scope.do(async_raise(ValueError(), 2))
                 await (time + 2)
                 raise KeyError
+
+    @via_usim
+    async def test_fail_privileged(self):
+        """Failure inside children with privilege is not suppressed"""
+        for exc_type in (AssertionError, KeyboardInterrupt, SystemExit):
+            with pytest.raises(exc_type):
+                async with Scope() as scope:
+                    scope.do(async_raise(IndexError(), 0))
+                    scope.do(async_raise(TypeError(), 0))
+                    scope.do(async_raise(KeyError(), 0))
+                    scope.do(async_raise(exc_type(), 0))
+            with pytest.raises(exc_type):
+                async with Scope() as scope:
+                    scope.do(async_raise(IndexError(), 0))
+                    scope.do(async_raise(TypeError(), 0))
+                    scope.do(async_raise(KeyError(), 0))
+                    raise exc_type
