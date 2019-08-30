@@ -26,6 +26,17 @@ class MetaConcurrent(type):
         cls.specialisations = specialisations
         return cls
 
+    # Implementation Note:
+    # The Python data model defines both
+    # * ``isinstance(a, b) => type(b).__instancecheck__(b, a)``
+    # * ``issubclass(a, b) => type(b).__subclasscheck__(b, a)``
+    # So we could need either for error handling.
+    #
+    # The Python language translates the except clause of
+    #   try: raise a
+    #   except b as err: <block>
+    # to ``if issubclass(type(a), b): <block>``.
+    # Which means we need ``__subclasscheck__`` only.
     def __instancecheck__(cls, instance):
         if type(instance) == Concurrent:
             # except MultiError:
@@ -35,6 +46,9 @@ class MetaConcurrent(type):
             else:
                 return cls._instancecheck_specialisation(instance)
         return False
+
+    def __subclasscheck__(cls, subclass):
+        return super().__subclasscheck__(subclass)
 
     def _instancecheck_specialisation(cls, instance: 'Concurrent'):
         matched_specialisations = sum(
