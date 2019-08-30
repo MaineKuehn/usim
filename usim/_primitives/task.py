@@ -142,6 +142,13 @@ class Task(Awaitable[RT]):
             return result  # noqa: B901
 
     @property
+    def __exception__(self) -> Optional[BaseException]:
+        """Get the exception of this task"""
+        assert self._result is not None,\
+            f'Task.__exception__ may only be queried for finished tasks'
+        return self._result[1]
+
+    @property
     def done(self) -> 'Done':
         """
         :py:class:`~.Condition` whether the :py:class:`~.Task` has stopped running.

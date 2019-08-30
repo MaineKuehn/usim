@@ -3,7 +3,8 @@ from typing import Coroutine, List, TypeVar, Any, Optional
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification
 from .flag import Flag
-from .task import Task, TaskExit, TaskState
+from .task import Task, TaskExit, TaskState, TaskCancelled
+from .concurrent_exception import Concurrent
 
 
 RT = TypeVar('RT')
@@ -20,6 +21,13 @@ class CancelScope(CoreInterrupt):
     def __init__(self, subject: 'Scope', *token):
         super().__init__(*token)
         self.subject = subject
+
+
+#: Exceptions which are *not* re-raised from concurrent tasks
+SUPPRESS_CONCURRENT = {
+    *BaseException.__subclasses__(),
+    TaskCancelled, TaskExit,
+}
 
 
 class Scope:
@@ -153,9 +161,25 @@ class Scope:
             await child.done
 
     async def _reraise_children(self):
-        for child in self._children:
-            if child.status is TaskState.FAILED:
-                await child
+        suppress = SUPPRESS_CONCURRENT
+        child_exceptions = [
+            exc for exc in (
+                child.__exception__ for child in self._children
+                if child.status is TaskState.FAILED
+            )
+            if exc not in suppress
+        ]
+        if child_exceptions:
+            # do not add magic around assertion errors - there is probably
+            # a machine waiting for it (like our unittests)
+            if __debug__:
+                assertion = [
+                    exc for exc in child_exceptions
+                    if type(exc) is AssertionError
+                ][:1]
+                if assertion:
+                    raise assertion[0]
+            raise Concurrent(*child_exceptions)
 
     def _cancel_children(self):
         for child in self._children:
