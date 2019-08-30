@@ -21,9 +21,12 @@ class MetaConcurrent(type):
                 specialisations = specialisations[:i] + specialisations[i+1:]
                 assert ... not in specialisations,\
                     "only one ... allowed in specialisations"
+            template = bases[0]
         else:
             cls.inclusive = True
+            template = cls
         cls.specialisations = specialisations
+        cls.template = template
         return cls
 
     # Implementation Note:
@@ -38,14 +41,19 @@ class MetaConcurrent(type):
     # to ``if issubclass(type(a), b): <block>``.
     # Which means we need ``__subclasscheck__`` only.
     def __instancecheck__(cls, instance):
-        if type(instance) == Concurrent:
-            # except MultiError:
-            if cls.specialisations is None:
-                return True
-            # except MultiError[]:
-            else:
-                return cls._instancecheck_specialisation(instance)
-        return False
+        try:
+            template = instance.template
+        except AttributeError:
+            return False
+        else:
+            if template == cls.template:
+                # except MultiError:
+                if cls.specialisations is None:
+                    return True
+                # except MultiError[]:
+                else:
+                    return cls._instancecheck_specialisation(instance)
+            return False
 
     def __subclasscheck__(cls, subclass):
         return super().__subclasscheck__(subclass)
