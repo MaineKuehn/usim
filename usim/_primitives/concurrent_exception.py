@@ -8,14 +8,17 @@ class MetaConcurrent(type):
     template: 'MetaConcurrent'
 
     def __new__(
-            mcs,
-            name: str,
-            bases: Tuple[Type, ...],
-            namespace: Dict[str, Any],
-            specialisations: Optional[Tuple[Union[Type[Exception], 'ellipsis'], ...]] = None,
-            **kwargs,
+        mcs,
+        name: str,
+        bases: Tuple[Type, ...],
+        namespace: Dict[str, Any],
+        specialisations:
+            Optional[Tuple[Union[Type[Exception], 'ellipsis'], ...]] = None,
+        **kwargs,
     ):
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)  # type: MetaConcurrent
+        cls = super().__new__(
+            mcs, name, bases, namespace, **kwargs
+        )  # type: MetaConcurrent
         if specialisations is not None:
             try:
                 i = specialisations.index(...)
@@ -23,7 +26,7 @@ class MetaConcurrent(type):
                 inclusive = False
             else:
                 inclusive = True
-                specialisations = specialisations[:i] + specialisations[i+1:]
+                specialisations = specialisations[:i] + specialisations[(i + 1):]
                 assert ... not in specialisations,\
                     "only one ... allowed in specialisations"
             template = bases[0]
@@ -84,7 +87,15 @@ class MetaConcurrent(type):
                 for child in subclass.specialisations
             )
 
-    def __getitem__(cls, item: Union[Type[Exception], 'ellipsis', Tuple[Union[Type[Exception], 'ellipsis'], ...]]):
+    def __getitem__(
+        cls,
+        item:
+            Union[
+                Type[Exception],
+                'ellipsis',
+                Tuple[Union[Type[Exception], 'ellipsis'], ...]
+            ]
+    ):
         if cls.specialisations is not None:
             raise TypeError(f'Cannot specialise already specialised {cls.__name__!r}')
         if not isinstance(item, tuple):
@@ -183,13 +194,11 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
     __specialisations__ = WeakValueDictionary()
 
     def __new__(cls: 'Type[Concurrent]', *children):
-        if children is None:
+        if not children:
             assert cls.specialisations is None,\
-                f"specialisation () does not match children {children}"
+                f"specialisation {cls.specialisations} does not match"\
+                f" children {children}; Note: Do not 'raise {cls.__name__}'"
             return super().__new__(cls)
-        assert children,\
-            f'specialised {cls.__name__} must receive matching children\n'\
-            f'instantiate the unspecialised type {cls.template.__name__!r} instead'
         specialisations = frozenset(type(child) for child in children)
         try:
             special_cls = cls.__specialisations__[children]
