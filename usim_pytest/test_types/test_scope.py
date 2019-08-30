@@ -1,7 +1,6 @@
 import pytest
 
-from usim import Scope, time, instant
-from usim._primitives.concurrent_exception import Concurrent
+from usim import Scope, time, instant, Concurrent
 
 from ..utility import via_usim
 
@@ -43,7 +42,7 @@ class TestExceptions:
             await (time + after)
             observations += 1
 
-        with pytest.raises(KeyError):
+        with pytest.raises(Concurrent):
             async with Scope() as scope:
                 scope.do(observe(5))
                 await instant
@@ -64,7 +63,7 @@ class TestExceptions:
             await (time + after)
             observations += 1
 
-        with pytest.raises(Concurrent[KeyError, IndexError]):
+        with pytest.raises(Concurrent):
             async with Scope() as scope:
                 scope.do(observe(5))
                 await instant
