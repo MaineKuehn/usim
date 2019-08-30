@@ -183,9 +183,13 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
     __specialisations__ = WeakValueDictionary()
 
     def __new__(cls: 'Type[Concurrent]', *children):
-        if not children:
-            assert cls.specialisations is None, 'specialisation must match children'
+        if children is None:
+            assert cls.specialisations is None,\
+                f"specialisation () does not match children {children}"
             return super().__new__(cls)
+        assert children,\
+            f'specialised {cls.__name__} must receive matching children\n'\
+            f'instantiate the unspecialised type {cls.template.__name__!r} instead'
         specialisations = frozenset(type(child) for child in children)
         try:
             special_cls = cls.__specialisations__[children]
