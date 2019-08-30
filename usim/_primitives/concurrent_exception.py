@@ -147,6 +147,7 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
 
     """
     def __init__(self, *children):
+        super().__init__(children)
         self.children = children
 
     def __str__(self):
