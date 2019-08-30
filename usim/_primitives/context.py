@@ -1,7 +1,7 @@
 from typing import Coroutine, List, TypeVar, Any, Optional
 
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
-from .notification import Notification
+from .notification import Notification, postpone
 from .flag import Flag
 from .task import Task, TaskExit, TaskState
 
@@ -82,7 +82,7 @@ class Scope:
         self._volatile_children = []  # type: List[Task]
         self._done = Flag()
         self._activity = None  # type: Optional[Coroutine]
-        self._cancel_self = CancelScope(self)
+        self._cancel_self = CancelScope(self, 'Scope._cancel_self')
 
     def __await__(self):
         yield from self._done.__await__()
@@ -179,25 +179,32 @@ class Scope:
         )
         await self._done.set()
         if exc_type is None:
-            try:
-                await self._await_children()
-            except BaseException as err:
-                exc_type, exc_val = type(err), err
-            else:
-                self._close_volatile()
-                await self._reraise_children()
-                return self._handle_exception(exc_val)
+            return await self._aexit_graceful()
         # there was an exception, we have to abandon the scope
+        return await self._aexit_forceful(exc_type, exc_val)
+
+    async def _aexit_forceful(self, exc_type, exc_val):
+        """Exit with exception"""
         if exc_type is GeneratorExit:
             return self._handle_close(exc_val)
         # reap all children now
         self._cancel_children()
         await self._await_children()
-        if exc_type is GeneratorExit:
-            return self._handle_close(exc_val)
         self._close_volatile()
+        # locally raise any errors that occurred concurrently
         await self._reraise_children()
         return self._handle_exception(exc_val)
+
+    async def _aexit_graceful(self):
+        """Exit without exception"""
+        try:
+            await self._await_children()
+        except BaseException as err:
+            return await self._aexit_forceful(type(err), err)
+        else:
+            self._close_volatile()
+            await self._reraise_children()
+            return self._handle_exception(None)
 
     def _handle_close(self, exc_val: GeneratorExit) -> bool:
         assert isinstance(exc_val, GeneratorExit)
