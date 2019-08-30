@@ -1,8 +1,16 @@
-from typing import Optional, Tuple, Union, Type, Dict, Any
+from typing import Optional, Tuple, Union, Type, Dict, Any, ClassVar
 from weakref import WeakValueDictionary
 
 
 class MetaConcurrent(type):
+    """
+    Metaclass to implement specialisation of :py:exc:`Concurrent`
+
+    Provides specialisation via subscription and corresponding type checks:
+    ``Type[spec]`` and ``issubclass(Type[spec], Type[spec, spec2])``. Accepts
+    the specialisation ``...`` (:py:const:`Ellipsis`) to mark the specialisation
+    as inclusive, meaning a subtype may have additional specialisations.
+    """
     inclusive: bool
     specialisations: Optional[Tuple[Type[Exception]]]
     template: 'MetaConcurrent'
@@ -50,14 +58,17 @@ class MetaConcurrent(type):
     # to ``if issubclass(type(a), b): <block>``.
     # Which means we need ``__subclasscheck__`` only.
     def __instancecheck__(cls, instance):
+        """``isinstance(instance, cls)``"""
         return cls.__subclasscheck__(type(instance))
 
     def __subclasscheck__(cls, subclass):
+        """``issubclass(subclass, cls)``"""
         try:
             template = subclass.template
         except AttributeError:
             return False
         else:
+            # if we are templated, check that the specialisation matches
             if template == cls.template:
                 # except MultiError:
                 if cls.specialisations is None:
@@ -68,6 +79,7 @@ class MetaConcurrent(type):
             return False
 
     def _subclasscheck_specialisation(cls, subclass: 'MetaConcurrent'):
+        """``issubclass(Type[subclass.specialisation], Type[cls.specialisation])``"""
         matched_specialisations = sum(
             1 for specialisation in cls.specialisations
             if any(
@@ -79,9 +91,11 @@ class MetaConcurrent(type):
             return False
         # except MultiError[KeyError, ...]
         elif cls.inclusive:
+            # We do not care if ``subclass`` has unmatched specialisations
             return True
         # except MultiError[KeyError]:
         else:
+            # Make sure that ``subclass`` has no unmatched specialisations
             return not any(
                 not issubclass(child, cls.specialisations)
                 for child in subclass.specialisations
@@ -96,6 +110,7 @@ class MetaConcurrent(type):
                 Tuple[Union[Type[Exception], 'ellipsis'], ...]
             ]
     ):
+        """``cls[item]``"""
         if cls.specialisations is not None:
             raise TypeError(f'Cannot specialise already specialised {cls.__name__!r}')
         if not isinstance(item, tuple):
@@ -127,7 +142,7 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
     A meta-exception that represents any :py:exc:`Exception` of any failing
     :py:class:`~usim.typing.Task` of a :py:class:`~usim.Scope`. This does not
     include any :py:exc:`Exception` thrown in the body of the scope. As a result,
-    it is possible to separately catch concurrent and regular exceptions:
+    it is possible to separately handle concurrent and regular exceptions:
 
     .. code:: python3
 
@@ -147,7 +162,7 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
     In addition to separating concurrent and regular exceptions,
     :py:class:`~.Concurrent` can also separate different concurrent exception types.
     Subscribing the :py:class:`~.Concurrent` type as ``Concurrent[Exception]``
-    specialise ``except`` clauses to a specific concurrent :py:exc:`Exception`:
+    specialises ``except`` clauses to a specific concurrent :py:exc:`Exception`:
 
     .. code:: python3
 
@@ -190,8 +205,18 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
         except Concurrent[KeyError, ...]:
             print('Failed key lookup and something else')
 
+    Note that
+    ``except (Concurrent[A], Concurrent[B]:`` means *either* ``A`` *or* ``B``
+    whereas
+    ``except Concurrent[A, B]:`` means *both* ``A`` *and* ``B``.
     """
     __specialisations__ = WeakValueDictionary()
+    #: Whether this type accepts additional unmatched specialisations
+    inclusive: ClassVar[bool]
+    #: Specialisations this type expects in order to match
+    specialisations: ClassVar[Optional[Tuple[Type[Exception]]]]
+    #: Basic template of specialisation
+    template: ClassVar[MetaConcurrent]
 
     def __new__(cls: 'Type[Concurrent]', *children):
         if not children:
