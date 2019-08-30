@@ -31,7 +31,7 @@ class TestTests:
 
     @pytest.mark.xfail(raises=Concurrent[KeyError], strict=True)
     @via_usim
-    async def test_scoped(self):
+    async def test_concurrent_scoped(self):
         async with Scope() as scope:
             scope.do(a_raise(KeyError()))
 
