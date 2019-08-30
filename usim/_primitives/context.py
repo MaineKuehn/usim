@@ -155,6 +155,7 @@ class Scope:
 
     def _disable_interrupts(self):
         self._interruptable = False
+        self._cancel_self.revoke()
 
     async def _await_children(self):
         for child in self._children:
