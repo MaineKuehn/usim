@@ -24,10 +24,13 @@ class CancelScope(CoreInterrupt):
 
 
 #: Exceptions which are *not* re-raised from concurrent tasks
-SUPPRESS_CONCURRENT = {
-    *BaseException.__subclasses__(),
-    TaskCancelled, TaskExit,
-}
+SUPPRESS_CONCURRENT = (
+    TaskCancelled, TaskExit, GeneratorExit
+)
+#: Exceptions which are always propagated unwrapped
+PROMOTE_CONCURRENT = (
+    SystemExit, KeyboardInterrupt, AssertionError
+)
 
 
 class Scope:
@@ -163,24 +166,19 @@ class Scope:
 
     async def _reraise_children(self):
         suppress = SUPPRESS_CONCURRENT
-        child_exceptions = [
-            exc for exc in (
-                child.__exception__ for child in self._children
-                if child.status is TaskState.FAILED
-            )
-            if exc not in suppress
-        ]
-        if child_exceptions:
-            # do not add magic around assertion errors - there is probably
-            # a machine waiting for it (like our unittests)
-            if __debug__:
-                assertion = [
-                    exc for exc in child_exceptions
-                    if type(exc) is AssertionError
-                ][:1]
-                if assertion:
-                    raise assertion[0]
-            raise Concurrent(*child_exceptions)
+        promote = PROMOTE_CONCURRENT
+        concurrent, privileged = [], []
+        for child in self._children:
+            if child.status is TaskState.FAILED:
+                exc = child.__exception__
+                if type(exc) in promote:
+                    privileged.append(exc)
+                if type(exc) not in suppress:
+                    concurrent.append(exc)
+        if privileged:
+            raise privileged[0]
+        elif concurrent:
+            raise Concurrent(*concurrent)
 
     def _cancel_children(self):
         for child in self._children:
@@ -232,8 +230,16 @@ class Scope:
         self._cancel_children()
         await self._await_children()
         self._close_volatile()
-        # locally raise any errors that occurred concurrently
-        await self._reraise_children()
+        # prefer global exceptions and task local signals
+        if (
+            exc_type not in PROMOTE_CONCURRENT
+            and (
+                not issubclass(exc_type, CoreInterrupt)
+                or self._handle_exception(exc_val)
+            )
+        ):
+            # locally raise any errors that occurred concurrently
+            await self._reraise_children()
         return self._handle_exception(exc_val)
 
     async def _aexit_graceful(self):
