@@ -15,16 +15,17 @@ class MetaConcurrent(type):
             try:
                 i = specialisations.index(...)
             except ValueError:
-                cls.inclusive = False
+                inclusive = False
             else:
-                cls.inclusive = True
+                inclusive = True
                 specialisations = specialisations[:i] + specialisations[i+1:]
                 assert ... not in specialisations,\
                     "only one ... allowed in specialisations"
             template = bases[0]
         else:
-            cls.inclusive = True
+            inclusive = True
             template = cls
+        cls.inclusive = inclusive
         cls.specialisations = specialisations
         cls.template = template
         return cls
