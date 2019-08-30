@@ -1,7 +1,12 @@
 from typing import Optional, Tuple, Union, Type, Dict, Any
+from weakref import WeakValueDictionary
 
 
 class MetaConcurrent(type):
+    inclusive: bool
+    specialisations: Optional[Tuple[Type[Exception]]]
+    template: 'MetaConcurrent'
+
     def __new__(
             mcs,
             name: str,
@@ -42,8 +47,11 @@ class MetaConcurrent(type):
     # to ``if issubclass(type(a), b): <block>``.
     # Which means we need ``__subclasscheck__`` only.
     def __instancecheck__(cls, instance):
+        return cls.__subclasscheck__(type(instance))
+
+    def __subclasscheck__(cls, subclass):
         try:
-            template = instance.template
+            template = subclass.template
         except AttributeError:
             return False
         else:
@@ -53,18 +61,15 @@ class MetaConcurrent(type):
                     return True
                 # except MultiError[]:
                 else:
-                    return cls._instancecheck_specialisation(instance)
+                    return cls._subclasscheck_specialisation(subclass)
             return False
 
-    def __subclasscheck__(cls, subclass):
-        return super().__subclasscheck__(subclass)
-
-    def _instancecheck_specialisation(cls, instance: 'Concurrent'):
+    def _subclasscheck_specialisation(cls, subclass: 'MetaConcurrent'):
         matched_specialisations = sum(
             1 for specialisation in cls.specialisations
             if any(
-                isinstance(child, specialisation)
-                for child in instance.children
+                issubclass(child, specialisation)
+                for child in subclass.specialisations
             )
         )
         if matched_specialisations < len(cls.specialisations):
@@ -75,8 +80,8 @@ class MetaConcurrent(type):
         # except MultiError[KeyError]:
         else:
             return not any(
-                not isinstance(child, cls.specialisations)
-                for child in instance.children
+                not issubclass(child, cls.specialisations)
+                for child in subclass.specialisations
             )
 
     def __getitem__(cls, item: Union[Type[Exception], 'ellipsis', Tuple[Union[Type[Exception], 'ellipsis'], ...]]):
@@ -91,11 +96,17 @@ class MetaConcurrent(type):
             return MetaConcurrent(name, (cls,), {}, specialisations=(item,))
         else:
             assert all(
-                issubclass(child, Exception) or (child is ...) for child in item
+                (child is ...) or issubclass(child, Exception) for child in item
             ),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
-            name = f'{cls.__name__}[{", ".join(child.__name__ for child in item)}]'
+            spec = ", ".join(
+                '...' if child is ... else child.__name__ for child in item
+            )
+            name = f'{cls.__name__}[{spec}]'
             return MetaConcurrent(name, (cls,), {}, specialisations=tuple(set(item)))
+
+    def __repr__(cls):
+        return f"<class 'usim.{cls.__name__}'>"
 
 
 class Concurrent(Exception, metaclass=MetaConcurrent):
@@ -169,16 +180,30 @@ class Concurrent(Exception, metaclass=MetaConcurrent):
             print('Failed key lookup and something else')
 
     """
+    __specialisations__ = WeakValueDictionary()
+
     def __new__(cls: 'Type[Concurrent]', *children):
-        specialisation = cls[tuple(type(child) for child in children)]
-        return super().__new__(specialisation, *children)
+        if not children:
+            assert cls.specialisations is None, 'specialisation must match children'
+            return super().__new__(cls)
+        specialisations = frozenset(type(child) for child in children)
+        try:
+            special_cls = cls.__specialisations__[children]
+        except KeyError:
+            special_cls = cls[tuple(specialisations)]
+            cls.__specialisations__[specialisations] = special_cls
+        self = super().__new__(special_cls)
+        return self
 
     def __init__(self, *children):
         super().__init__(children)
         self.children = children
 
     def __str__(self):
-        return ', '.join(map(repr, self.children))
+        return \
+            f'{self.__class__.__name__}: {", ".join(map(repr, self.children))}'
 
     def __repr__(self):
-        return f'<usim.f{self.__class__.__name__} of {self}>'
+        return \
+            f'<object usim.{self.__class__.__name__} '\
+            f'of {", ".join(map(repr, self.children))}>'
