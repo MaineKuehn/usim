@@ -77,6 +77,21 @@ class TestConcurrent:
             with pytest.raises(Concurrent[KeyError, ValueError, ...]):
                 raise Concurrent(IndexError(), ValueError())
 
+    def test_specialised_base(self):
+        """Specialised ``Concurrent[a]`` catches also ``Concurrent(b(): a)``"""
+        with pytest.raises(Concurrent[LookupError]):
+            raise Concurrent(IndexError())
+        with pytest.raises(Concurrent[LookupError]):
+            raise Concurrent(KeyError())
+        # basetype may catch multiple subtypes
+        with pytest.raises(Concurrent[LookupError]):
+            raise Concurrent(KeyError(), IndexError())
+        # basetype matches do not satisfy missing matchs
+        # check that inner test does not catch
+        with pytest.raises(Concurrent[LookupError]):
+            with pytest.raises(Concurrent[LookupError, TypeError]):
+                raise Concurrent(KeyError(), IndexError())
+
     def test_specialised_identity(self):
         assert type(Concurrent()) is Concurrent
         assert type(Concurrent(KeyError())) is Concurrent[KeyError]
