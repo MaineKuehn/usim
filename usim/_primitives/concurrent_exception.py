@@ -49,7 +49,9 @@ class MetaConcurrent(type):
     #   try: raise a
     #   except b as err: <block>
     # to ``if issubclass(type(a), b): <block>``.
-    # Which means we need ``__subclasscheck__`` only.
+    #
+    # Which means we need just ``__subclasscheck__`` for error handling.
+    # We implement ``__instancecheck__`` for consistency only.
     def __instancecheck__(cls, instance):
         """``isinstance(instance, cls)``"""
         return cls.__subclasscheck__(type(instance))
@@ -72,7 +74,7 @@ class MetaConcurrent(type):
             return False
 
     def _subclasscheck_specialisation(cls, subclass: 'MetaConcurrent'):
-        """``issubclass(Type[subclass.specialisation], Type[cls.specialisation])``"""
+        """``issubclass(:Type[subclass.specialisation], Type[:cls.specialisation])``"""
         matched_specialisations = sum(
             1 for specialisation in cls.specialisations
             if any(
@@ -94,6 +96,12 @@ class MetaConcurrent(type):
                 for child in subclass.specialisations
             )
 
+    # Specialisation Interface
+    # Allows to do ``Cls[A, B, C]`` to specialise ``Cls`` with ``A, B, C``.
+    # This part is the only one that actually understands ``...``.
+    #
+    # Expect this to be called by user-facing code, either directly or as a result
+    # of ``Cls(A(), B(), C())``. Errors should be reported appropriately.
     def __getitem__(
         cls,
         item:
