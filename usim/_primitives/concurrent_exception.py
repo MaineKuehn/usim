@@ -58,6 +58,8 @@ class MetaConcurrent(type):
 
     def __subclasscheck__(cls, subclass):
         """``issubclass(subclass, cls)``"""
+        if cls is subclass:
+            return True
         try:
             template = subclass.template
         except AttributeError:
