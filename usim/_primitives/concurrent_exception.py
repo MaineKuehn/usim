@@ -130,10 +130,12 @@ class MetaConcurrent(type):
             specialised_cls = cls.__specialisations__[unique_spec]
         except KeyError:
             spec = ", ".join(
-                '...' if child is ... else child.__name__ for child in item
-            )
+                child.__name__ for child in unique_spec if child is not ...
+            ) + (', ...' if ... in unique_spec else '')
             name = f'{cls.__name__}[{spec}]'
-            specialised_cls = MetaConcurrent(name, (cls,), {}, specialisations=tuple(set(item)))
+            specialised_cls = MetaConcurrent(
+                name, (cls,), {}, specialisations=tuple(unique_spec),
+            )
             cls.__specialisations__[unique_spec] = specialised_cls
         return specialised_cls
 
@@ -230,14 +232,8 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
                 f"specialisation {cls.specialisations} does not match"\
                 f" children {children}; Note: Do not 'raise {cls.__name__}'"
             return super().__new__(cls)
-        specialisations = frozenset(type(child) for child in children)
-        try:
-            special_cls = cls.__specialisations__[children]
-        except KeyError:
-            special_cls = cls[tuple(specialisations)]
-            cls.__specialisations__[specialisations] = special_cls
-        self = super().__new__(special_cls)
-        return self
+        special_cls = cls[tuple(type(child) for child in children)]
+        return super().__new__(special_cls)
 
     def __init__(self, *children):
         super().__init__(children)
