@@ -171,7 +171,8 @@ class Scope:
         for child in self._children:
             await child.done
 
-    async def _reraise_children(self):
+    async def _reraise_concurrent(self):
+        """re-``raise`` any exceptions that occurred concurrently"""
         suppress = self.SUPPRESS_CONCURRENT
         promote = self.PROMOTE_CONCURRENT
         concurrent = []
@@ -184,6 +185,15 @@ class Scope:
                     concurrent.append(exc)
         if concurrent:
             raise Concurrent(*concurrent)
+
+    async def _reraise_privileged(self):
+        """re-``raise`` any important exceptions that occurred concurrently"""
+        promote = self.PROMOTE_CONCURRENT
+        for child in self._children:
+            if child.status is TaskState.FAILED:
+                exc = child.__exception__
+                if isinstance(exc, promote):
+                    raise exc
 
     def _cancel_children(self):
         for child in self._children:
@@ -227,7 +237,7 @@ class Scope:
 
     async def _aexit_forceful(self, exc_type, exc_val):
         """Exit with exception"""
-        # we already handle an exception, supress
+        # we already handle an exception, suppress
         self._disable_interrupts()
         if exc_type is GeneratorExit:
             return self._handle_close(exc_val)
@@ -235,16 +245,11 @@ class Scope:
         self._cancel_children()
         await self._await_children()
         self._close_volatile()
-        # prefer global exceptions and task local signals
-        if (
-            exc_type not in self.PROMOTE_CONCURRENT
-            and (
-                not issubclass(exc_type, CoreInterrupt)
-                or self._handle_exception(exc_val)
-            )
-        ):
-            # locally raise any errors that occurred concurrently
-            await self._reraise_children()
+        # allow replacing our exception with more important ones
+        if not issubclass(exc_type, self.PROMOTE_CONCURRENT):
+            await self._reraise_privileged()
+        if self._handle_exception(exc_val):
+            await self._reraise_concurrent()
         return self._handle_exception(exc_val)
 
     async def _aexit_graceful(self):
@@ -257,7 +262,7 @@ class Scope:
             self._close_volatile()
             # everybody is dead - we just handle the cleanup
             self._disable_interrupts()
-            await self._reraise_children()
+            await self._reraise_concurrent()
             return self._handle_exception(None)
 
     def _handle_close(self, exc_val: GeneratorExit) -> bool:
