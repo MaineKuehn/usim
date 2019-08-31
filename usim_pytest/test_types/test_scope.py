@@ -84,6 +84,7 @@ class TestExceptions:
             async with Scope() as scope:
                 scope.do(async_raise(IndexError(), 1))
                 raise KeyError
+        assert time.now == 0
 
         with pytest.raises(Concurrent[IndexError]):
             async with Scope() as scope:
@@ -92,6 +93,7 @@ class TestExceptions:
                 scope.do(async_raise(ValueError(), 2))
                 await (time + 2)
                 raise KeyError
+        assert time.now == 1
 
         with pytest.raises(Concurrent[IndexError, TypeError]):
             async with Scope() as scope:
@@ -101,6 +103,7 @@ class TestExceptions:
                 scope.do(async_raise(ValueError(), 2))
                 await (time + 2)
                 raise KeyError
+        assert time.now == 2
 
         with pytest.raises(Concurrent[IndexError, TypeError, ...]):
             async with Scope() as scope:
@@ -110,6 +113,7 @@ class TestExceptions:
                 scope.do(async_raise(ValueError(), 2))
                 await (time + 2)
                 raise KeyError
+        assert time.now == 3
 
     @via_usim
     async def test_fail_privileged(self):
