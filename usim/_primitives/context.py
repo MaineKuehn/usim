@@ -174,17 +174,15 @@ class Scope:
     async def _reraise_children(self):
         suppress = self.SUPPRESS_CONCURRENT
         promote = self.PROMOTE_CONCURRENT
-        concurrent, privileged = [], []
+        concurrent = []
         for child in self._children:
             if child.status is TaskState.FAILED:
                 exc = child.__exception__
                 if isinstance(exc, promote):
-                    privileged.append(exc)
+                    raise exc
                 if not isinstance(exc, suppress):
                     concurrent.append(exc)
-        if privileged:
-            raise privileged[0]
-        elif concurrent:
+        if concurrent:
             raise Concurrent(*concurrent)
 
     def _cancel_children(self):
