@@ -23,16 +23,6 @@ class CancelScope(CoreInterrupt):
         self.subject = subject
 
 
-#: Exceptions which are *not* re-raised from concurrent tasks
-SUPPRESS_CONCURRENT = (
-    TaskCancelled, TaskExit, GeneratorExit
-)
-#: Exceptions which are always propagated unwrapped
-PROMOTE_CONCURRENT = (
-    SystemExit, KeyboardInterrupt, AssertionError
-)
-
-
 class Scope:
     r"""
     Concurrency scope that allows branching off and waiting for multiple activities
@@ -92,6 +82,15 @@ class Scope:
     """
     __slots__ = '_children', '_body_done', '_activity', '_volatile_children',\
                 '_cancel_self', '_interruptable'
+
+    #: Exceptions which are *not* re-raised from concurrent tasks
+    SUPPRESS_CONCURRENT = (
+        TaskCancelled, TaskExit, GeneratorExit
+    )
+    #: Exceptions which are always propagated unwrapped
+    PROMOTE_CONCURRENT = (
+        SystemExit, KeyboardInterrupt, AssertionError
+    )
 
     def __init__(self):
         self._children = []  # type: List[Task]
@@ -173,8 +172,8 @@ class Scope:
             await child.done
 
     async def _reraise_children(self):
-        suppress = SUPPRESS_CONCURRENT
-        promote = PROMOTE_CONCURRENT
+        suppress = self.SUPPRESS_CONCURRENT
+        promote = self.PROMOTE_CONCURRENT
         concurrent, privileged = [], []
         for child in self._children:
             if child.status is TaskState.FAILED:
@@ -240,7 +239,7 @@ class Scope:
         self._close_volatile()
         # prefer global exceptions and task local signals
         if (
-            exc_type not in PROMOTE_CONCURRENT
+            exc_type not in self.PROMOTE_CONCURRENT
             and (
                 not issubclass(exc_type, CoreInterrupt)
                 or self._handle_exception(exc_val)
