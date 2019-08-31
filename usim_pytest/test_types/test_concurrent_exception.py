@@ -116,3 +116,6 @@ class TestConcurrent:
             Concurrent[KeyError, ...], Concurrent[IndexError, KeyError]
         )
         assert not issubclass(FakeConcurrent, Concurrent)
+        assert not issubclass(KeyError, Concurrent[KeyError])
+        assert not issubclass(KeyError, Concurrent[...])
+        assert not issubclass(KeyError, Concurrent[KeyError, ...])
