@@ -135,7 +135,7 @@ class MetaConcurrent(type):
         return f"<class 'usim.{cls.__name__}'>"
 
 
-class Concurrent(Exception, metaclass=MetaConcurrent):
+class Concurrent(BaseException, metaclass=MetaConcurrent):
     """
     Exception from one or more concurrent :term:`activity`
 
