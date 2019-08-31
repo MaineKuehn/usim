@@ -3,6 +3,10 @@ import pytest
 from usim import Concurrent
 
 
+class FakeConcurrent:
+    template = BaseException
+
+
 class TestConcurrent:
     """Test the semantics of ``usim.Concurrent``"""
     def test_generic(self):
@@ -94,8 +98,21 @@ class TestConcurrent:
 
     def test_specialised_identity(self):
         assert type(Concurrent()) is Concurrent
+        assert Concurrent[...] is Concurrent
         assert type(Concurrent(KeyError())) is Concurrent[KeyError]
         assert type(Concurrent(KeyError(), IndexError()))\
             is Concurrent[KeyError, IndexError]
         assert type(Concurrent(IndexError(), KeyError()))\
             is Concurrent[KeyError, IndexError]
+
+    def test_specialised_subclass(self):
+        assert issubclass(Concurrent[KeyError], Concurrent)
+        assert issubclass(Concurrent[IndexError], Concurrent)
+        assert issubclass(Concurrent[IndexError, KeyError], Concurrent)
+        assert issubclass(Concurrent[KeyError], Concurrent[KeyError])
+        assert issubclass(Concurrent[IndexError], Concurrent[LookupError])
+        assert issubclass(Concurrent[IndexError, KeyError], Concurrent[KeyError, ...])
+        assert not issubclass(
+            Concurrent[KeyError, ...], Concurrent[IndexError, KeyError]
+        )
+        assert not issubclass(FakeConcurrent, Concurrent)
