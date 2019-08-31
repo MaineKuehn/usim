@@ -61,9 +61,13 @@ class Scope:
         # block is done after a total delay of 20
 
     Both the block of scope and all its activities form one unit of control.
-    If either encounters an unhandled exception, all are aborted.
     A :py:class:`~.Scope` will only exit once its block and all non-``volatile``
     activities are done.
+    If either encounters an unhandled exception, all are aborted;
+    exceptions from child tasks are collapsed into a single :py:exc:`~.Concurrent`
+    exception which is raised by the :py:class:`~.Scope`.
+    Only the fatal exception types :py:exc:`SystemExit`, :py:exc:`KeyboardInterrupt`,
+    and :py:exc:`AssertionError` are not collapsed, but propagated directly.
 
     During its lifetime, a :py:class:`~.Scope` can be passed around freely.
     Most importantly, it can be passed to child activities.
@@ -119,8 +123,12 @@ class Scope:
         :param volatile: whether the activity is aborted at the end of the scope
         :return: representation of the ongoing activity
 
-        All non-`volatile` activities are `await`\ ed at the end of the scope.
+        All non-``volatile`` activities are ``await``\ ed at the end of the scope.
         As a result, the scope only ends after all its child activities are done.
+        Unhandled exceptions in children cause the parent scope to abort immediately;
+        all child exceptions are collected and re-raised as part of a single
+        :py:exc:`~.Concurrent` exception in this case.
+
         If an activity needs to shut down gracefully with its scope,
         it can `await` the scope.
 
@@ -131,14 +139,14 @@ class Scope:
                 await containing_scope
                 print('... scope has finished')
 
-            with Scope() as scope:
+            async with Scope() as scope:
                 scope.do(graceful(scope))
 
-        All `volatile` activities are aborted at the end of the scope,
-        after all non-`volatile` activities have finished.
-        Aborting ``volatile` activities is not graceful:
+        All ``volatile`` activities are aborted at the end of the scope,
+        after all non-``volatile`` activities have finished.
+        Aborting ``volatile`` activities is not graceful:
         :py:class:`GeneratorExit` is raised in the activity,
-        which must exit without `await`\ ing or `yield`\ ing anything.
+        which must exit without ``await``\ ing or ``yield``\ ing anything.
         """
         child_task = Task(payload, self)
         __LOOP_STATE__.LOOP.schedule(

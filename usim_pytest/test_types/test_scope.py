@@ -113,7 +113,7 @@ class TestExceptions:
 
     @via_usim
     async def test_fail_privileged(self):
-        """Failure inside children with privilege is not suppressed"""
+        """Failure inside children with privileged errors is not collapsed"""
         for exc_type in (AssertionError, KeyboardInterrupt, SystemExit):
             with pytest.raises(exc_type):
                 async with Scope() as scope:
