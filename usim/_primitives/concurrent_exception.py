@@ -22,22 +22,14 @@ class MetaConcurrent(type):
         bases: Tuple[Type, ...],
         namespace: Dict[str, Any],
         specialisations:
-            Optional[Tuple[Union[Type[Exception], 'ellipsis'], ...]] = None,
+            Optional[Tuple[Type[Exception], ...]] = None,
+        inclusive: bool = True,
         **kwargs,
     ):
         cls = super().__new__(
             mcs, name, bases, namespace, **kwargs
         )  # type: MetaConcurrent
         if specialisations is not None:
-            try:
-                i = specialisations.index(...)
-            except ValueError:
-                inclusive = False
-            else:
-                inclusive = True
-                specialisations = specialisations[:i] + specialisations[(i + 1):]
-                assert ... not in specialisations,\
-                    "only one ... allowed in specialisations"
             template = bases[0]
         else:
             inclusive = True
@@ -114,12 +106,12 @@ class MetaConcurrent(type):
         """``cls[item]``"""
         if cls.specialisations is not None:
             raise TypeError(f'Cannot specialise already specialised {cls.__name__!r}')
-        if not isinstance(item, tuple):
-            if item is ...:
-                return cls
+        if item is ...:
+            return cls
+        elif type(item) is not tuple:
             assert issubclass(item, Exception),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
-            item = item,
+            item = (item,)
         else:
             assert all(
                 (child is ...) or issubclass(child, Exception) for child in item
@@ -129,12 +121,15 @@ class MetaConcurrent(type):
         try:
             specialised_cls = cls.__specialisations__[unique_spec]
         except KeyError:
+            inclusive = ... in unique_spec
+            specialisations = tuple(child for child in unique_spec if child is not ...)
             spec = ", ".join(
-                child.__name__ for child in unique_spec if child is not ...
-            ) + (', ...' if ... in unique_spec else '')
-            name = f'{cls.__name__}[{spec}]'
+                child.__name__ for child in specialisations
+            ) + (', ...' if inclusive else '')
+            # Note: type(name, bases, namespace) parameters cannot be passed by keyword
             specialised_cls = MetaConcurrent(
-                name, (cls,), {}, specialisations=tuple(unique_spec),
+                f'{cls.__name__}[{spec}]', (cls,), {},
+                specialisations=specialisations, inclusive=inclusive
             )
             cls.__specialisations__[unique_spec] = specialised_cls
         return specialised_cls
