@@ -248,9 +248,9 @@ class Scope:
         # allow replacing our exception with more important ones
         if not issubclass(exc_type, self.PROMOTE_CONCURRENT):
             await self._reraise_privileged()
-        if self._handle_exception(exc_val):
+        if self._suppress_exception(exc_val):
             await self._reraise_concurrent()
-        return self._handle_exception(exc_val)
+        return self._suppress_exception(exc_val)
 
     async def _aexit_graceful(self):
         """Exit without exception"""
@@ -263,16 +263,16 @@ class Scope:
             # everybody is dead - we just handle the cleanup
             self._disable_interrupts()
             await self._reraise_concurrent()
-            return self._handle_exception(None)
+            return self._suppress_exception(None)
 
     def _handle_close(self, exc_val: GeneratorExit) -> bool:
         assert isinstance(exc_val, GeneratorExit)
         for child in self._children + self._volatile_children:
             child.__close__()
-        return self._handle_exception(exc_val)
+        return self._suppress_exception(exc_val)
 
-    def _handle_exception(self, exc_val) -> bool:
-        r"""Handle the exception of :py:mod:`~.__aexit__` and signal completion"""
+    def _suppress_exception(self, exc_val) -> bool:
+        r"""Whether to suppress the exception of :py:meth:`~.__aexit__`"""
         return exc_val is self._cancel_self
 
     def __repr__(self):
@@ -307,9 +307,12 @@ class InterruptScope(Scope):
         self._notification.__subscribe__(self._activity, self._interrupt)
         return self
 
-    def _handle_exception(self, exc_val) -> bool:
+    def _disable_interrupts(self):
         self._notification.__unsubscribe__(self._activity, self._interrupt)
-        return exc_val is self._interrupt or super()._handle_exception(exc_val)
+        super()._disable_interrupts()
+
+    def _suppress_exception(self, exc_val) -> bool:
+        return exc_val is self._interrupt or super()._suppress_exception(exc_val)
 
     def __repr__(self):
         return (
