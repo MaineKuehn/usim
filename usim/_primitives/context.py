@@ -178,9 +178,9 @@ class Scope:
         for child in self._children:
             if child.status is TaskState.FAILED:
                 exc = child.__exception__
-                if type(exc) in promote:
+                if isinstance(exc, promote):
                     privileged.append(exc)
-                if type(exc) not in suppress:
+                if not isinstance(exc, suppress):
                     concurrent.append(exc)
         if privileged:
             raise privileged[0]
