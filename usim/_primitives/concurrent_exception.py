@@ -103,7 +103,8 @@ class MetaConcurrent(type):
                 Tuple[Union[Type[Exception], 'ellipsis'], ...]
             ]
     ):
-        """``cls[item]``"""
+        """``cls[item]`` - used to specialise ``cls`` with ``item``"""
+        # check parameters
         if cls.specialisations is not None:
             raise TypeError(f'Cannot specialise already specialised {cls.__name__!r}')
         if item is ...:
@@ -117,6 +118,7 @@ class MetaConcurrent(type):
                 (child is ...) or issubclass(child, Exception) for child in item
             ),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
+        # specialise class
         unique_spec = frozenset(item)
         try:
             specialised_cls = cls.__specialisations__[unique_spec]
