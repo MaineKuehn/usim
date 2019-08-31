@@ -76,3 +76,11 @@ class TestConcurrent:
         with pytest.raises(Concurrent[IndexError, ValueError, ...]):
             with pytest.raises(Concurrent[KeyError, ValueError, ...]):
                 raise Concurrent(IndexError(), ValueError())
+
+    def test_specialised_identity(self):
+        assert type(Concurrent()) is Concurrent
+        assert type(Concurrent(KeyError())) is Concurrent[KeyError]
+        assert type(Concurrent(KeyError(), IndexError()))\
+            is Concurrent[KeyError, IndexError]
+        assert type(Concurrent(IndexError(), KeyError()))\
+            is Concurrent[KeyError, IndexError]

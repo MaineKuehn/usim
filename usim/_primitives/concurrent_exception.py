@@ -14,6 +14,7 @@ class MetaConcurrent(type):
     inclusive: bool
     specialisations: Optional[Tuple[Type[Exception]]]
     template: 'MetaConcurrent'
+    __specialisations__: WeakValueDictionary
 
     def __new__(
         mcs,
@@ -118,18 +119,23 @@ class MetaConcurrent(type):
                 return cls
             assert issubclass(item, Exception),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
-            name = f'{cls.__name__}[{item.__name__}]'
-            return MetaConcurrent(name, (cls,), {}, specialisations=(item,))
+            item = item,
         else:
             assert all(
                 (child is ...) or issubclass(child, Exception) for child in item
             ),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
+        unique_spec = frozenset(item)
+        try:
+            specialised_cls = cls.__specialisations__[unique_spec]
+        except KeyError:
             spec = ", ".join(
                 '...' if child is ... else child.__name__ for child in item
             )
             name = f'{cls.__name__}[{spec}]'
-            return MetaConcurrent(name, (cls,), {}, specialisations=tuple(set(item)))
+            specialised_cls = MetaConcurrent(name, (cls,), {}, specialisations=tuple(set(item)))
+            cls.__specialisations__[unique_spec] = specialised_cls
+        return specialised_cls
 
     def __repr__(cls):
         return f"<class 'usim.{cls.__name__}'>"
