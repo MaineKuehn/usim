@@ -171,7 +171,7 @@ class Scope:
         for child in self._children:
             await child.done
 
-    async def _reraise_concurrent(self):
+    def _reraise_concurrent(self):
         """re-``raise`` any exceptions that occurred concurrently"""
         suppress = self.SUPPRESS_CONCURRENT
         promote = self.PROMOTE_CONCURRENT
@@ -186,7 +186,7 @@ class Scope:
         if concurrent:
             raise Concurrent(*concurrent)
 
-    async def _reraise_privileged(self):
+    def _reraise_privileged(self):
         """re-``raise`` any important exceptions that occurred concurrently"""
         promote = self.PROMOTE_CONCURRENT
         for child in self._children:
@@ -247,9 +247,9 @@ class Scope:
         self._close_volatile()
         # allow replacing our exception with more important ones
         if not issubclass(exc_type, self.PROMOTE_CONCURRENT):
-            await self._reraise_privileged()
+            self._reraise_privileged()
         if self._suppress_exception(exc_val):
-            await self._reraise_concurrent()
+            self._reraise_concurrent()
         return self._suppress_exception(exc_val)
 
     async def _aexit_graceful(self):
@@ -262,7 +262,7 @@ class Scope:
             self._close_volatile()
             # everybody is dead - we just handle the cleanup
             self._disable_interrupts()
-            await self._reraise_concurrent()
+            self._reraise_concurrent()
             return self._suppress_exception(None)
 
     def _handle_close(self, exc_val: GeneratorExit) -> bool:
