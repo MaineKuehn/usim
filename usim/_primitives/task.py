@@ -4,6 +4,7 @@ from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List,\
     TYPE_CHECKING
 
 from .._core.loop import __LOOP_STATE__, Interrupt
+from .notification import suspend
 from .condition import Condition
 if TYPE_CHECKING:
     from .context import Scope
@@ -95,7 +96,7 @@ class Task(Awaitable[RT]):
     """
     __slots__ = 'payload', '_result', '__runner__', '_cancellations', '_done', 'parent'
 
-    def __init__(self, payload: Coroutine[Any, Any, RT], parent: 'Scope'):
+    def __init__(self, payload: Coroutine[Any, Any, RT], parent: 'Scope', delay, at):
         @wraps(payload)
         async def payload_wrapper():
             # check for a pre-run cancellation
@@ -103,6 +104,13 @@ class Task(Awaitable[RT]):
                 self.payload.close()
                 return
             try:
+                # We suspend the Task internally instead of waiting to start
+                # the Task externally. This is because starting must *always*
+                # be done via ``Task.__runner__.send(None)`` which we *cannot*
+                # cancel cleanly. An internal suspension means we *can* cancel
+                # the Task pre-run because no time passes until we check that.
+                if delay or at:
+                    await suspend(delay=delay, until=at)
                 result = await self.payload
             except CancelTask as err:
                 assert (
@@ -180,13 +188,18 @@ class Task(Awaitable[RT]):
         This is similar to calling :py:meth:`Coroutine.close`,
         but ensures that waiting activities are properly notified.
         """
-        # we have not FINISHED running yet
+        # we have not FINISHED running yet, and can still change the result
         if self._result is None:
             self._result = None, reason
-            # we have not STARTED running yet
+            # We have not STARTED running yet, which means we will in the same time
+            # Our __runner__ will cleanly exit as soon as it sees we have finalized
+            # everything already.
             if self.__runner__.cr_frame.f_lasti == -1:
                 self._done.__set_done__()
-            self.__runner__.close()
+            # We are RUNNING and __runner__ is prepared to catch GeneratorExit
+            # Close the __runner__ to have it clean up and finalize everything.
+            else:
+                self.__runner__.close()
 
     def cancel(self, *token) -> None:
         """
