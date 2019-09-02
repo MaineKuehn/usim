@@ -33,6 +33,30 @@ async def postpone():
         wake_up.revoke()
 
 
+async def suspend(*, delay: float, until: float):
+    """
+    Suspend a coroutine until a future time step
+
+    This will safely requeue the current task,
+    allowing other tasks to run and interrupts to occur.
+    Time will pass as if ``time == until`` or ``time + delay``
+    were used, but there is no ``Condition`` interface on top.
+    """
+    task = __LOOP_STATE__.LOOP.activity
+    wake_up = Interrupt('postpone', task)
+    __LOOP_STATE__.LOOP.schedule(task, signal=wake_up, delay=delay, at=until)
+    try:
+        await __HIBERNATE__
+    except Interrupt as err:
+        if err is not wake_up:
+            assert (
+                task is __LOOP_STATE__.LOOP.activity
+            ), 'Break points cannot be passed to other coroutines'
+            raise
+    finally:
+        wake_up.revoke()
+
+
 class Notification:
     """
     Synchronisation point to which activities can subscribe
