@@ -1,6 +1,6 @@
 import pytest
 
-from usim import Scope, time, eternity, VolatileTaskExit, TaskState,\
+from usim import Scope, time, eternity, VolatileTaskClosed, TaskState,\
     TaskCancelled, until, each
 
 from .utility import via_usim, assertion_mode
@@ -69,7 +69,7 @@ class TestDo:
 
         async with Scope() as scope:
             activity = scope.do(payload(), volatile=True)
-        with pytest.raises(VolatileTaskExit):
+        with pytest.raises(VolatileTaskClosed):
             assert await activity
         assert activity.status == TaskState.CANCELLED
 

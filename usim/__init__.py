@@ -5,7 +5,7 @@ from ._core.loop import Loop as _Loop
 from ._primitives.timing import Time, Eternity, Instant, each
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
-from ._primitives.context import until, Scope, VolatileTaskExit
+from ._primitives.context import until, Scope, VolatileTaskClosed
 from ._primitives.task import TaskCancelled, TaskState
 from ._primitives.concurrent_exception import Concurrent
 
@@ -13,7 +13,7 @@ from ._primitives.concurrent_exception import Concurrent
 __all__ = [
     'run',
     'time', 'eternity', 'instant', 'each',
-    'until', 'Scope', 'TaskCancelled', 'VolatileTaskExit', 'TaskState',
+    'until', 'Scope', 'TaskCancelled', 'VolatileTaskClosed', 'TaskState',
     'Flag', 'Lock',
     'Concurrent',
 ]

@@ -3,14 +3,14 @@ from typing import Coroutine, List, TypeVar, Any, Optional
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification
 from .flag import Flag
-from .task import Task, TaskExit, TaskState, TaskCancelled
+from .task import Task, TaskClosed, TaskState, TaskCancelled
 from .concurrent_exception import Concurrent
 
 
 RT = TypeVar('RT')
 
 
-class VolatileTaskExit(TaskExit):
+class VolatileTaskClosed(TaskClosed):
     """A volatile :py:class:`~.Task` forcefully exited at the end of its scope"""
 
 
@@ -85,7 +85,7 @@ class Scope:
 
     #: Exceptions which are *not* re-raised from concurrent tasks
     SUPPRESS_CONCURRENT = (
-        TaskCancelled, TaskExit, GeneratorExit
+        TaskCancelled, TaskClosed, GeneratorExit
     )
     #: Exceptions which are always propagated unwrapped
     PROMOTE_CONCURRENT = (
@@ -199,7 +199,7 @@ class Scope:
             child.cancel(self)
 
     def _close_volatile(self):
-        reason = VolatileTaskExit("closed at end of scope '%s'" % self)
+        reason = VolatileTaskClosed("closed at end of scope '%s'" % self)
         for child in self._volatile_children:
             child.__close__(reason=reason)
 

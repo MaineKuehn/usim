@@ -56,7 +56,7 @@ class CancelTask(Interrupt):
         return result
 
 
-class TaskExit(BaseException):
+class TaskClosed(Exception):
     """A :py:class:`~.Task` forcefully exited"""
 
 
@@ -172,7 +172,7 @@ class Task(Awaitable[RT]):
             if error is not None:
                 return (
                     TaskState.CANCELLED
-                    if isinstance(error, (TaskCancelled, TaskExit))
+                    if isinstance(error, (TaskCancelled, TaskClosed))
                     else TaskState.FAILED
                 )
             return TaskState.SUCCESS
@@ -181,7 +181,7 @@ class Task(Awaitable[RT]):
             return TaskState.CREATED
         return TaskState.RUNNING
 
-    def __close__(self, reason=TaskExit('activity closed')):
+    def __close__(self, reason=TaskClosed('activity closed')):
         """
         Close the underlying coroutine
 
