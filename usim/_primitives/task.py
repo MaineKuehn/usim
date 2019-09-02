@@ -13,6 +13,16 @@ if TYPE_CHECKING:
 RT = TypeVar('RT')
 
 
+def try_close(coroutine: Coroutine):
+    """Attempt to close a coroutine-like object if possible"""
+    try:
+        close = coroutine.close
+    except AttributeError:
+        pass
+    else:
+        close()
+
+
 # enum.Flag is Py3.6+
 class TaskState(enum.Flag if hasattr(enum, 'Flag') else enum.IntEnum):
     """State of a :py:class:`~.Task`"""
@@ -101,7 +111,7 @@ class Task(Awaitable[RT]):
         async def payload_wrapper():
             # check for a pre-run cancellation
             if self._result is not None:
-                self.payload.close()
+                try_close(self.payload)
                 return
             try:
                 # We suspend the Task internally instead of waiting to start
@@ -132,6 +142,7 @@ class Task(Awaitable[RT]):
                 self._result = result, None
             for cancellation in self._cancellations:
                 cancellation.revoke()
+            try_close(self.payload)
             self._done.__set_done__()
         self._cancellations = []  # type: List[CancelTask]
         self._result = None  \
