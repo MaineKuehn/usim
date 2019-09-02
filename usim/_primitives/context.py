@@ -200,11 +200,14 @@ class Scope:
                 if isinstance(exc, promote):
                     raise exc
 
-    def _cancel_children(self):
+    def _close_children(self):
+        """Forcefully close all child non-volatile tasks"""
+        reason = TaskClosed("closed at end of scope '%s'" % self)
         for child in self._children:
-            child.cancel(self)
+            child.__close__(reason=reason)
 
     def _close_volatile(self):
+        """Forcefully close all volatile child tasks"""
         reason = VolatileTaskClosed("closed at end of scope '%s'" % self)
         for child in self._volatile_children:
             child.__close__(reason=reason)
@@ -238,17 +241,26 @@ class Scope:
         if exc_type is None:
             return await self._aexit_graceful()
         # there was an exception, we have to abandon the scope
-        return await self._aexit_forceful(exc_type, exc_val)
+        return self._aexit_forceful(exc_type, exc_val)
 
-    async def _aexit_forceful(self, exc_type, exc_val):
-        """Exit with exception"""
+    def _aexit_forceful(self, exc_type, exc_val):
+        """
+        Exit with exception
+
+        This immediately closes all children without waiting for anything.
+        No further interrupts can occur during shutdown (this is a sync function).
+
+        If a fatal exception occurred in this scope or a child, the fatal
+        exception replaces all other exceptions in flight.
+        If the current exception is suppressed by the scope, any exceptions from
+        children are reraised as :py:exc:`~.Concurrent` errors.
+        """
         # we already handle an exception, suppress
         self._disable_interrupts()
         if exc_type is GeneratorExit:
             return self._handle_close(exc_val)
         # reap all children now
-        self._cancel_children()
-        await self._await_children()
+        self._close_children()
         self._close_volatile()
         # allow replacing our exception with more important ones
         if not issubclass(exc_type, self.PROMOTE_CONCURRENT):
@@ -258,11 +270,20 @@ class Scope:
         return self._suppress_exception(exc_val)
 
     async def _aexit_graceful(self):
-        """Exit without exception"""
+        """
+        Exit without exception
+
+        This suspends the scope until all children have finished by themselves.
+        If any children encountered an error, they are reraised as
+        :py:exc:`~.Concurrent` errors.
+
+        If an error occurs while waiting for children to stop, a forceful
+        shutdown is performed instead.
+        """
         try:
             await self._await_children()
         except BaseException as err:
-            return await self._aexit_forceful(type(err), err)
+            return self._aexit_forceful(type(err), err)
         else:
             self._close_volatile()
             # everybody is dead - we just handle the cleanup
