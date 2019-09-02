@@ -6,14 +6,14 @@ from ._primitives.timing import Time, Eternity, Instant, each
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
 from ._primitives.context import until, Scope, VolatileTaskClosed
-from ._primitives.task import TaskCancelled, TaskState
+from ._primitives.task import TaskCancelled, TaskState, TaskClosed
 from ._primitives.concurrent_exception import Concurrent
 
 
 __all__ = [
     'run',
     'time', 'eternity', 'instant', 'each',
-    'until', 'Scope', 'TaskCancelled', 'VolatileTaskClosed', 'TaskState',
+    'until', 'Scope', 'TaskCancelled', 'VolatileTaskClosed', 'TaskClosed', 'TaskState',
     'Flag', 'Lock',
     'Concurrent',
 ]

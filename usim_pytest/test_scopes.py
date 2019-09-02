@@ -1,7 +1,7 @@
 import pytest
 
 from usim import Scope, time, eternity, VolatileTaskClosed, TaskState,\
-    TaskCancelled, until, each
+    TaskCancelled, TaskClosed, until, each
 
 from .utility import via_usim, assertion_mode
 
@@ -41,8 +41,6 @@ class TestDo:
             activity = scope.do(payload(), after=5)
             assert activity.status == TaskState.CREATED
             await (time + 4)
-            assert activity.status == TaskState.CREATED
-            await (time + 3)
             assert activity.status == TaskState.RUNNING
             await activity.done
             assert time.now == 15
@@ -164,7 +162,7 @@ async def test_until():
         activity = running.do(scheduler())
 
     assert time.now == 500
-    with pytest.raises(TaskCancelled):
+    with pytest.raises(TaskClosed):
         await activity
 
 
