@@ -219,27 +219,17 @@ class Scope:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            self._disable_interrupts()
-        # receiving GeneratorExit means our coroutine is .closed'd
-        # This is forceful, and we are not allowed to await anything
-        # since it can happen on any await, we check multiple times
-        if exc_type is GeneratorExit:
-            return self._handle_close(exc_val)
-        assert (
-            self._activity is __LOOP_STATE__.LOOP.activity
-        ), (
-            "Instances of %s cannot be shared between activities" %
-            self.__class__.__name__
-        )
-        try:
-            # inform everyone that we are shutting down
-            # we may receive any shutdown signal here
-            await self._body_done.set()
-        except BaseException as err:
-            exc_type, exc_val = type(err), err
         if exc_type is None:
-            return await self._aexit_graceful()
+            try:
+                # inform everyone that we are shutting down
+                # we may receive any shutdown signal here
+                await self._body_done.set()
+            except BaseException as err:
+                exc_type, exc_val = type(err), err
+            else:
+                return await self._aexit_graceful()
+        self._body_done._value = True
+        self._body_done.__trigger__()
         # there was an exception, we have to abandon the scope
         return self._aexit_forceful(exc_type, exc_val)
 
@@ -257,8 +247,6 @@ class Scope:
         """
         # we already handle an exception, suppress
         self._disable_interrupts()
-        if exc_type is GeneratorExit:
-            return self._handle_close(exc_val)
         # reap all children now
         self._close_children()
         self._close_volatile()
@@ -285,9 +273,9 @@ class Scope:
         except BaseException as err:
             return self._aexit_forceful(type(err), err)
         else:
-            self._close_volatile()
-            # everybody is dead - we just handle the cleanup
+            # everybody is gone - we just handle the cleanup
             self._disable_interrupts()
+            self._close_volatile()
             self._reraise_concurrent()
             return self._suppress_exception(None)
 
@@ -298,7 +286,12 @@ class Scope:
         return self._suppress_exception(exc_val)
 
     def _suppress_exception(self, exc_val) -> bool:
-        r"""Whether to suppress the exception of :py:meth:`~.__aexit__`"""
+        """
+        Whether to suppress the exception of :py:meth:`~.__aexit__`
+
+        This generally means that the exception was an interrupt for this scope.
+        If the exception is meant for anyone else, we should let it propagate.
+        """
         return exc_val is self._cancel_self
 
     def __repr__(self):
