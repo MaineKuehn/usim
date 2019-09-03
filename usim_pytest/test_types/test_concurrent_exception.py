@@ -4,6 +4,7 @@ from usim import Concurrent
 
 
 class FakeConcurrent:
+    """Fake of ``Concurrent`` that offers some fields but is not a subclass"""
     template = BaseException
 
 
@@ -21,7 +22,7 @@ class TestConcurrent:
             raise Concurrent(KeyError(), IndexError())
 
     def test_specialised_single(self):
-        """Specialised ``Concurrent[a]`` catches only ``Concurrent(a())``"""
+        """``Concurrent[a]`` matches only ``Concurrent(a())``"""
         with pytest.raises(Concurrent[IndexError]):
             raise Concurrent(IndexError())
         with pytest.raises(Concurrent[KeyError]):
@@ -35,7 +36,7 @@ class TestConcurrent:
                 raise Concurrent(IndexError())
 
     def test_specialised_multi(self):
-        """Specialised ``Concurrent[a, b]`` catches only ``Concurrent(a(), b())``"""
+        """``Concurrent[a, b]`` matches only ``Concurrent(a(), b())``"""
         with pytest.raises(Concurrent[IndexError, KeyError]):
             raise Concurrent(IndexError(), KeyError())
         with pytest.raises(Concurrent[TypeError, ValueError]):
@@ -52,7 +53,7 @@ class TestConcurrent:
                     raise Concurrent(IndexError(), KeyError(), ValueError())
 
     def test_specialised_single_open(self):
-        """Specialised ``Concurrent[a, ...]`` catches any ``Concurrent(a(), ...)``"""
+        """``Concurrent[a, ...]`` matches any ``Concurrent(a(), ...)``"""
         with pytest.raises(Concurrent[IndexError, ...]):
             raise Concurrent(IndexError())
         with pytest.raises(Concurrent[IndexError, ...]):
@@ -68,7 +69,7 @@ class TestConcurrent:
                 raise Concurrent(IndexError(), ValueError())
 
     def test_specialised_multi_open(self):
-        """Specialised ``Concurrent[a, ...]`` catches any ``Concurrent(a(), ...)``"""
+        """``Concurrent[a, b, ...]`` matches any ``Concurrent(a(), b(), ...)``"""
         with pytest.raises(Concurrent[IndexError, KeyError, ...]):
             raise Concurrent(IndexError(), KeyError())
         with pytest.raises(Concurrent[IndexError, KeyError, ...]):
@@ -82,7 +83,7 @@ class TestConcurrent:
                 raise Concurrent(IndexError(), ValueError())
 
     def test_specialised_base(self):
-        """Specialised ``Concurrent[a]`` catches also ``Concurrent(b(): a)``"""
+        """``Concurrent[a]`` matches also ``Concurrent(b(): a)``"""
         with pytest.raises(Concurrent[LookupError]):
             raise Concurrent(IndexError())
         with pytest.raises(Concurrent[LookupError]):
@@ -97,6 +98,7 @@ class TestConcurrent:
                 raise Concurrent(KeyError(), IndexError())
 
     def test_specialised_identity(self):
+        """Various ``Concurrent`` forms are identical, not just equal"""
         assert type(Concurrent()) is Concurrent
         assert Concurrent[...] is Concurrent
         assert type(Concurrent(KeyError())) is Concurrent[KeyError]
@@ -106,6 +108,7 @@ class TestConcurrent:
             is Concurrent[KeyError, IndexError]
 
     def test_specialised_subclass(self):
+        """``Concurrent[T] :> Concurrent[U]`` if ``T :> U``"""
         assert issubclass(Concurrent[KeyError], Concurrent)
         assert issubclass(Concurrent[IndexError], Concurrent)
         assert issubclass(Concurrent[IndexError, KeyError], Concurrent)
