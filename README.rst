@@ -33,7 +33,7 @@ for more information on creating simulations with μSim.
 If you are reading this, you are looking at
 `the μSim repository <https://github.com/MaineKuehn/usim>`_.
 Here you can find the current development version,
-submit issue tickets or propose pull requests.
+submit issue tickets, or propose pull requests.
 
 In order to try the most recent development version,
 check out and install the ``master`` branch.
