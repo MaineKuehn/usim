@@ -7,7 +7,7 @@ repo_base_dir = os.path.abspath(os.path.dirname(__file__))
 package_about = {}
 with open(os.path.join(repo_base_dir, "usim", "__about__.py")) as about_file:
     exec(about_file.read(), package_about)
-    long_description = package_about.__doc__
+    long_description = package_about['__doc__']
 
 
 TESTS_REQUIRE = ['pytest>=4.3.0', 'pytest-timeout']
