@@ -16,7 +16,7 @@ Scopes and Exceptions
 ---------------------
 
 The purpose of a :py:class:`~usim.Scope` is to :py:meth:`~usim.Scope.do`
-additional activities concurrently, alongside a main activity represented
+activities concurrently, alongside a main activity represented
 by the Scope body itself.
 Consequently, we can separate exceptions into synchronous exceptions in the body,
 or :py:exc:`~usim.Concurrent` exceptions in a child activity.
@@ -53,8 +53,8 @@ Handling Scope Exceptions
 
 The :py:exc:`~usim.Concurrent` exception model is made to integrate with
 Python's regular ``try``/``except`` exception handling machinery.
-Synchronous exceptions do not need any extra effort to handle,
-while :py:exc:`~usim.Concurrent` exceptions have the required, additional
+Synchronous exceptions do not need any extra effort to handle.
+The :py:exc:`~usim.Concurrent` exceptions have the required, additional
 error handling built in.
 To handle a :py:exc:`~usim.Concurrent` exception of a specific type,
 use ``except Concurrent[ExceptionType]`` instead of ``except ExceptionType``:
@@ -70,7 +70,7 @@ use ``except Concurrent[ExceptionType]`` instead of ``except ExceptionType``:
         except Concurrent[RuntimeError] as err:
             print('Handled concurrent exception:', err)
 
-μSim guarantees that you never have to handle both a regular and
+μSim guarantees that you never have to handle both a regular and a
 :py:exc:`~usim.Concurrent` exception at the same time - it is an "either or" situation.
 Consequently, you can safely use separate error handlers for either exception flavour.
 :py:exc:`~usim.Concurrent` exceptions follow the regular subclassing relations
@@ -81,7 +81,7 @@ of exceptions -- for example, ``Concurrent[LookupError]`` matches both
 
     μSim considers the use of a :py:class:`~usim.Scope` an implementation detail of
     functions and abstractions that should *not* be visible to users.
-    Consequently, we handle any :py:exc:`~usim.Concurrent` exceptions internally
+    Consequently, we handle any :py:exc:`~usim.Concurrent` exception internally
     and only propagate regular exceptions.
     While this is not enforced for custom functions and abstractions,
     we strongly recommend to adhere to this convention.
@@ -98,7 +98,7 @@ In order not to require users to manually adhere to such unwritten rules,
 Task local exceptions
     Python's :py:exc:`GeneratorExit` and μSim's internal ``Interrupt``
     represent the teardown of a Task or parts of it.
-    In the Task they are meant for, these exceptions will replace all
+    In the Task they belong to, these exceptions will replace all
     other synchronous or concurrent exceptions; otherwise, they are suppressed.
     As a result, you do not have to worry about re-raising an ``Interrupt`` and
     you should never encounter a ``Concurrent[GeneratorExit]``, for example.
@@ -111,8 +111,8 @@ Application global exceptions
 
 As a result, μSim will do the correct thing by default.
 You only have to worry about μSim's internal exceptions if you use catch-all
-exceptions handlers such as ``except BaseException:`` or even ``except:``.
-When you are unsure, ``raise`` at the end of a handler the let exceptions propagate.
+exception handlers such as ``except BaseException:`` or even ``except:``.
+In case you are unsure, ``raise`` at the end of a handler to let exceptions propagate.
 
 Handling Multiple Exceptions
 ----------------------------
@@ -135,7 +135,7 @@ at once.
 This example will propagate a single exception :py:exc:`~usim.Concurrent` exception
 containing ``IndexError('A')``, ``KeyError('B')``, and ``IndexError('C')`` --
 the ``KeyError('D')`` is suppressed by the scope stopping itself and its children.
-The *type* of the exception includes all the types of its child exceptions,
+The *type* of the exception includes all types of its child exceptions,
 namely ``Concurrent[IndexError, KeyError]``.
 Note that neither the *number* nor *order* of exceptions is captured in the type.
 

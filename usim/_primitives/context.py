@@ -261,7 +261,7 @@ class Scope:
         """
         Exit without exception
 
-        This suspends the scope until all children have finished by themselves.
+        This suspends the scope until all children have finished themselves.
         If any children encountered an error, they are reraised as
         :py:exc:`~.Concurrent` errors.
 

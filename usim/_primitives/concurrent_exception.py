@@ -197,7 +197,7 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
             print('Incorrect type/value of something!')
 
     Since a :py:class:`~usim.Scope` can run more than one :py:class:`~usim.typing.Task`
-    concurrently, there can be more than one failure as well. Subscribing
+    concurrently, there can be more than one exception as well. Subscribing
     :py:class:`~.Concurrent` is possible for several types at once:
     ``Concurrent[ExceptionA, ExceptionB]`` matches only ``ExceptionA`` and
     ``ExceptionB`` at the same time, and
