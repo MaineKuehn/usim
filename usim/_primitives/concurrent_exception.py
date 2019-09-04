@@ -100,6 +100,8 @@ class MetaConcurrent(type):
         # This means that we must handle cases where specialisations
         # match multiple times - for example, when matching
         # Class[B] against Class[A, B], then B matches both A and B,
+        #
+        # Make sure that ``cls`` has no unmatched specialisations
         matched_specialisations = all(
             any(
                 issubclass(child, specialisation)
@@ -115,6 +117,10 @@ class MetaConcurrent(type):
         # except MultiError[KeyError]:
         else:
             # Make sure that ``subclass`` has no unmatched specialisations
+            #
+            # We need to check every child of subclass instead of comparing counts.
+            # This is needed in case that we have duplicate matches. Consider:
+            # Concurrent[KeyError, LookupError], Concurrent[KeyError, RuntimeError]
             return not any(
                 not issubclass(child, cls.specialisations)
                 for child in subclass.specialisations
