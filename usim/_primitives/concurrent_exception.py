@@ -100,14 +100,13 @@ class MetaConcurrent(type):
         # This means that we must handle cases where specialisations
         # match multiple times - for example, when matching
         # Class[B] against Class[A, B], then B matches both A and B,
-        matched_specialisations = sum(
-            1 for specialisation in cls.specialisations
-            if any(
+        matched_specialisations = all(
+            any(
                 issubclass(child, specialisation)
                 for child in subclass.specialisations
-            )
+            ) for specialisation in cls.specialisations
         )
-        if matched_specialisations < len(cls.specialisations):
+        if not matched_specialisations:
             return False
         # except MultiError[KeyError, ...]
         elif cls.inclusive:
