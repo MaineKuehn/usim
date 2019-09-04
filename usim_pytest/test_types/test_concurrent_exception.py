@@ -122,3 +122,7 @@ class TestConcurrent:
         assert not issubclass(KeyError, Concurrent[KeyError])
         assert not issubclass(KeyError, Concurrent[...])
         assert not issubclass(KeyError, Concurrent[KeyError, ...])
+        # duplicate match does not include unmatched case
+        assert not issubclass(
+            Concurrent[KeyError, LookupError], Concurrent[KeyError, RuntimeError]
+        )
