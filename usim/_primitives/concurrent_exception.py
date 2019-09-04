@@ -11,11 +11,23 @@ class MetaConcurrent(type):
     the specialisation ``...`` (:py:const:`Ellipsis`) to mark the specialisation
     as inclusive, meaning a subtype may have additional specialisations.
     """
+    # metaclass instance fields - i.e. class fields
+    # used to define specialisations of a base type
     inclusive: bool
     specialisations: Optional[Tuple[Type[Exception]]]
     template: 'MetaConcurrent'
     __specialisations__: WeakValueDictionary
 
+    # Called when constructing a class (an instance of the metaclass)
+    # The following corresponds to calling __new__:
+    #
+    # class name(*bases, specialisations=specialisations, inclusive=inclusive):
+    #   <namespace>
+    #
+    # __new__ is called once per type hierarchy when the template
+    # is defined usin `class ...`.
+    # Afterwards, __getitem__ (i.e. Class[...]) explicitly calls
+    # __new__ to create specialisations.
     def __new__(
         mcs,
         name: str,
@@ -58,6 +70,7 @@ class MetaConcurrent(type):
 
     def __subclasscheck__(cls, subclass):
         """``issubclass(subclass, cls)``"""
+        # issubclass(A, A)
         if cls is subclass:
             return True
         try:
@@ -66,17 +79,27 @@ class MetaConcurrent(type):
             return False
         else:
             # if we are templated, check that the specialisation matches
+            # the superclass specialisation must be at least
+            # as general as the subclass specialisation
             if template == cls.template:
                 # except MultiError:
+                # issubclass(A[???], A)
+                # the base class is the superclass of all its specialisations
                 if cls.specialisations is None:
                     return True
                 # except MultiError[]:
+                # issubclass(A[???], A[???])
                 else:
                     return cls._subclasscheck_specialisation(subclass)
             return False
 
     def _subclasscheck_specialisation(cls, subclass: 'MetaConcurrent'):
         """``issubclass(:Type[subclass.specialisation], Type[:cls.specialisation])``"""
+        # specialisations are covariant - if A <: B, then Class[A] <: Class[B]
+        #
+        # This means that we must handle cases where specialisations
+        # match multiple times - for example, when matching
+        # Class[B] against Class[A, B], then B matches both A and B,
         matched_specialisations = sum(
             1 for specialisation in cls.specialisations
             if any(
@@ -104,9 +127,14 @@ class MetaConcurrent(type):
     #
     # Expect this to be called by user-facing code, either directly or as a result
     # of ``Cls(A(), B(), C())``. Errors should be reported appropriately.
+    #
+    # Unlike () calls, [] calls only take a single argument.
+    # Multiple arguments get passed as a tuple:
+    # - Cls[a]      means   Cls.__getitem__(a)
+    # - Cls[a, b]   means   Cls.__getitem__((a, b))
     def __getitem__(
         cls,
-        item:
+        item:  # [Exception] or [...] or [Exception, ...]
             Union[
                 Type[Exception],
                 'ellipsis',
@@ -114,30 +142,47 @@ class MetaConcurrent(type):
             ]
     ):
         """``cls[item]`` - used to specialise ``cls`` with ``item``"""
-        # check parameters
+        # validate/normalize parameters
+        #
+        # Cls[A, B][C]
         if cls.specialisations is not None:
             raise TypeError(f'Cannot specialise already specialised {cls.__name__!r}')
+        # Cls[...]
         if item is ...:
             return cls
+        # Cls[item]
         elif type(item) is not tuple:
             assert issubclass(item, Exception),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
             item = (item,)
+        # Cls[item1, item2]
         else:
             assert all(
                 (child is ...) or issubclass(child, Exception) for child in item
             ),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
-        # specialise class
+        return cls._get_specialisation(item)
+
+    def _get_specialisation(cls, item):
+        # provide specialised class
+        #
+        # If a type already exists for the given specialisation, we return that
+        # same type. This avoids class creation and allows fast `A is B` checks.
+        #
+        # Each template stores the currently used __specialisations__, indexed
+        # by a set of items - this eliminates duplicates and ordering as well.
         unique_spec = frozenset(item)
         try:
             specialised_cls = cls.__specialisations__[unique_spec]
         except KeyError:
             inclusive = ... in unique_spec
             specialisations = tuple(child for child in unique_spec if child is not ...)
-            spec = ", ".join(
+            spec = ", ".join(  # the specialisation string "KeyError, IndexError, ..."
                 child.__name__ for child in specialisations
             ) + (', ...' if inclusive else '')
+            # class 'cls.__name__[spec]'(cls, specialisations, inclusive):
+            #   pass
+            #
             # Note: type(name, bases, namespace) parameters cannot be passed by keyword
             specialised_cls = MetaConcurrent(
                 f'{cls.__name__}[{spec}]', (cls,), {},
@@ -225,15 +270,20 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
     whereas
     ``except Concurrent[A, B]:`` means *both* ``A`` *and* ``B``.
     """
+    # currently used specialised subclasses
     __specialisations__ = WeakValueDictionary()
     #: Whether this type accepts additional unmatched specialisations
     inclusive: ClassVar[bool]
     #: Specialisations this type expects in order to match
-    specialisations: ClassVar[Optional[Tuple[Type[Exception]]]]
+    specialisations: ClassVar[Optional[Tuple[Type[Exception], ...]]]
     #: Basic template of specialisation
     template: ClassVar[MetaConcurrent]
+    #: Exceptions that occurred concurrently
+    children: Tuple[Exception, ...]
 
-    def __new__(cls: 'Type[Concurrent]', *children):
+    # __new__ automatically specialises Concurrent to match its children.
+    # Concurrent(A(), B()) => Concurrent[A, B](A(), B())
+    def __new__(cls: 'Type[Concurrent]', *children: Exception):
         if not children:
             assert cls.specialisations is None,\
                 f"specialisation {cls.specialisations} does not match"\
@@ -242,7 +292,7 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
         special_cls = cls[tuple(type(child) for child in children)]
         return super().__new__(special_cls)
 
-    def __init__(self, *children):
+    def __init__(self, *children: Exception):
         super().__init__(children)
         self.children = children
 
