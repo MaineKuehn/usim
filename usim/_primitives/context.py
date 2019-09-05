@@ -253,9 +253,9 @@ class Scope:
         # allow replacing our exception with more important ones
         if not issubclass(exc_type, self.PROMOTE_CONCURRENT):
             self._reraise_privileged()
-        if self._suppress_exception(exc_val):
+        if self._is_suppressed(exc_val):
             self._reraise_concurrent()
-        return self._suppress_exception(exc_val)
+        return self._is_suppressed(exc_val)
 
     async def _aexit_graceful(self):
         """
@@ -277,17 +277,17 @@ class Scope:
             self._disable_interrupts()
             self._close_volatile()
             self._reraise_concurrent()
-            return self._suppress_exception(None)
+            return self._is_suppressed(None)
 
     def _handle_close(self, exc_val: GeneratorExit) -> bool:
         assert isinstance(exc_val, GeneratorExit)
         for child in self._children + self._volatile_children:
             child.__close__()
-        return self._suppress_exception(exc_val)
+        return self._is_suppressed(exc_val)
 
-    def _suppress_exception(self, exc_val) -> bool:
+    def _is_suppressed(self, exc_val) -> bool:
         """
-        Whether to suppress the exception of :py:meth:`~.__aexit__`
+        Whether the exception is handled completely by :py:meth:`~.__aexit__`
 
         This generally means that the exception was an interrupt for this scope.
         If the exception is meant for anyone else, we should let it propagate.
@@ -330,8 +330,8 @@ class InterruptScope(Scope):
         self._notification.__unsubscribe__(self._activity, self._interrupt)
         super()._disable_interrupts()
 
-    def _suppress_exception(self, exc_val) -> bool:
-        return exc_val is self._interrupt or super()._suppress_exception(exc_val)
+    def _is_suppressed(self, exc_val) -> bool:
+        return exc_val is self._interrupt or super()._is_suppressed(exc_val)
 
     def __repr__(self):
         return (
