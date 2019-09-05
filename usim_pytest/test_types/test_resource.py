@@ -3,7 +3,7 @@ import math
 from typing import Type
 
 from usim import Scope, time, until
-from usim.basics import Resources, Capacities
+from usim.basics import Resources, Capacities, ResourcesUnavailable
 from usim._basics.resource import BaseResources
 
 from ..utility import via_usim, assertion_mode
@@ -46,6 +46,38 @@ class BaseResourceCase:
             assert True
         async with resources.borrow(a=10, b=10):
             assert True
+
+    @via_usim
+    async def test_claim(self):
+        resources = self.resource_type(a=10, b=10)
+        # test that we can claim below capacity
+        async with resources.claim(a=5, b=5):
+            assert True
+        async with resources.claim(a=5):
+            assert True
+        async with resources.claim(b=5):
+            assert True
+        async with resources.claim(a=7, b=7):
+            assert True
+        async with resources.claim(a=10, b=10):
+            assert True
+        # test that we cannot claim beyond capacity
+        async with resources.claim(a=5, b=5):
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=10, b=10):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=10):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(b=10):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=10, b=5):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=5, b=10):
+                    assert False
 
     @via_usim
     async def test_nested_borrow(self):
@@ -139,6 +171,7 @@ class TestCapacity(BaseResourceCase):
     async def test_limits(self):
         resources = Capacities(a=10, b=10)
         assert resources.limits == resources.resource_type(a=10, b=10)
+        assert resources.limits == resources.levels
         async with resources.borrow(a=5, b=5):
             assert resources.limits > resources.levels
             assert resources.limits == resources.resource_type(a=10, b=10)

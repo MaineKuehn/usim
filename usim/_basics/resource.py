@@ -8,6 +8,12 @@ from .tracked import Tracked
 T = TypeVar('T')
 
 
+class ResourcesUnavailable(Exception):
+    """Resources requested from a supply are not available"""
+    def __init__(self, claim: 'ClaimedResources'):
+        self.claim = claim
+
+
 class BaseResources(Generic[T]):
     """
     Internal base class for resource types
@@ -44,6 +50,16 @@ class BaseResources(Generic[T]):
         assert self._levels_type.zero <= borrowed_levels,\
             'cannot borrow negative amounts'
         return BorrowedResources(self, borrowed_levels)
+
+    def claim(self, **amounts: T) -> 'ClaimedResources[T]':
+        """
+        Temporarily borrow resources for a given context if available
+
+        :param amounts: resource levels to borrow
+        :return: async context to borrow resources
+        """
+        borrowed_levels = self.borrow(**amounts).limits
+        return ClaimedResources(self, borrowed_levels)
 
 
 class BorrowedResources(BaseResources[T]):
@@ -92,6 +108,17 @@ class BorrowedResources(BaseResources[T]):
         assert self._debits >= borrowing._debits,\
             'cannot borrow beyond capacity'
         return borrowing
+
+
+class ClaimedResources(BorrowedResources[T]):
+    """
+    Fixed supply of resources temporarily taken without delay
+    """
+    async def __aenter__(self):
+        # do not postpone if we can resume immediately
+        if not self._resources._available >= self._debits:
+            raise ResourcesUnavailable(self)
+        return await super().__aenter__()
 
 
 class Capacities(BorrowedResources[T]):
