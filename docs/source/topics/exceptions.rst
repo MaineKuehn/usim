@@ -12,8 +12,8 @@ and thus may encounter several failures at once.
 Similarly, several :py:exc:`~usim.Concurrent` exceptions may need to
 be handled individually or all at once.
 
-Scopes and Exceptions
----------------------
+Concurrency and Exceptions
+--------------------------
 
 The purpose of a :py:class:`~usim.Scope` is to :py:meth:`~usim.Scope.do`
 activities concurrently, alongside a main activity represented
@@ -48,8 +48,8 @@ In the example, the ``RuntimeError('child')`` will cause the
 :py:class:`~usim.Scope` to shut down and re-raise the exception as a
 ``Concurrent(RuntimeError('child'))``.
 
-Handling Scope Exceptions
--------------------------
+Handling Concurrent Exceptions
+------------------------------
 
 The :py:exc:`~usim.Concurrent` exception model is made to integrate with
 Python's regular ``try``/``except`` exception handling machinery.
