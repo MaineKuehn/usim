@@ -22,7 +22,7 @@ class BaseResourceCase:
     async def test_debug_misuse(self):
         with pytest.raises(AssertionError):
             self.resource_type(a=10, b=-10)
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         with pytest.raises(AssertionError):
             async with resources.borrow(a=-1, b=-1):
                 pass
@@ -35,7 +35,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_borrow(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             assert True
         async with resources.borrow(a=5):
@@ -49,7 +49,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_nested_borrow(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             async with resources.borrow(a=5, b=5):
                 assert True
@@ -65,7 +65,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_recursive_borrow(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         async with resources.borrow(a=5, b=5) as sub_resource:
             async with sub_resource.borrow(a=5, b=5):
                 assert True
@@ -91,7 +91,7 @@ class BaseResourceCase:
             async with resources.borrow(**amounts):
                 await (time + duration)
 
-        resources = Capacities(a=1, b=1)
+        resources = self.resource_type(a=1, b=1)
         async with Scope() as scope:
             scope.do(borrow_nowait(10, a=1, b=1))
             scope.do(borrow_nowait(10, a=1, b=1))
@@ -99,7 +99,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_congested(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
 
         async def borrow(duration, **amounts):
             async with resources.borrow(**amounts):
@@ -115,7 +115,7 @@ class BaseResourceCase:
     @via_usim
     async def test_release(self):
         """Release resources from cancelled tasks"""
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
 
         async def block(**amounts):
             async with resources.borrow(**amounts):
