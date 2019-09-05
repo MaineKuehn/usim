@@ -1,4 +1,4 @@
-from typing import Coroutine, List, TypeVar, Any, Optional
+from typing import Coroutine, List, TypeVar, Any, Optional, Tuple
 
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification
@@ -176,30 +176,6 @@ class Scope:
         for child in self._children:
             await child.done
 
-    def _reraise_concurrent(self):
-        """re-``raise`` any exceptions that occurred concurrently"""
-        suppress = self.SUPPRESS_CONCURRENT
-        promote = self.PROMOTE_CONCURRENT
-        concurrent = []
-        for child in self._children:
-            if child.status is TaskState.FAILED:
-                exc = child.__exception__
-                if isinstance(exc, promote):
-                    raise exc
-                if not isinstance(exc, suppress):
-                    concurrent.append(exc)
-        if concurrent:
-            raise Concurrent(*concurrent)
-
-    def _reraise_privileged(self):
-        """re-``raise`` any important exceptions that occurred concurrently"""
-        promote = self.PROMOTE_CONCURRENT
-        for child in self._children:
-            if child.status is TaskState.FAILED:
-                exc = child.__exception__
-                if isinstance(exc, promote):
-                    raise exc
-
     def _close_children(self):
         """Forcefully close all child non-volatile tasks"""
         reason = TaskClosed("closed at end of scope '%s'" % self)
@@ -250,14 +226,7 @@ class Scope:
         # reap all children now
         self._close_children()
         self._close_volatile()
-        # allow replacing our exception with more important ones
-        if not issubclass(exc_type, self.PROMOTE_CONCURRENT):
-            self._reraise_privileged()
-        if self._is_suppressed(exc_val):
-            self._reraise_concurrent()
-            return True
-        else:
-            return False
+        return self._propagate_exceptions(exc_type, exc_val)
 
     async def _aexit_graceful(self) -> bool:
         """
@@ -278,8 +247,49 @@ class Scope:
             # everybody is gone - we just handle the cleanup
             self._disable_interrupts()
             self._close_volatile()
-            self._reraise_concurrent()
+            return self._propagate_exceptions(None, None)
+
+    def _collect_exceptions(self)\
+            -> Tuple[Optional[BaseException], Optional[Concurrent]]:
+        """
+        collect any privileged and concurrent exceptions that occurred in children
+
+        This returns a tuple ``(privileged, concurrent)`` of which both may be
+        :py:const:`None` if no appropriate exception is found.
+        """
+        suppress = self.SUPPRESS_CONCURRENT
+        promote = self.PROMOTE_CONCURRENT
+        concurrent = []
+        for child in self._children:
+            if child.status is TaskState.FAILED:
+                exc = child.__exception__
+                if isinstance(exc, promote):
+                    return exc, None
+                if not isinstance(exc, suppress):
+                    concurrent.append(exc)
+        if concurrent:
+            return None, Concurrent(*concurrent)
+        return None, None
+
+    def _propagate_exceptions(self, exc_type, exc_val):
+        if exc_type in self.PROMOTE_CONCURRENT:
+            # we already have a privileged exception, there is nothing more important
+            # propagate it
+            return False
+        elif self._is_suppressed(exc_val):
+            # we do not have an exception to propagate, take whatever we can get
+            privileged, concurrent = self._collect_exceptions()
+            if privileged is not None or concurrent is not None:
+                raise privileged or concurrent
+            # we handled our own and there was nothing else to propagate
             return True
+        else:
+            # we already have an exception to propagate, take only important ones
+            privileged, _ = self._collect_exceptions()
+            if privileged is not None:
+                raise privileged
+            # we still have our unhandled exception to propagate
+            return False
 
     def _is_suppressed(self, exc_val) -> bool:
         """
