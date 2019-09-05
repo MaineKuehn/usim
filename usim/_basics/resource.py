@@ -60,7 +60,9 @@ class BorrowedResources(BaseResources[T]):
         self._available = Tracked(self._levels_type.zero)
 
     async def __aenter__(self):
-        await (self._resources._available >= self._debits)
+        # do not postpone if we can resume immediately
+        if not self._resources._available >= self._debits:
+            await (self._resources._available >= self._debits)
         await self._resources.__remove_resources__(self._debits)
         await self.__insert_resources__(self._debits)
         return self
