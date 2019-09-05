@@ -54,7 +54,13 @@ class BorrowedResources(BaseResources[T]):
     def _levels_type(self):
         return self._resources._levels_type
 
+    @property
+    def limits(self):
+        """Upper limit of resource levels"""
+        return self._limits
+
     def __init__(self, resources: 'BaseResources', debits: ResourceLevels):
+        self._limits = resources.levels
         self._resources = resources
         self._debits = debits
         self._available = Tracked(self._levels_type.zero)

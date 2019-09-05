@@ -135,6 +135,14 @@ class BaseResourceCase:
 class TestCapacity(BaseResourceCase):
     resource_type = Capacities
 
+    @via_usim
+    async def test_limits(self):
+        resources = Capacities(a=10, b=10)
+        assert resources.limits == resources.resource_type(a=10, b=10)
+        async with resources.borrow(a=5, b=5):
+            assert resources.limits > resources.levels
+            assert resources.limits == resources.resource_type(a=10, b=10)
+
     @assertion_mode
     @via_usim
     async def test_borrow_exceed(self):
