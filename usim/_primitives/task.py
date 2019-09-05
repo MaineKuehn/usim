@@ -202,14 +202,17 @@ class Task(Awaitable[RT]):
         # we have not FINISHED running yet, and can still change the result
         if self._result is None:
             self._result = None, reason
-            # We have not STARTED running yet, which means we will in the same time
-            # Our __runner__ will cleanly exit as soon as it sees we have finalized
-            # everything already.
             if self.__runner__.cr_frame.f_lasti == -1:
+                # We have not STARTED running yet
+                # This means __runner__ will start running in the same time frame.
+                # We cannot .close() it, since it must receive the un-cancellable
+                # initial .send(None).
+                # We prepare the state *as if* we had stopped; the __runner__
+                # will then shutdown at a later turn without observable side-effects.
                 self._done.__set_done__()
-            # We are RUNNING and __runner__ is prepared to catch GeneratorExit
-            # Close the __runner__ to have it clean up and finalize everything.
             else:
+                # We are RUNNING and __runner__ is prepared to catch GeneratorExit
+                # Close the __runner__ to have it clean up and finalize everything.
                 self.__runner__.close()
 
     def cancel(self, *token) -> None:
