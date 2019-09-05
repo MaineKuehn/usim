@@ -81,7 +81,11 @@ class BaseResourceCase:
 
     @via_usim
     async def test_borrow_atomicity(self):
-        async def borrow(duration, **amounts):
+        """Test that a borrow will succeed at once"""
+        async def borrow_nowait(duration, **amounts):
+            """Borrow resources only if possible"""
+            # if `borrow` is not atomic, this check will run *before*
+            # an eventual owner has actually acquired the resources.
             if resources.resource_type(**amounts) > resources.levels:
                 return
             async with resources.borrow(**amounts):
@@ -89,8 +93,8 @@ class BaseResourceCase:
 
         resources = Capacities(a=1, b=1)
         async with Scope() as scope:
-            scope.do(borrow(10, a=1, b=1))
-            scope.do(borrow(10, a=1, b=1))
+            scope.do(borrow_nowait(10, a=1, b=1))
+            scope.do(borrow_nowait(10, a=1, b=1))
         assert time == 10
 
     @via_usim
