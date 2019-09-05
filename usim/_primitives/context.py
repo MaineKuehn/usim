@@ -218,7 +218,7 @@ class Scope:
         self._activity = __LOOP_STATE__.LOOP.activity
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
         if exc_type is None:
             try:
                 # inform everyone that we are shutting down
@@ -233,7 +233,7 @@ class Scope:
         # there was an exception, we have to abandon the scope
         return self._aexit_forceful(exc_type, exc_val)
 
-    def _aexit_forceful(self, exc_type, exc_val):
+    def _aexit_forceful(self, exc_type, exc_val) -> bool:
         """
         Exit with exception
 
@@ -255,9 +255,11 @@ class Scope:
             self._reraise_privileged()
         if self._is_suppressed(exc_val):
             self._reraise_concurrent()
-        return self._is_suppressed(exc_val)
+            return True
+        else:
+            return False
 
-    async def _aexit_graceful(self):
+    async def _aexit_graceful(self) -> bool:
         """
         Exit without exception
 
@@ -277,7 +279,7 @@ class Scope:
             self._disable_interrupts()
             self._close_volatile()
             self._reraise_concurrent()
-            return self._is_suppressed(None)
+            return True
 
     def _is_suppressed(self, exc_val) -> bool:
         """
