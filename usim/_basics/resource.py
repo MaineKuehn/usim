@@ -10,6 +10,8 @@ T = TypeVar('T')
 
 class ResourcesUnavailable(Exception):
     """Resources requested from a supply are not available"""
+    __slots__ = 'claim',
+
     def __init__(self, claim: 'ClaimedResources'):
         self.claim = claim
 
