@@ -279,12 +279,6 @@ class Scope:
             self._reraise_concurrent()
             return self._is_suppressed(None)
 
-    def _handle_close(self, exc_val: GeneratorExit) -> bool:
-        assert isinstance(exc_val, GeneratorExit)
-        for child in self._children + self._volatile_children:
-            child.__close__()
-        return self._is_suppressed(exc_val)
-
     def _is_suppressed(self, exc_val) -> bool:
         """
         Whether the exception is handled completely by :py:meth:`~.__aexit__`
