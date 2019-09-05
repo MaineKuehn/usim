@@ -80,6 +80,20 @@ class BaseResourceCase:
             assert True
 
     @via_usim
+    async def test_borrow_atomicity(self):
+        async def borrow(duration, **amounts):
+            if resources.resource_type(**amounts) > resources.levels:
+                return
+            async with resources.borrow(**amounts):
+                await (time + duration)
+
+        resources = Capacities(a=1, b=1)
+        async with Scope() as scope:
+            scope.do(borrow(10, a=1, b=1))
+            scope.do(borrow(10, a=1, b=1))
+        assert time == 10
+
+    @via_usim
     async def test_congested(self):
         resources = Capacities(a=10, b=10)
 
