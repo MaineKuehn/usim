@@ -57,6 +57,7 @@ class BaseResources(Generic[T]):
 
         :param amounts: resource levels to borrow
         :return: async context to borrow resources
+        :raises ResourcesUnavailable: if the claim is made as resources are unavailable
         """
         borrowed_levels = self.borrow(**amounts).limits
         return ClaimedResources(self, borrowed_levels)
