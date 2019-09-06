@@ -112,15 +112,13 @@ def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
 def __make_init__(zero, names: Tuple[str, ...]):
     """Make an ``__init__`` with ``names`` as keywords and defaults of ``zero``"""
     namespace = {}
+    args_list = f'={zero}, '.join(names)
     exec(
         '\n'.join(
             [
-                """def __init__(self, *, {args_list}={zero}):""".format(
-                    args_list='={}, '.format(zero).join(names),
-                    zero=zero,
-                )
+                f"""def __init__(self, *, {args_list}={zero}):"""
             ] + [
-                """    self.{name} = {name}""".format(name=name)
+                f"""    self.{name} = {name}"""
                 for name in names
             ]
         ),
@@ -147,17 +145,12 @@ def __binary_op__(op_name: str, op_symbol: str, names: Tuple[str, ...]):
     exec(
         '\n'.join(
             [
-                """def {op_name}(self, other):""".format(
-                    op_name=op_name
-                ),
+                f"""def {op_name}(self, other):""",
                 """    assert type(self) is type(other),\\""",
                 """        'resource levels specialisations cannot be mixed'""",
                 """    return type(self)(""",
             ] + [
-                """        {name} = self.{name} {op_symbol} other.{name},""".format(
-                    op_symbol=op_symbol,
-                    name=name,
-                )
+                f"""        {name} = self.{name} {op_symbol} other.{name},"""
                 for name in names
             ] + [
                 """           )"""
@@ -186,21 +179,13 @@ def __comparison_op__(op_name: str, op_symbol: str, names: Tuple[str]):
     exec(
         '\n'.join(
             [
-                """def {op_name}(self, other):""".format(
-                    op_name=op_name
-                ),
+                f"""def {op_name}(self, other):""",
                 """    assert type(self) is type(other),\\""",
                 """        'resource levels specialisations cannot be mixed'""",
                 """    return (""",
-                """        self.{name} {op_symbol} other.{name}""".format(
-                    op_symbol=op_symbol,
-                    name=names[0],
-                )
+                f"""        self.{names[0]} {op_symbol} other.{names[0]}"""
             ] + [
-                """        and self.{name} {op_symbol} other.{name}""".format(
-                    op_symbol=op_symbol,
-                    name=name,
-                )
+                f"""        and self.{name} {op_symbol} other.{name}"""
                 for name in names[1:]
             ] + [
                 """           )"""
