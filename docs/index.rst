@@ -10,6 +10,7 @@
    :maxdepth: 1
    :caption: Contents:
 
+   source/api/overview
    source/tutorial/overview
    source/topics/overview
    source/glossary
