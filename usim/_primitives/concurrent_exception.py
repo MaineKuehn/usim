@@ -25,7 +25,7 @@ class MetaConcurrent(type):
     #   <namespace>
     #
     # __new__ is called once per type hierarchy when the template
-    # is defined usin `class ...`.
+    # is defined using `class ...`.
     # Afterwards, __getitem__ (i.e. Class[...]) explicitly calls
     # __new__ to create specialisations.
     def __new__(
