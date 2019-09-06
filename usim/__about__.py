@@ -32,7 +32,7 @@ __title__ = 'usim'
 __summary__ = 'Lightweight Simulation Framework'
 __url__ = 'https://github.com/MaineKuehn/usim'
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 __author__ = 'Eileen Kuehn, Max Fischer'
 __email__ = 'mainekuehn@gmail.com'
 __copyright__ = '2019 %s' % __author__
