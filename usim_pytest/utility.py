@@ -3,7 +3,7 @@ from functools import wraps
 from collections import namedtuple
 
 from usim import run
-from usim._core.loop import ActivityError, __LOOP_STATE__
+from usim._core.loop import __LOOP_STATE__
 
 
 RT = TypeVar('RT')
@@ -74,17 +74,8 @@ def via_usim(test_case: Callable[..., Coroutine]):
             nonlocal test_completed
             await test_case(*args, **kwargs)
             test_completed = True
-        # pytest currently ignores __tracebackhide__ if we re-raise
-        # https://github.com/pytest-dev/pytest/issues/1904
-        __tracebackhide__ = True
-        # >>> This is not the frame you are looking for. Do read on. <<<
-        try:
-            result = run(complete_test_case())
-        except ActivityError as err:
-            # unwrap any exceptions
-            raise err.__cause__
-        else:
-            if not test_completed:
-                raise UnfinishedTest(test_case)
-            return result
+        result = run(complete_test_case())
+        if not test_completed:
+            raise UnfinishedTest(test_case)
+        return result
     return run_test
