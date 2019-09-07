@@ -15,7 +15,7 @@ class StopSimulation(BaseException):
 
 
 class SimPyException(Exception):
-    """Base case for all exceptions of ``usim.py`` that can safely be handled"""
+    """Base case for all exceptions of ``usim.py`` that can safely be handled in a simulation"""
 
 
 class StopProcess(SimPyException):

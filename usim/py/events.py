@@ -206,7 +206,7 @@ class Event(Generic[V]):
 
     def trigger(self, event: 'Event') -> 'Event':
         """
-        Trigger this event to match the state of ``event``
+        Trigger this event and inherit the value or exception of ``event``
 
         .. note::
 
@@ -466,7 +466,7 @@ class ConditionValue:
     .. note::
 
         This type only captures the events, not their values.
-        If the value of an event changes, this class reflects the change.
+        If the value of a contained event changes, the value in the ConditionValue changes as well.
     """
     __slots__ = 'events',
 
