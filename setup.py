@@ -27,7 +27,7 @@ if __name__ == '__main__':
             'sortedcontainers',
         ],
         extras_require={
-            'docs': ["sphinx", "sphinx_rtd_theme"],
+            'docs': ["sphinx", "sphinx_rtd_theme", "sphinxcontrib-trio"],
             'test': TESTS_REQUIRE,
             'contrib': ['flake8', 'flake8-bugbear'] + TESTS_REQUIRE,
         },

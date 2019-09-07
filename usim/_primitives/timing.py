@@ -181,16 +181,16 @@ class Moment(Condition):
 
 class Eternity(Condition):
     r"""
-    A future point in time infinitely far into the future
+    A point in time infinitely far into the future
 
-    An :term:`activity` that `await`\ s :py:class:`~.Eternity`
-    is never woken up by itself.
+    An :term:`activity` that ``await``\ s :py:data:`usim.eternity`
+    :term:`suspends <suspension>` indefinitely and never wakes up by itself.
     This holds true even when :term:`time` advances to :py:data:`math.inf`
     or another representation of infinity.
 
-    .. code:: python
+    .. code:: python3
 
-        await Eternity()  # wait forever
+        await eternity  # wait forever
     """
     __slots__ = ()
 
@@ -221,7 +221,7 @@ class Instant(Condition):
 
     .. code:: python
 
-        await Instant()  # wait shortly, resuming in the same time step
+        await instant  # wait shortly, resuming in the same time step
     """
     __slots__ = ()
 
@@ -304,10 +304,38 @@ class Time:
     However, it is possible to *test* e.g. "equal or before" using the
     current time (``time.now <= point``).
     To avoid accidental mixing of ``await``\ able and non-\ ``await``\ able
-    comparisons, :py:class:`Time` does not support the later.
+    comparisons, expressions of :py:data:`usim.time` never provide a result
+    which cannot be ``await``\ ed.
 
-    :note: There is no need to instantiate :py:class:`Time` as it is stateless.
-           Use the instance :py:data:`usim.time` instead.
+    .. describe:: time.now
+
+        The current simulation time.
+
+    .. describe:: time + delay
+                  await (time + delay)
+
+        A :py:class:`~usim.typing.Notification` that triggers after ``delay``
+        time has passed.
+        Delays are not translated to absolute points in time; the same delay
+        can be ``await``\ ed multiple times, and each pauses for ``delay``.
+
+    .. describe:: time >= date
+                  await (time >= date)
+
+        A :py:class:`~usim.typing.Condition` that is satisfied at or after
+        the simulation time equals ``date``.
+
+    .. describe:: time == date
+                  await (time == date)
+
+        A :py:class:`~usim.typing.Condition` that is satisfied only when
+        the simulation time equals ``date``.
+
+    .. describe:: time < date
+                  await (time < date)
+
+        A :py:class:`~usim.typing.Condition` that is satisfied only before
+        the simulation time equals ``date``.
     """
     __slots__ = ()
 

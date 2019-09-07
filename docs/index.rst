@@ -12,6 +12,7 @@
 
    source/tutorial/overview
    source/topics/overview
+   source/api/overview
    source/glossary
    source/api/modules
 
