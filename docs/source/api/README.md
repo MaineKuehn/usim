@@ -8,4 +8,4 @@ Use [autodoc directives](http://www.sphinx-doc.org/en/master/usage/extensions/au
 to automatically generate documentations of objects from their docstrings.
 In addition, μSim uses the
 [autodoc trio extension](https://sphinxcontrib-trio.readthedocs.io/en/latest/)
-which allow usage annotations, such as ``:async:`` or ``:with: foo``.
+which allows usage annotations, such as ``:async:`` or ``:with: foo``.
