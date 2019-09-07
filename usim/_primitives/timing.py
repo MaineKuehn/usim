@@ -191,10 +191,6 @@ class Eternity(Condition):
     .. code:: python3
 
         await eternity  # wait forever
-
-    :note: There is no need to instantiate the class :py:class:`~.Eternity`
-           as it is stateless.
-           Use the instance :py:data:`usim.eternity` instead.
     """
     __slots__ = ()
 
@@ -226,10 +222,6 @@ class Instant(Condition):
     .. code:: python
 
         await instant  # wait shortly, resuming in the same time step
-
-    :note: There is no need to instantiate the class :py:class:`~.Instant`
-           as it is stateless.
-           Use the instance :py:data:`usim.time` instead.
     """
     __slots__ = ()
 
@@ -344,10 +336,6 @@ class Time:
 
         A :py:class:`~usim.typing.Condition` that is satisfied only before
         the simulation time equals ``date``.
-
-    :note: There is no need to instantiate the class :py:class:`~.Time`
-           as it is stateless.
-           Use the instance :py:data:`usim.time` instead.
     """
     __slots__ = ()
 
