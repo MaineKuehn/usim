@@ -343,15 +343,26 @@ class Process(Event[V]):
 
     .. code:: python3
 
-        def clock(env: Environment, sound):
-            for _ in range(60):
-                print(sound)
-                yield env.timeout(1)
+        def go_to(env: Environment, destination: str, duration: float):
+            print('Driving to %s' % destination)
+            yield env.timeout(duration)
+            print('Arrived at %s' % destination)
 
-        def clocks(env: Environment):
-            env.process('tick')
-            env.process('tack')
-            yield env.process('TOCK')
+        def visit_many(env, *destinations: str):
+            '''Visit all destinations one after the other'''
+            for destination in destinations:
+                # yield a process to wait for its completion
+                yield env.process(go_to(env, destination, len(destination))
+
+    A Process can also be created without waiting for it.
+    In this case, the newly created process has no connection to its parent process.
+
+    .. code:: python3
+
+        def dispatch(env: Environment, destinations: List[str], drivers: List[str]):
+            for destination, driver in zip(destinations, drivers):
+                print('Sending %s to %s' % (driver, destination))
+                env.process(go_to(env, destination, len(destination))
 
     .. hint::
 
@@ -365,33 +376,34 @@ class Process(Event[V]):
 
         .. code:: python3
 
-            async def clock(sound):
-                for _ in range(60):
-                    print(sound)
-                    await (time + 1)
+            async def go_to(destination: str, duration: float):
+                print(f'Driving to {destination}')
+                await (time + duration)
+                print(f'Arrived at {destination}')
 
         To run an activity, one must distinguish between a concurrent
         :py:class:`~usim.typing.Task` and a nested activity. When an activity
-        exclusively waits for another activity, it can ``await`` it.
+        exclusively waits for another activity, it can directly ``await`` it.
 
         .. code:: python3
 
-            async def double_clock(sound):
-                '''A clock of double duration'''
-                await clock(sound)
-                await clock(sound)
+            async def visit_many(*destinations: str):
+                '''Visit all destinations one after the other'''
+                for destination in destinations:
+                    # awat a bare activity to wait for its completion
+                    await go_to(destination, len(destination)
 
         Only concurrent activities must be handled as a :py:class:`~usim.typing.Task`.
-        Use a :py:class:`usim.Scope` to open new tasks and manage their lifetime:
+        Use a :py:class:`usim.Scope` to open new tasks and manage their lifetime
+        -- the parent activity will automatically manage its child activities.
 
         .. code:: python3
 
-            async def multi_clock():
-                "A clock making multiple sounds"
+            async def dispatch(destinations: List[str], drivers: List[str]):
                 async for Scope() as scope:
-                    scope.do(clock('tick'))
-                    scope.do(clock('tack'))
-                    scope.do(clock('TOCK'))
+                    for destination, driver in zip(destinations, drivers):
+                        print(f'Sending {driver} to {destination}')
+                        scope.do(go_to(destination, len(destination))
     """
     __slots__ = '_generator', '_interrupts', 'target'
 
