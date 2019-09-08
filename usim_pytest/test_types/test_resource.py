@@ -3,7 +3,7 @@ import math
 from typing import Type
 
 from usim import Scope, time, until
-from usim.basics import Resources, Capacities
+from usim.basics import Resources, Capacities, ResourcesUnavailable
 from usim._basics.resource import BaseResources
 
 from ..utility import via_usim, assertion_mode
@@ -22,7 +22,7 @@ class BaseResourceCase:
     async def test_debug_misuse(self):
         with pytest.raises(AssertionError):
             self.resource_type(a=10, b=-10)
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         with pytest.raises(AssertionError):
             async with resources.borrow(a=-1, b=-1):
                 pass
@@ -35,7 +35,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_borrow(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             assert True
         async with resources.borrow(a=5):
@@ -48,8 +48,40 @@ class BaseResourceCase:
             assert True
 
     @via_usim
+    async def test_claim(self):
+        resources = self.resource_type(a=10, b=10)
+        # test that we can claim below capacity
+        async with resources.claim(a=5, b=5):
+            assert True
+        async with resources.claim(a=5):
+            assert True
+        async with resources.claim(b=5):
+            assert True
+        async with resources.claim(a=7, b=7):
+            assert True
+        async with resources.claim(a=10, b=10):
+            assert True
+        # test that we cannot claim beyond capacity
+        async with resources.claim(a=5, b=5):
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=10, b=10):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=10):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(b=10):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=10, b=5):
+                    assert False
+            with pytest.raises(ResourcesUnavailable):
+                async with resources.claim(a=5, b=10):
+                    assert False
+
+    @via_usim
     async def test_nested_borrow(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         async with resources.borrow(a=5, b=5):
             async with resources.borrow(a=5, b=5):
                 assert True
@@ -65,7 +97,7 @@ class BaseResourceCase:
 
     @via_usim
     async def test_recursive_borrow(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
         async with resources.borrow(a=5, b=5) as sub_resource:
             async with sub_resource.borrow(a=5, b=5):
                 assert True
@@ -80,8 +112,26 @@ class BaseResourceCase:
             assert True
 
     @via_usim
+    async def test_borrow_atomicity(self):
+        """Test that a borrow will succeed at once"""
+        async def borrow_nowait(duration, **amounts):
+            """Borrow resources only if possible"""
+            # if `borrow` is not atomic, this check will run *before*
+            # an eventual owner has actually acquired the resources.
+            if resources.resource_type(**amounts) > resources.levels:
+                return
+            async with resources.borrow(**amounts):
+                await (time + duration)
+
+        resources = self.resource_type(a=1, b=1)
+        async with Scope() as scope:
+            scope.do(borrow_nowait(10, a=1, b=1))
+            scope.do(borrow_nowait(10, a=1, b=1))
+        assert time == 10
+
+    @via_usim
     async def test_congested(self):
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
 
         async def borrow(duration, **amounts):
             async with resources.borrow(**amounts):
@@ -97,7 +147,7 @@ class BaseResourceCase:
     @via_usim
     async def test_release(self):
         """Release resources from cancelled tasks"""
-        resources = Capacities(a=10, b=10)
+        resources = self.resource_type(a=10, b=10)
 
         async def block(**amounts):
             async with resources.borrow(**amounts):
@@ -116,6 +166,15 @@ class BaseResourceCase:
 
 class TestCapacity(BaseResourceCase):
     resource_type = Capacities
+
+    @via_usim
+    async def test_limits(self):
+        resources = Capacities(a=10, b=10)
+        assert resources.limits == resources.resource_type(a=10, b=10)
+        assert resources.limits == resources.levels
+        async with resources.borrow(a=5, b=5):
+            assert resources.limits > resources.levels
+            assert resources.limits == resources.resource_type(a=10, b=10)
 
     @assertion_mode
     @via_usim

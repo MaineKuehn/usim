@@ -15,18 +15,6 @@ from .waitq import WaitQueue
 
 
 # Errors
-class ActivityError(RuntimeError):
-    r"""An activity failed to handle an exception"""
-    def __init__(self, activity: Coroutine, signal: Optional[BaseException]):
-        self.activity = activity
-        self.signal = signal
-        super().__init__(
-            'Activity %r raised an exception in response to %s' % (
-                activity, signal
-            )
-        )
-
-
 class ActivityLeak(RuntimeError):
     r"""An activity failed to contain output"""
     def __init__(self, activity: Coroutine, signal: Optional[BaseException], result):
@@ -232,8 +220,6 @@ class Loop:
             if err.args:
                 # async def ... return foo -> StopIteration.args == (foo,)
                 raise ActivityLeak(target, signal, err.args[0]) from err
-        except BaseException as err:
-            raise ActivityError(target, signal=signal) from err
 
     def schedule(
             self,

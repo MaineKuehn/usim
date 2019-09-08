@@ -1,12 +1,26 @@
 from functools import wraps
 import enum
-from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List
+from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List,\
+    TYPE_CHECKING
 
 from .._core.loop import __LOOP_STATE__, Interrupt
+from .notification import suspend
 from .condition import Condition
+if TYPE_CHECKING:
+    from .context import Scope
 
 
 RT = TypeVar('RT')
+
+
+def try_close(coroutine: Coroutine):
+    """Attempt to close a coroutine-like object if possible"""
+    try:
+        close = coroutine.close
+    except AttributeError:
+        pass
+    else:
+        close()
 
 
 # enum.Flag is Py3.6+
@@ -52,7 +66,7 @@ class CancelTask(Interrupt):
         return result
 
 
-class TaskExit(BaseException):
+class TaskClosed(Exception):
     """A :py:class:`~.Task` forcefully exited"""
 
 
@@ -60,8 +74,8 @@ class Task(Awaitable[RT]):
     """
     Concurrently running activity
 
-    A :py:class:`Task` wraps an :term:`activity` that is
-    concurrently run in a :py:class:`~.Scope`.
+    A :py:class:`Task` wraps a ``payload`` :term:`activity` that is
+    concurrently run in a ``parent`` :py:class:`~.Scope`.
     This allows to store or pass on the :py:class:`Task`
     in order to control the underlying activity.
     Other activities can ``await`` a :py:class:`Task`
@@ -90,16 +104,23 @@ class Task(Awaitable[RT]):
     :note: This class should not be instantiated directly.
            Always use a :py:class:`~.Scope` to create it.
     """
-    __slots__ = ('payload', '_result', '__runner__', '_cancellations', '_done')
+    __slots__ = 'payload', '_result', '__runner__', '_cancellations', '_done', 'parent'
 
-    def __init__(self, payload: Coroutine[Any, Any, RT]):
+    def __init__(self, payload: Coroutine[Any, Any, RT], parent: 'Scope', delay, at):
         @wraps(payload)
         async def payload_wrapper():
             # check for a pre-run cancellation
             if self._result is not None:
-                self.payload.close()
+                try_close(self.payload)
                 return
             try:
+                # We suspend the Task internally instead of waiting to start
+                # the Task externally. This is because starting must *always*
+                # be done via ``Task.__runner__.send(None)`` which we *cannot*
+                # cancel cleanly. An internal suspension means we *can* cancel
+                # the Task pre-run because no time passes until we check that.
+                if delay or at:
+                    await suspend(delay=delay, until=at)
                 result = await self.payload
             except CancelTask as err:
                 assert (
@@ -108,15 +129,26 @@ class Task(Awaitable[RT]):
                     self, err.subject
                 )
                 self._result = None, err.__transcript__
+            except GeneratorExit:
+                # We are NOT allowed to do any async once the generator
+                # exits forcefully.
+                # We should only receive GeneratorExit due to a forceful
+                # termination in self.__close__ or during cleanup.
+                pass
+            except BaseException as err:
+                self._result = None, err
+                self.parent.__cancel__()
             else:
                 self._result = result, None
             for cancellation in self._cancellations:
                 cancellation.revoke()
+            try_close(self.payload)
             self._done.__set_done__()
         self._cancellations = []  # type: List[CancelTask]
         self._result = None  \
             # type: Optional[Tuple[Optional[RT], Optional[BaseException]]]
         self.payload = payload
+        self.parent = parent
         self._done = Done(self)
         self.__runner__ = payload_wrapper()  # type: Coroutine[Any, Any, RT]
 
@@ -127,6 +159,13 @@ class Task(Awaitable[RT]):
             raise error
         else:
             return result  # noqa: B901
+
+    @property
+    def __exception__(self) -> Optional[BaseException]:
+        """Get the exception of this task"""
+        assert self._result is not None,\
+            f'Task.__exception__ may only be queried for finished tasks'
+        return self._result[1]
 
     @property
     def done(self) -> 'Done':
@@ -144,7 +183,7 @@ class Task(Awaitable[RT]):
             if error is not None:
                 return (
                     TaskState.CANCELLED
-                    if isinstance(error, TaskCancelled)
+                    if isinstance(error, (TaskCancelled, TaskClosed))
                     else TaskState.FAILED
                 )
             return TaskState.SUCCESS
@@ -153,17 +192,28 @@ class Task(Awaitable[RT]):
             return TaskState.CREATED
         return TaskState.RUNNING
 
-    def __close__(self, reason=TaskExit('activity closed')):
+    def __close__(self, reason=TaskClosed('activity closed')):
         """
         Close the underlying coroutine
 
         This is similar to calling :py:meth:`Coroutine.close`,
         but ensures that waiting activities are properly notified.
         """
+        # we have not FINISHED running yet, and can still change the result
         if self._result is None:
-            self.__runner__.close()
             self._result = None, reason
-            self._done.__set_done__()
+            if self.__runner__.cr_frame.f_lasti == -1:
+                # We have not STARTED running yet
+                # This means __runner__ will start running in the same time frame.
+                # We cannot .close() it, since it must receive the un-cancellable
+                # initial .send(None).
+                # We prepare the state *as if* we had stopped; the __runner__
+                # will then shutdown at a later turn without observable side-effects.
+                self._done.__set_done__()
+            else:
+                # We are RUNNING and __runner__ is prepared to catch GeneratorExit
+                # Close the __runner__ to have it clean up and finalize everything.
+                self.__runner__.close()
 
     def cancel(self, *token) -> None:
         """
