@@ -466,7 +466,8 @@ class ConditionValue:
     .. note::
 
         This type only captures the events, not their values.
-        If the value of a contained event changes, the value in the ConditionValue changes as well.
+        If the value of a contained event changes,
+        the value in the ConditionValue changes as well.
     """
     __slots__ = 'events',
 
