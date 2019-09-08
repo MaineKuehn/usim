@@ -268,7 +268,15 @@ class Scope:
                 if not isinstance(exc, suppress):
                     concurrent.append(exc)
         if concurrent:
-            return None, Concurrent(*concurrent)
+            exc = Concurrent(*concurrent)
+            # exc.__cause__ shows up in the stacktrace before exc
+            #
+            # Since everything leading up to here is not relevant
+            # for users, there is no harm replacing it. Python only
+            # allows one cause, so we have to choose one arbitrarily
+            # - the first *might* be the start of a cascade at least.
+            exc.__cause__ = concurrent[0]
+            return None, exc
         return None, None
 
     def _propagate_exceptions(self, exc_type, exc_val):
