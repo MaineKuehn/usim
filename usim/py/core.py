@@ -18,8 +18,10 @@ from .exceptions import NotCompatibleError, StopSimulation, StopProcess
 
 
 class EnvironmentScope(Scope):
-    def _handle_exception(self, exc_val):
-        return isinstance(exc_val, StopSimulation)
+    def _is_suppressed(self, exc_val):
+        return isinstance(exc_val, StopSimulation) or super()._is_suppressed(exc_val)
+
+    PROMOTE_CONCURRENT = Scope.PROMOTE_CONCURRENT + (StopSimulation,)
 
 
 def _inside_usim():
@@ -131,15 +133,20 @@ class Environment:
 
     async def until(self, until=None):
         """Asynchronous version of the :py:meth:`~.run` method"""
-        async with self:
-            if until is not None:
-                if isinstance(until, Event):
-                    await until.__usimpy_flag__
-                else:
-                    if until < time.now:
-                        raise ValueError('until must be in the future')
-                    await (time >= until)
-                raise StopSimulation
+        try:
+            async with self:
+                if until is not None:
+                    if isinstance(until, Event):
+                        await until.__usimpy_flag__
+                    else:
+                        if until < time.now:
+                            raise ValueError('until must be in the future')
+                        await (time >= until)
+                    raise StopSimulation
+        except Concurrent as err:
+            raise err.children[0]
+        except StopSimulation:
+            pass
 
     def run(
         self, until: 'Union[None, float, Event[V]]' = None
