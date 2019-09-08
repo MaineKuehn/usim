@@ -9,8 +9,8 @@ The latter allows interactions between the μSim and SimPy components.
 """
 from typing import Optional, List, Tuple, Coroutine, Generator, TypeVar, Iterable,\
     Union
-from .._core.loop import __LOOP_STATE__, Loop, ActivityError
-from .. import time, run as usim_run
+from .._core.loop import __LOOP_STATE__, Loop
+from .. import time, run as usim_run, Concurrent
 from .. import Scope
 
 from .events import Event
@@ -167,16 +167,11 @@ class Environment:
             The sub-simulation lasts until simulation time equals ``until``.
         """
         if not _inside_usim():
-            try:
-                usim_run(self.until(until))
-            except ActivityError as err:
-                # unwrap any exceptions
-                raise err.__cause__
-            else:
-                if isinstance(until, Event):
-                    if until.processed:
-                        return until.value
-                    raise RuntimeError("'until' event was not triggered")
+            usim_run(self.until(until))
+            if isinstance(until, Event):
+                if until.triggered:
+                    return until.value
+                raise RuntimeError("'until' event was not triggered")
         else:
             raise NotCompatibleError(
                 "'env.run' is not supported inside a 'usim' simulation\n"
