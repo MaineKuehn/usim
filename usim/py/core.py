@@ -14,7 +14,7 @@ from .. import time, run as usim_run
 from .. import Scope
 
 from .events import Event
-from .exceptions import NotEmulatedError, StopSimulation, StopProcess
+from .exceptions import NotCompatibleError, StopSimulation, StopProcess
 
 
 class EnvironmentScope(Scope):
@@ -171,7 +171,7 @@ class Environment:
                         return until.value
                     raise RuntimeError("'until' event was not triggered")
         else:
-            raise NotEmulatedError(
+            raise NotCompatibleError(
                 "'env.run' is not supported inside a 'usim' simulation\n"
                 "\n"
                 "Synchronous 'run' blocks the event loop. Use instead:\n"
@@ -199,7 +199,7 @@ class Environment:
         The μSim compatibility layer uses the regular μSim event loop.
         There is no public alternative to 'Environment.step'.
         """
-        raise NotEmulatedError(self.step.__doc__)
+        raise NotCompatibleError(self.step.__doc__)
 
     def peek(self):
         """
@@ -208,7 +208,7 @@ class Environment:
         The μSim compatibility layer uses the regular μSim event loop.
         There is no public alternative to 'Environment.peek'.
         """
-        raise NotEmulatedError(self.step.__doc__)
+        raise NotCompatibleError(self.step.__doc__)
 
     @property
     def now(self) -> float:
@@ -237,7 +237,7 @@ class Environment:
             for example :py:meth:`usim.Flag.set`.
         """
         if priority != 1:
-            raise NotEmulatedError('Only the default priority=1 is supported')
+            raise NotCompatibleError('Only the default priority=1 is supported')
         if isinstance(event, Event):
             event = event.__usimpy_schedule__()
         if delay == 0:

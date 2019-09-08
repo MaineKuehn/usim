@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, TypeVar, Generic, Union, Tuple, Optional, Gene
 from .. import Flag, time
 from .._primitives.condition import Any as AnyFlag
 
-from .exceptions import NotEmulatedError, Interrupt, StopProcess
+from .exceptions import NotCompatibleError, Interrupt, StopProcess
 if TYPE_CHECKING:
     from .core import Environment
 
@@ -295,7 +295,7 @@ class Initialize:
     unconditionally raises an error.
     """
     def __init__(self, *args, **kwargs):
-        raise NotEmulatedError(self.__doc__)
+        raise NotCompatibleError(self.__doc__)
 
 
 class InterruptQueue:

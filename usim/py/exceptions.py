@@ -6,7 +6,7 @@ all signals are considered internal and are not meant to be handled manually.
 """
 
 
-class NotEmulatedError(NotImplementedError):
+class NotCompatibleError(NotImplementedError):
     """An operation of the 'simpy' API is not emulated by the 'usim.py' API"""
 
 
