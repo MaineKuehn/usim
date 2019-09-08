@@ -13,7 +13,7 @@ This makes a difference both in the usage, as well as supported features.
 
 To allow running, integrating and migrating existing SimPy simulations,
 μSim has an inbuilt compatibility layer: the :py:mod:`usim.py` module
-emulates most of the SimPy API. The only truly unsupported feature are scheduling
+provides most of the SimPy API. The only truly unsupported feature are scheduling
 priorities - due to its high concurrency, μSim is optimised for FIFO scheduling.
 
 Using μSim in a SimPy Simulation
@@ -70,7 +70,7 @@ only the single line previously used to ``import simpy`` needs changing.
     Start driving at 12
     Start parking at 14
 
-The ``usim.py`` layer not only emulates SimPy - it can even be used from native
+The ``usim.py`` layer not only provides the SimPy API, it can even interoperate with native
 μSim simulations. This allows combining simulations from μSim and SimPy, and
 to gradually convert simulations.
 

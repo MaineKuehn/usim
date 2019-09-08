@@ -2,9 +2,9 @@
 SimPy to μSim compatibility layer
 =================================
 
-This package and its submodules emulate the API of the :py:mod:`simpy` package.
+This package and its submodules recreate the API of the :py:mod:`simpy` package.
 It serves as a drop-in replacement for SimPy in order to gradually integrate
-and migrate simulations to μSim. To use the emulated API in an existing simulation,
+and migrate simulations to μSim. For use in an existing SimPy simulation,
 it is sufficient to import ``usim.py`` in place of ``simpy``.
 
 .. code:: python3

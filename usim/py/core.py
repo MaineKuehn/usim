@@ -178,7 +178,7 @@ class Environment:
                 "* 'await env.until()' to block only the current activity\n"
                 "* 'async with env:' to concurrently run the environment\n"
                 "\n"
-                "You can 'env.run' outside of a 'usim' simulation"
+                "You may 'env.run' outside of a 'usim' simulation"
             )
 
     def exit(self, value=None):
