@@ -10,7 +10,8 @@ It gives access to the current time, and using it in expressions provides
 For convenience and readability, several helpers are provided:
 :py:data:`usim.eternity` and :py:data:`usim.instant` are the longest and shortest
 delay possible, respectively.
-:py:func:`usim.each` allows to repeatedly delay in order to act at fixed intervals.
+:py:func:`usim.delay` and :py:func:`usim.interval` allow to repeatedly delay
+in order to act at fixed intervals.
 
 Direct Interaction with Time
 ----------------------------
@@ -30,5 +31,8 @@ Actively Postpone and Suspend
 Controlled Repetitions
 ----------------------
 
-.. autofunction:: usim.each
+.. autofunction:: usim.interval
+    :async-for:
+
+.. autofunction:: usim.delay
     :async-for:
