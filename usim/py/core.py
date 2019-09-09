@@ -38,7 +38,7 @@ V = TypeVar('V')
 
 
 class Environment:
-    """
+    r"""
     SimPy Environment compatibility layer embedded in a μSim simulation
 
     This environment can be run by itself or in any μSim :term:`Activity`.
@@ -74,7 +74,7 @@ class Environment:
 
         Unlike a :py:class:`simpy.Environment`, this environment
         *cannot* resume after running ``until`` some point.
-        However, you can have an arbitrary number of :term:`Activity`
+        However, you can have an arbitrary number of :term:`Activity`\ s
         running concurrently.
 
     .. hint::

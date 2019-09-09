@@ -390,7 +390,7 @@ class Process(Event[V]):
             async def visit_many(*destinations: str):
                 '''Visit all destinations one after the other'''
                 for destination in destinations:
-                    # awat a bare activity to wait for its completion
+                    # await a bare activity to wait for its completion
                     await go_to(destination, len(destination)
 
         Only concurrent activities must be handled as a :py:class:`~usim.typing.Task`.
