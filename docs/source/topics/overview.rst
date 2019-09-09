@@ -8,3 +8,4 @@ This is a collection of separate topics on μSim.
 
     exceptions
     debug
+    simpy
