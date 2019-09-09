@@ -1,7 +1,7 @@
 import pytest
 
 from usim import Scope, time, eternity, VolatileTaskClosed, TaskState,\
-    TaskCancelled, TaskClosed, until, each
+    TaskCancelled, TaskClosed, until, interval
 
 from .utility import via_usim, assertion_mode
 
@@ -230,7 +230,7 @@ async def test_order_with_cancel():
 async def test_for_interval():
     expected_time = 5
     async with until(time == 60):
-        async for _ in each(interval=5):
+        async for _ in interval(value=5):
             assert time.now == expected_time
             expected_time += 5
     assert time.now == 60
