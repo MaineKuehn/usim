@@ -148,11 +148,16 @@ class Scope:
         which must exit without ``await``\ ing or ``yield``\ ing anything.
         """
         assert after is None or at is None,\
-            "schedule date must be either absolute or relative"
+            "start date must be either absolute or relative"
+        # resolve "now" to what the event loop expects
+        if after == 0:
+            after = None
+        elif at == __LOOP_STATE__.LOOP.time:
+            at = None
         assert after is None or after > 0,\
-            "schedule date must not be in the past"
+            "start date must not be in the past"
         assert at is None or at > __LOOP_STATE__.LOOP.time,\
-            "schedule date must not be in the past"
+            "start date must not be in the past"
         child_task = Task(payload, self, delay=after, at=at)
         __LOOP_STATE__.LOOP.schedule(
             child_task.__runner__,

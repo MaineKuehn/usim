@@ -4,7 +4,7 @@ import pytest
 
 from usim import time, until, eternity, instant, delay, interval
 
-from ..utility import via_usim
+from ..utility import via_usim, assertion_mode
 
 
 class TestTime:
@@ -19,6 +19,18 @@ class TestTime:
             await time
         with pytest.raises(TypeError):
             await (time <= 100)
+        with pytest.raises(TypeError):
+            ~(time + 3)
+        with pytest.raises(TypeError):
+            (time + 3) & (time == 3)
+        with pytest.raises(TypeError):
+            (time + 3) | (time == 3)
+
+    @assertion_mode
+    @via_usim
+    async def test_debug_misuse(self):
+        with pytest.raises(AssertionError):
+            await (time + -1)
 
     @via_usim
     async def test_delay(self):
@@ -26,6 +38,9 @@ class TestTime:
         for seq in range(5):
             assert start + (delay * seq) == time.now
             await (time + delay)
+        assert start + (delay * 5) == time.now
+        # allow for 0 delay
+        await (time + 0)
         assert start + (delay * 5) == time.now
 
     @via_usim

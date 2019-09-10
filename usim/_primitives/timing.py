@@ -12,7 +12,7 @@ time can represent more than 285 million years of time accurately.
        it is still not possible to reach :py:class:`Eternity`.
        This may change in the future.
 """
-from typing import Coroutine, Generator, Any, AsyncIterable
+from typing import Coroutine, Generator, Any, AsyncIterable, Union
 
 from .._core.loop import __LOOP_STATE__, __HIBERNATE__, Interrupt as CoreInterrupt
 from .notification import postpone, Notification
@@ -258,13 +258,20 @@ class Delay(Notification):
         delay = time + 20
         await delay      # delay for 20
         await delay      # delay for 20 again
-        print(time.now)  # gives 40
+        print(time.now)  # prints 40
 
-    The expression ``time + duration`` is equivalent to ``Delay(duration)``.
+    Because :py:class:`~.Delay` represents a time duration it is not a
+    :py:class:`~.Condition` that becomes true at some point in time.
+    If a Condition is required, use ``time == time.now + duration`` instead.
+
+    The expression ``time + duration`` is equivalent to ``Delay(duration)``
+    if ``duration`` is positive. If ``duration`` is ``0``, ``time + duration``
+    is equivalent to an :py:class:`~.Instant`.
     """
     __slots__ = ('duration',)
 
     def __init__(self, duration: float):
+        assert duration > 0, "delay must point at the future"
         super().__init__()
         self.duration = duration
 
@@ -277,6 +284,42 @@ class Delay(Notification):
 
     def __str__(self):
         return 'usim.time + {}'.format(self.duration)
+
+    # NOTE: Python objects *always* have __bool__, which defaults
+    # to True. We could debug-protect against misuse of bool(time + 3)
+    # but that would lead to observably different behaviour.
+    # If we always raise an error, that is inconsistent with other objects.
+
+    if __debug__:
+        def __and__(self, other):
+            raise TypeError((
+                "Operator & not supported for delays\n\n"
+                "Delays (time + delay) are measured from the ongoing current time,\n"
+                "They do not provide a Condition, but a Notification. Operators of\n"
+                "Condition are not supported.\n"
+                "\n"
+                "If a Condition is required, use 'time == time.now + delay' instead"
+            ))
+
+        def __or__(self, other):
+            raise TypeError((
+                "Operator | not supported for delays\n\n"
+                "Delays (time + delay) are measured from the ongoing current time,\n"
+                "They do not provide a Condition, but a Notification. Operators of\n"
+                "Condition are not supported.\n"
+                "\n"
+                "If a Condition is required, use 'time == time.now + delay' instead"
+            ))
+
+        def __invert__(self):
+            raise TypeError((
+                "Operator ~ not supported for delays\n\n"
+                "Delays (time + delay) are measured from the ongoing current time,\n"
+                "They do not provide a Condition, but a Notification. Operators of\n"
+                "Condition are not supported.\n"
+                "\n"
+                "If a Condition is required, use 'time == time.now + delay' instead"
+            ))
 
 
 class Time:
@@ -344,7 +387,10 @@ class Time:
         """The current simulation time"""
         return __LOOP_STATE__.LOOP.time
 
-    def __add__(self, other: float) -> Delay:
+    def __add__(self, other: float) -> Union[Delay, Instant]:
+        assert other >= 0, "delay must point at the future"
+        if other == 0:
+            return Instant()
         return Delay(other)
 
     def __ge__(self, other: float) -> After:
