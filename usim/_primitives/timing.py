@@ -258,9 +258,15 @@ class Delay(Notification):
         delay = time + 20
         await delay      # delay for 20
         await delay      # delay for 20 again
-        print(time.now)  # gives 40
+        print(time.now)  # prints 40
 
-    The expression ``time + duration`` is equivalent to ``Delay(duration)``.
+    Because :py:class:`~.Delay` represents a time duration it is not a
+    :py:class:`~.Condition` that becomes true at some point in time.
+    If a Condition is required, use ``time == time.now + duration`` instead.
+
+    The expression ``time + duration`` is equivalent to ``Delay(duration)``
+    if ``duration`` is positive. If ``duration`` is ``0``, ``time + duration``
+    is equivalent to an :py:class:`~.Instant`.
     """
     __slots__ = ('duration',)
 
