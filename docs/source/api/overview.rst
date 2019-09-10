@@ -21,7 +21,8 @@ Simulating Time
 :py:data:`usim.time`     used to define or delay until arbitrary points in time
 :py:data:`usim.eternity` a delay time indefinitely in the future
 :py:data:`usim.instant`  a delay time indistinguishable from the current time
-:py:data:`usim.each`     a repeated delay by a fixed interval
+:py:data:`usim.interval` a repeated delay by a fixed interval
+:py:data:`usim.delay`    a repeated delay
 ======================== ======================================================
 
 Detailed Topics

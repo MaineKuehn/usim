@@ -9,10 +9,10 @@ Using the ``async``/``await`` capabilities of Python3,
 
 .. code:: python3
 
-   >>> from usim import each, run
+   >>> from usim import delay, run
    >>>
    >>> async def metronome(period: float, sound: str):
-   ...     async for now in each(delay=period):
+   ...     async for now in delay(period):
    ...         print(sound, '@', now)
    ...
    >>> run(metronome(period=1, sound='tick'), metronome(period=2, sound='TOCK'), till=5)

@@ -403,63 +403,62 @@ class Time:
 time = Time()
 
 
-async def each_interval(interval: float):
-    loop = __LOOP_STATE__.LOOP
-    last_time = loop.time
-    while True:
-        await (time == last_time + interval)
-        last_time = loop.time
-        yield last_time
-
-
-async def each_delay(delay: float):
-    loop = __LOOP_STATE__.LOOP
-    waiter = time + delay
-    while True:
-        await waiter
-        yield loop.time
-
-
-def each(
-        *, delay: float = None, interval: float = None
-) -> AsyncIterable[float]:
+async def interval(period) -> AsyncIterable[float]:
     """
-    Iterate through time by either ``delay`` or ``interval``
+    Iterate through time by intervals of ``period``
 
-    :param delay: on each step, pause for ``delay``
-    :param interval: on each step, pause until ``interval`` since the last step
-    :raises TypeError: if both ``delay`` and ``interval`` are provided
+    :param period: on each step, pause with a ``period`` since the last step
 
     Asynchronous iteration pauses and provides the current time at each step.
 
     .. code:: python3
 
         print('It was', time.now)  # 0
-        async for now in each(delay=10):
-            print('It is', now)  # 10, 20, 30, ...
-
-    The first pause occurs *before* entering the loop body.
-
-    Setting `delay`` causes iteration to always *pause for* the same time,
-    even if the current activity is :term:`suspended <Suspension>`
-    in the loop body.
-    Setting ``interval`` causes iteration to *resume at* regular times,
-    even if the current activity is :term:`suspended <Suspension>`
-    in the loop body - the pause is shortened if necessary.
-
-    .. code:: python3
-
-        async for now in each(interval=10):
+        async for now in interval(10):
             await (time + 1)
             print(now, time.now)  # (10, 11), (20, 21), (30, 31), ...
 
-        async for now in each(delay=10):
+    The first pause occurs *before* entering the loop body.
+
+    Using interval causes iteration to *resume at* regular times,
+    even if the current activity is :term:`suspended <Suspension>`
+    in the loop body - the pause is shortened if necessary.
+
+    .. seealso:: :py:func:`~.delay` if you want to always *pause for* the same time
+    """
+    loop = __LOOP_STATE__.LOOP
+    last_time = loop.time
+    while True:
+        await (time == last_time + period)
+        last_time = loop.time
+        yield last_time
+
+
+async def delay(period) -> AsyncIterable[float]:
+    """
+    Iterate through time by delays of ``period``
+
+    :param period: on each step, pause for a ``period``
+
+    Asynchronous iteration pauses and provides the current time at each step.
+
+    .. code:: python3
+
+        print('It was', time.now)  # 0
+        async for now in delay(10):
             await (time + 1)
             print(now, time.now)  # (10, 11), (21, 22), (32, 33), ...
+
+    The first pause occurs *before* entering the loop body.
+
+    Delaying causes iteration to always *pause for* the same time,
+    even if the current activity is :term:`suspended <Suspension>`
+    in the loop body.
+
+    .. seealso:: :py:func:`~.interval` if you want to *resume at* regular times
     """
-    if delay is not None and interval is None:
-        return each_delay(delay)
-    elif interval is not None and delay is None:
-        return each_interval(interval)
-    else:
-        raise TypeError("each() got conflicting arguments 'delay' and 'interval'")
+    loop = __LOOP_STATE__.LOOP
+    waiter = time + period
+    while True:
+        await waiter
+        yield loop.time

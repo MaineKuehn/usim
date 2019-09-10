@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from usim import time, until, eternity, instant, each
+from usim import time, until, eternity, instant, delay, interval
 
 from ..utility import via_usim
 
@@ -140,7 +140,7 @@ class TestTimeIteration:
     @via_usim
     async def test_delay(self):
         start, iteration = time.now, 0
-        async for now in each(delay=20):
+        async for now in delay(20):
             iteration += 1
             await (time + 5)
             assert time.now - now == 5
@@ -151,16 +151,10 @@ class TestTimeIteration:
     @via_usim
     async def test_interval(self):
         start, iteration = time.now, 1
-        async for now in each(interval=20):
+        async for now in interval(20):
             await (time + 5)
             assert time.now - now == 5
             assert time.now == start + iteration * 20 + 5
             if iteration == 5:
                 break
             iteration += 1
-
-    @via_usim
-    async def test_misue(self):
-        with pytest.raises(TypeError):
-            async for _ in each(interval=20, delay=20):
-                assert False
