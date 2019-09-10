@@ -2,7 +2,7 @@ import pytest
 
 from usim import Scope, time, instant, Concurrent
 
-from ..utility import via_usim
+from ..utility import via_usim, assertion_mode
 
 
 async def async_raise(exc: BaseException, after=0):
@@ -10,6 +10,10 @@ async def async_raise(exc: BaseException, after=0):
     if after:
         await (time + after)
     raise exc
+
+
+async def async_pass():
+    pass
 
 
 class TestExceptions:
@@ -131,3 +135,41 @@ class TestExceptions:
                     scope.do(async_raise(TypeError(), 0))
                     scope.do(async_raise(KeyError(), 0))
                     raise exc_type
+
+
+class TestScoping:
+    @via_usim
+    async def test_do_after(self):
+        async with Scope() as scope:
+            apass = scope.do(async_pass(), after=10)
+            assert time.now == 0
+            await apass
+            assert time.now == 10
+            # zero delay is well-defined
+            apass = scope.do(async_pass(), after=0)
+            assert time.now == 10
+            await apass
+            assert time.now == 10
+
+    @via_usim
+    async def test_do_at(self):
+        async with Scope() as scope:
+            apass = scope.do(async_pass(), at=10)
+            assert time.now == 0
+            await apass
+            assert time.now == 10
+            # zero delay is well-defined
+            apass = scope.do(async_pass(), at=10)
+            assert time.now == 10
+            await apass
+            assert time.now == 10
+
+    @assertion_mode
+    @via_usim
+    async def test_do_misuse(self):
+        with pytest.raises(AssertionError):
+            async with Scope() as scope:
+                scope.do(async_pass(), at=-1)
+        with pytest.raises(AssertionError):
+            async with Scope() as scope:
+                scope.do(async_pass(), after=-1)
