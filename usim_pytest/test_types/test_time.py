@@ -140,7 +140,7 @@ class TestTimeIteration:
     @via_usim
     async def test_delay(self):
         start, iteration = time.now, 0
-        async for now in delay(value=20):
+        async for now in delay(20):
             iteration += 1
             await (time + 5)
             assert time.now - now == 5
@@ -151,7 +151,7 @@ class TestTimeIteration:
     @via_usim
     async def test_interval(self):
         start, iteration = time.now, 1
-        async for now in interval(value=20):
+        async for now in interval(20):
             await (time + 5)
             assert time.now - now == 5
             assert time.now == start + iteration * 20 + 5

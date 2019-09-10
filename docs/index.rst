@@ -30,7 +30,7 @@ no matter if they are small and simple, or large and complex.
    >>> from usim import delay, run
    >>>
    >>> async def metronome(period: float, sound: str):
-   ...     async for now in delay(value=period):
+   ...     async for now in delay(period):
    ...         print(sound, '@', now)
    ...
    >>> run(metronome(period=1, sound='tick'), metronome(period=2, sound='TOCK'), till=5)

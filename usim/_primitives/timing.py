@@ -403,35 +403,18 @@ class Time:
 time = Time()
 
 
-async def each_interval(interval: float):
-    loop = __LOOP_STATE__.LOOP
-    last_time = loop.time
-    while True:
-        await (time == last_time + interval)
-        last_time = loop.time
-        yield last_time
-
-
-async def each_delay(delay: float):
-    loop = __LOOP_STATE__.LOOP
-    waiter = time + delay
-    while True:
-        await waiter
-        yield loop.time
-
-
-def interval(value: float) -> AsyncIterable[float]:
+async def interval(period) -> AsyncIterable[float]:
     """
-    Iterate through time by ``interval``
+    Iterate through time by intervals of ``period``
 
-    :param value: on each step, pause until ``interval`` since the last step
+    :param period: on each step, pause with a ``period`` since the last step
 
     Asynchronous iteration pauses and provides the current time at each step.
 
     .. code:: python3
 
         print('It was', time.now)  # 0
-        async for now in interval(value=10):
+        async for now in interval(10):
             await (time + 1)
             print(now, time.now)  # (10, 11), (20, 21), (30, 31), ...
 
@@ -443,21 +426,26 @@ def interval(value: float) -> AsyncIterable[float]:
 
     .. seealso:: :py:func:`~.delay` if you want to always *pause for* the same time
     """
-    return each_interval(value)
+    loop = __LOOP_STATE__.LOOP
+    last_time = loop.time
+    while True:
+        await (time == last_time + period)
+        last_time = loop.time
+        yield last_time
 
 
-def delay(value: float) -> AsyncIterable[float]:
+async def delay(period) -> AsyncIterable[float]:
     """
-    Iterate through time by ``delay``
+    Iterate through time by delays of ``period``
 
-    :param value: on each step, pause for ``value``
+    :param period: on each step, pause for a ``period``
 
     Asynchronous iteration pauses and provides the current time at each step.
 
     .. code:: python3
 
         print('It was', time.now)  # 0
-        async for now in delay(value=10):
+        async for now in delay(10):
             await (time + 1)
             print(now, time.now)  # (10, 11), (21, 22), (32, 33), ...
 
@@ -469,4 +457,8 @@ def delay(value: float) -> AsyncIterable[float]:
 
     .. seealso:: :py:func:`~.interval` if you want to *resume at* regular times
     """
-    return each_delay(value)
+    loop = __LOOP_STATE__.LOOP
+    waiter = time + period
+    while True:
+        await waiter
+        yield loop.time
