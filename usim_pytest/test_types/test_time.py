@@ -19,6 +19,12 @@ class TestTime:
             await time
         with pytest.raises(TypeError):
             await (time <= 100)
+        with pytest.raises(TypeError):
+            ~(time + 3)
+        with pytest.raises(TypeError):
+            (time + 3) & (time == 3)
+        with pytest.raises(TypeError):
+            (time + 3) | (time == 3)
 
     @assertion_mode
     @via_usim

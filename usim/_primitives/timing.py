@@ -279,6 +279,42 @@ class Delay(Notification):
     def __str__(self):
         return 'usim.time + {}'.format(self.duration)
 
+    # NOTE: Python objects *always* have __bool__, which defaults
+    # to True. We could debug-protect against misuse of bool(time + 3)
+    # but that would lead to observably different behaviour.
+    # If we always raise an error, that is inconsistent with other objects.
+
+    if __debug__:
+        def __and__(self, other):
+            raise TypeError((
+                "Operator & not supported for delays\n\n"
+                "Delays (time + delay) are measured from the ongoing current time,\n"
+                "They do not provide a Condition, but a Notification. Operators of\n"
+                "Condition are not supported.\n"
+                "\n"
+                "If a Condition is required, use 'time == time.now + delay' instead"
+            ))
+
+        def __or__(self, other):
+            raise TypeError((
+                "Operator | not supported for delays\n\n"
+                "Delays (time + delay) are measured from the ongoing current time,\n"
+                "They do not provide a Condition, but a Notification. Operators of\n"
+                "Condition are not supported.\n"
+                "\n"
+                "If a Condition is required, use 'time == time.now + delay' instead"
+            ))
+
+        def __invert__(self):
+            raise TypeError((
+                "Operator ~ not supported for delays\n\n"
+                "Delays (time + delay) are measured from the ongoing current time,\n"
+                "They do not provide a Condition, but a Notification. Operators of\n"
+                "Condition are not supported.\n"
+                "\n"
+                "If a Condition is required, use 'time == time.now + delay' instead"
+            ))
+
 
 class Time:
     r"""
