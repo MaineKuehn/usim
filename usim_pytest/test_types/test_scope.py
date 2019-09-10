@@ -167,9 +167,11 @@ class TestScoping:
     @assertion_mode
     @via_usim
     async def test_do_misuse(self):
+        fail_pass = async_pass()
         with pytest.raises(AssertionError):
             async with Scope() as scope:
-                scope.do(async_pass(), at=-1)
+                scope.do(fail_pass, at=-1)
         with pytest.raises(AssertionError):
             async with Scope() as scope:
-                scope.do(async_pass(), after=-1)
+                scope.do(fail_pass, after=-1)
+        fail_pass.close()
