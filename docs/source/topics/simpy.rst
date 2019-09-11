@@ -106,6 +106,16 @@ however, there is no equivalent to μSim's ``async for`` and ``async with`` in S
     ...         print(f'Start driving at {env.now}')
     ...         yield (time + trip_duration)
     ...
+    >>> import usim.py as simpy  # import usim.py instead of simpy
+    >>> env = simpy.Environment()
+    >>> env.process(car(env))
+    <Process(car) object at 0x...>
+    >>> env.run(until=15)
+    Start parking at 0
+    Start driving at 5
+    Start parking at 7
+    Start driving at 12
+    Start parking at 14
 
 Note that a :py:class:`~usim.py.Process` may directly ``await`` any :term:`activity`
 -- there is no need to wrap an :term:`activity` in another :py:class:`~usim.py.Process`.
