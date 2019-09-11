@@ -41,7 +41,7 @@ class AwaitableEvent(Generic[R]):
 
     async def wait_interruptible(self, interrupted: Flag) -> bool:
         """
-        Wait for the notification to trigger or the process be ``interrupted``
+        Wait for the notification to trigger or the process being ``interrupted``
 
         Returns ``True`` if the notification triggered or
         ``False`` if an interrupt occured first.
