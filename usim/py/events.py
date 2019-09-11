@@ -433,13 +433,7 @@ class Process(Event[V]):
         self.target = event = generator.send(None)  # type: Event
         env.active_process = None
         while True:
-            assert isinstance(event, Event),\
-                f'process must yield an Event, not {event.__class__.__name__}'
-            if not event.processed:
-                await (event.__usimpy_flag__ | interrupts.__usimpy_flag__)
-            if interrupts:
-                event = interrupts
-                self.target = None
+            event = await self._wait_interruptible(event, interrupts)
             try:
                 if event.ok:
                     env.active_process = self
@@ -458,6 +452,17 @@ class Process(Event[V]):
             except BaseException as err:
                 self.fail(err)
                 break
+
+    async def _wait_interruptible(self, event: Event, interrupts: InterruptQueue):
+        """Wait for the ``event`` or an interrupt to occur"""
+        assert isinstance(event, Event),\
+            f'process must yield an Event, not {event.__class__.__name__}'
+        if not event.processed:
+            await (event.__usimpy_flag__ | interrupts.__usimpy_flag__)
+        if interrupts:
+            event = interrupts
+            self.target = None
+        return event
 
     @property
     def is_alive(self):
