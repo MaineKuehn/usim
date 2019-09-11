@@ -1,4 +1,6 @@
+import pytest
 from usim import Flag, time
+from usim.py import Interrupt
 
 from .utility import via_usimpy
 
@@ -42,3 +44,26 @@ class TestUsim2Simpy:
         assert env.now == 20
         yield (time >= 10)
         assert env.now == 20
+
+    def test_interrupt(self, env):
+        """Can interrupt yield-as-await delays"""
+        def proc(env):
+            with pytest.raises(Interrupt):
+                yield (time + 1)
+
+        process = env.process(proc(env))
+        process.interrupt('interrupt')
+        env.run()
+
+    def test_interrupt_many(self, env):
+        """Can interrupt yield-as-await delays"""
+        def proc(env):
+            for _ in range(3):
+                with pytest.raises(Interrupt):
+                    yield (time + 1)
+
+        process = env.process(proc(env))
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        process.interrupt('interrupt')
+        env.run()
