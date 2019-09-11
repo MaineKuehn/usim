@@ -10,11 +10,12 @@ A native μSim simulation can react to events by having an :term:`activity`
 ``await`` an event.
 """
 from typing import TYPE_CHECKING, TypeVar, Generic, Union, Tuple, Optional, Generator,\
-    List, Iterable, Callable
+    List, Iterable, Callable, Awaitable
 from .. import Flag, time
 from .._primitives.condition import Any as AnyFlag
 
 from .exceptions import NotCompatibleError, Interrupt, StopProcess
+from ._awaitable import AwaitableEvent
 if TYPE_CHECKING:
     from .core import Environment
 
@@ -455,14 +456,23 @@ class Process(Event[V]):
 
     async def _wait_interruptible(self, event: Event, interrupts: InterruptQueue):
         """Wait for the ``event`` or an interrupt to occur"""
-        assert isinstance(event, Event),\
-            f'process must yield an Event, not {event.__class__.__name__}'
-        if not event.processed:
-            await (event.__usimpy_flag__ | interrupts.__usimpy_flag__)
-        if interrupts:
-            event = interrupts
-            self.target = None
-        return event
+        if isinstance(event, Awaitable) and not isinstance(event, Event):
+            event = AwaitableEvent(event)
+            finished = await event.wait_interruptible(interrupts.__usimpy_flag__)
+            if finished:
+                return event
+            else:
+                return interrupts
+        else:
+            assert isinstance(event, Event),\
+                f'process {self._generator} must yield an Event,'\
+                f' not {event.__class__.__name__}'
+            if not event.processed:
+                await (event.__usimpy_flag__ | interrupts.__usimpy_flag__)
+            if interrupts:
+                event = interrupts
+                self.target = None
+            return event
 
     @property
     def is_alive(self):
