@@ -16,7 +16,8 @@ class AwaitableEvent(Generic[R]):
     interface beyond what is needed internally.
 
     If you encounter a :py:class:`~.NotificationEvent` during a simulation,
-    **this is a bug**.
+    **this is a bug**; please report it in our
+    `Issue Tracker <https://github.com/MaineKuehn/usim/issues>`_.
     """
     @property
     def value(self):
