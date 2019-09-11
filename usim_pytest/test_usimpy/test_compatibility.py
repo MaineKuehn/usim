@@ -1,4 +1,4 @@
-from usim import Flag
+from usim import Flag, time
 
 from .utility import via_usimpy
 
@@ -27,3 +27,18 @@ class TestUsim2Simpy:
         result = yield ping_pong(3)
         assert result == 3
         assert env.now == 0
+
+    @via_usimpy
+    def test_time(self, env):
+        """Can yield-as-await time expressions"""
+        assert env.now == 0
+        yield (time + 3)
+        assert env.now == 3
+        yield (time == 10)
+        assert env.now == 10
+        yield (time >= 20)
+        assert env.now == 20
+        yield (time >= 20)
+        assert env.now == 20
+        yield (time >= 10)
+        assert env.now == 20
