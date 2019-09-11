@@ -27,4 +27,3 @@ class TestUsim2Simpy:
         result = yield ping_pong(3)
         assert result == 3
         assert env.now == 0
-
