@@ -45,6 +45,16 @@ class TestUsim2Simpy:
         yield (time >= 10)
         assert env.now == 20
 
+    @via_usimpy
+    def test_protection(self, env):
+        """Test that usage errors propagate to simpy"""
+        assert env.now == 0
+        with pytest.raises(AssertionError):
+            yield (time + -10)
+        assert env.now == 0
+        yield (time + 10)
+        assert env.now == 10
+
     def test_interrupt(self, env):
         """Can interrupt yield-as-await delays"""
         def proc(env):
