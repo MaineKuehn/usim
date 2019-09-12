@@ -1,7 +1,7 @@
 from typing import Coroutine, List, TypeVar, Any, Optional, Tuple
 
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
-from .notification import Notification
+from .notification import Notification, postpone
 from .flag import Flag
 from .task import Task, TaskClosed, TaskState, TaskCancelled
 from .concurrent_exception import Concurrent
@@ -184,14 +184,17 @@ class Scope:
             self._child_failures.append(child.__exception__)
         if child.__volatile__:
             self._volatile_children.remove(child)
+        else:
+            self._children.remove(child)
 
     def _disable_interrupts(self):
         self._interruptable = False
         self._cancel_self.revoke()
 
     async def _await_children(self):
-        for child in self._children:
-            await child.done
+        while self._children:
+            for child in self._children[:]:
+                await child.done
 
     def _close_children(self):
         """Forcefully close all child non-volatile tasks"""
@@ -258,6 +261,8 @@ class Scope:
         """
         try:
             await self._await_children()
+            # we must always postpone to receive signals, even if there are no children
+            await postpone()
         except BaseException as err:
             return self._aexit_forceful(type(err), err)
         else:
