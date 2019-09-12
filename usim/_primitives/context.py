@@ -3,7 +3,7 @@ from typing import Coroutine, List, TypeVar, Any, Optional, Tuple
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification, postpone
 from .flag import Flag
-from .task import Task, TaskClosed, TaskState, TaskCancelled
+from .task import Task, TaskClosed, TaskCancelled
 from .concurrent_exception import Concurrent
 
 
