@@ -175,3 +175,14 @@ class TestScoping:
             async with Scope() as scope:
                 scope.do(fail_pass, after=-1)
         fail_pass.close()
+
+    @via_usim
+    async def test_teardown_late(self):
+        """Test that the scope may receive failures during shutdown"""
+        async def fail_late(scope):
+            await scope
+            raise KeyError
+
+        with pytest.raises(Concurrent[KeyError]):
+            async with Scope() as scope:
+                scope.do(fail_late(scope))
