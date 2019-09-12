@@ -133,6 +133,7 @@ class Scope:
         :param after: delay after which to start the activity
         :param at: point in time at which to start the activity
         :param volatile: whether the activity is aborted at the end of the scope
+        :raises ScopeClosed: if the scope has ended already
         :return: representation of the ongoing activity
 
         All non-``volatile`` activities are ``await``\ ed at the end of the scope.
@@ -159,6 +160,14 @@ class Scope:
         Aborting ``volatile`` activities is not graceful:
         :py:class:`GeneratorExit` is raised in the activity,
         which must exit without ``await``\ ing or ``yield``\ ing anything.
+
+        The scope assumes exclusive ownership of the ``payload``:
+        no activity should modify the ``payload`` directly.
+        The scope takes the responsibility to ``await`` and
+        cleanup the payload as needed.
+
+        It is not possible to :py:meth:`~.do` activities after the scope has ended.
+        A :py:exc:`~.ScopeClosed` exception is raised in this case.
         """
         if not self._interruptable:
             # we have been given the payload with the expectation of managing it
