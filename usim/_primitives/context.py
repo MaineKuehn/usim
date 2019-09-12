@@ -80,8 +80,8 @@ class Scope:
             do_some(scope)  # pass scope around to do activities in it
             on_done(scope)  # pass scope around to await its end
     """
-    __slots__ = '_children', '_body_done', '_activity', '_volatile_children',\
-                '_cancel_self', '_interruptable'
+    __slots__ = '_children', '_body_done', '_activity', '_volatile_children', \
+                '_child_failures', '_cancel_self', '_interruptable'
 
     #: Exceptions which are *not* re-raised from concurrent tasks
     SUPPRESS_CONCURRENT = (
@@ -93,8 +93,12 @@ class Scope:
     )
 
     def __init__(self):
+        #: currently living child tasks
         self._children = []  # type: List[Task]
+        #: currently living child tasks that we won't wait for
         self._volatile_children = []  # type: List[Task]
+        #: failures encountered in children
+        self._child_failures = []  # type: List[BaseException]
         # the scope body is finished and we do/did __aexit__
         self._body_done = Flag()
         # we can still be cancelled/interrupted asynchronously
@@ -173,11 +177,13 @@ class Scope:
         if self._interruptable:
             __LOOP_STATE__.LOOP.schedule(self._activity, self._cancel_self)
 
-    def __child_finished__(self, task: Task, failed: bool):
+    def __child_finished__(self, child: Task, failed: bool):
+        assert child.parent is self
         if failed:
             self.__cancel__()
-        if task.__volatile__:
-            self._volatile_children.remove(task)
+            self._child_failures.append(child.__exception__)
+        if child.__volatile__:
+            self._volatile_children.remove(child)
 
     def _disable_interrupts(self):
         self._interruptable = False
@@ -271,13 +277,11 @@ class Scope:
         suppress = self.SUPPRESS_CONCURRENT
         promote = self.PROMOTE_CONCURRENT
         concurrent = []
-        for child in self._children:
-            if child.status is TaskState.FAILED:
-                exc = child.__exception__
-                if isinstance(exc, promote):
-                    return exc, None
-                if not isinstance(exc, suppress):
-                    concurrent.append(exc)
+        for exc in self._child_failures:
+            if isinstance(exc, promote):
+                return exc, None
+            if not isinstance(exc, suppress):
+                concurrent.append(exc)
         if concurrent:
             exc = Concurrent(*concurrent)
             # exc.__cause__ shows up in the stacktrace before exc
