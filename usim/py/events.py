@@ -454,7 +454,9 @@ class Process(Event[V]):
                 self.fail(err)
                 break
 
-    async def _wait_interruptible(self, event: Event, interrupts: InterruptQueue):
+    async def _wait_interruptible(
+        self, event: Union[Awaitable, Event], interrupts: InterruptQueue
+    ) -> Union[Event, AwaitableEvent, InterruptQueue]:
         """Wait for the ``event`` or an interrupt to occur"""
         if isinstance(event, Awaitable) and not isinstance(event, Event):
             event = AwaitableEvent(event)
