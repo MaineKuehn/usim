@@ -1,4 +1,4 @@
-from typing import Awaitable, TypeVar, Generic
+from typing import Awaitable, TypeVar, Generic, Optional, Tuple
 from .. import Flag, until
 
 
@@ -20,7 +20,7 @@ class AwaitableEvent(Generic[R]):
     `Issue Tracker <https://github.com/MaineKuehn/usim/issues>`_.
     """
     @property
-    def value(self):
+    def value(self) -> R:
         try:
             value, exception = self._value
         except TypeError:
@@ -36,8 +36,8 @@ class AwaitableEvent(Generic[R]):
 
     def __init__(self, awaitable: Awaitable[R]):
         self._awaitable = awaitable
-        self._value = None
-        self._ok = None
+        self._value = None  # type: Optional[Tuple[Optional[R], Optional[Exception]]]
+        #: usim exceptions are always handled
         self.defused = True
 
     async def wait_interruptible(self, interrupted: Flag) -> bool:
