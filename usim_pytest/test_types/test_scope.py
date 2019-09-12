@@ -186,3 +186,14 @@ class TestScoping:
         with pytest.raises(Concurrent[KeyError]):
             async with Scope() as scope:
                 scope.do(fail_late(scope))
+
+    @via_usim
+    async def test_spawn_late(self):
+        """Test spawning during graceful shutdown"""
+        async def spawn_late(scope):
+            await scope
+            scope.do(time + 10)
+
+        async with Scope() as scope:
+            scope.do(spawn_late(scope))
+        assert time.now == 10
