@@ -173,6 +173,12 @@ class Scope:
         if self._interruptable:
             __LOOP_STATE__.LOOP.schedule(self._activity, self._cancel_self)
 
+    def __child_finished__(self, task: Task, failed: bool):
+        if failed:
+            self.__cancel__()
+        if task.__volatile__:
+            self._volatile_children.remove(task)
+
     def _disable_interrupts(self):
         self._interruptable = False
         self._cancel_self.revoke()

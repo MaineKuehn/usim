@@ -134,17 +134,19 @@ class Task(Awaitable[RT]):
                     self, err.subject
                 )
                 self._result = None, err.__transcript__
+                self.parent.__child_finished__(self, failed=False)
             except GeneratorExit:
                 # We are NOT allowed to do any async once the generator
                 # exits forcefully.
                 # We should only receive GeneratorExit due to a forceful
                 # termination in self.__close__ or during cleanup.
-                pass
+                self.parent.__child_finished__(self, failed=False)
             except BaseException as err:
                 self._result = None, err
-                self.parent.__cancel__()
+                self.parent.__child_finished__(self, failed=True)
             else:
                 self._result = result, None
+                self.parent.__child_finished__(self, failed=False)
             for cancellation in self._cancellations:
                 cancellation.revoke()
             try_close(self.payload)
