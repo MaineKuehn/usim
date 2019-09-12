@@ -104,9 +104,14 @@ class Task(Awaitable[RT]):
     :note: This class should not be instantiated directly.
            Always use a :py:class:`~.Scope` to create it.
     """
-    __slots__ = 'payload', '_result', '__runner__', '_cancellations', '_done', 'parent'
+    __slots__ = 'payload', '_result', '__runner__', '_cancellations', '_done',\
+                '__volatile__', 'parent'
 
-    def __init__(self, payload: Coroutine[Any, Any, RT], parent: 'Scope', delay, at):
+    def __init__(
+            self,
+            payload: Coroutine[Any, Any, RT], parent: 'Scope',
+            delay: Optional[float], at: Optional[float], volatile: bool,
+    ):
         @wraps(payload)
         async def payload_wrapper():
             # check for a pre-run cancellation
@@ -144,6 +149,7 @@ class Task(Awaitable[RT]):
                 cancellation.revoke()
             try_close(self.payload)
             self._done.__set_done__()
+        self.__volatile__ = volatile
         self._cancellations = []  # type: List[CancelTask]
         self._result = None  \
             # type: Optional[Tuple[Optional[RT], Optional[BaseException]]]

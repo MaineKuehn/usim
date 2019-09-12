@@ -158,7 +158,7 @@ class Scope:
             "start date must not be in the past"
         assert at is None or at > __LOOP_STATE__.LOOP.time,\
             "start date must not be in the past"
-        child_task = Task(payload, self, delay=after, at=at)
+        child_task = Task(payload, self, delay=after, at=at, volatile=volatile)
         __LOOP_STATE__.LOOP.schedule(
             child_task.__runner__,
         )
