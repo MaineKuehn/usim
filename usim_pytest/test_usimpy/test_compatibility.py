@@ -2,6 +2,7 @@ import pytest
 from usim import Flag, time
 from usim.py import Interrupt
 
+from ..utility import assertion_mode
 from .utility import via_usimpy
 
 
@@ -45,6 +46,7 @@ class TestUsim2Simpy:
         yield (time >= 10)
         assert env.now == 20
 
+    @assertion_mode
     @via_usimpy
     def test_protection(self, env):
         """Test that usage errors propagate to simpy"""
