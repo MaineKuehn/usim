@@ -3,7 +3,7 @@ from typing import Coroutine, List, TypeVar, Any, Optional, Tuple
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
 from .notification import Notification, postpone
 from .flag import Flag
-from .task import Task, TaskClosed, TaskCancelled
+from .task import Task, TaskClosed, TaskCancelled, try_close
 from .concurrent_exception import Concurrent
 
 
@@ -21,6 +21,15 @@ class CancelScope(CoreInterrupt):
     def __init__(self, subject: 'Scope', *token):
         super().__init__(*token)
         self.subject = subject
+
+
+class ScopeClosed(RuntimeError):
+    """A :py:class:`~.Scope` has been closed and cannot be used anymore"""
+    __slots__ = 'scope',
+
+    def __init__(self, scope):
+        #: scope which has been used after close
+        self.scope = scope
 
 
 class Scope:
@@ -151,6 +160,11 @@ class Scope:
         :py:class:`GeneratorExit` is raised in the activity,
         which must exit without ``await``\ ing or ``yield``\ ing anything.
         """
+        if not self._interruptable:
+            # we have been given the payload with the expectation of managing it
+            # close it now since no-one else should expect to own it
+            try_close(payload)
+            raise ScopeClosed(self)
         assert after is None or at is None,\
             "start date must be either absolute or relative"
         # resolve "now" to what the event loop expects
