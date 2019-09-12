@@ -47,8 +47,6 @@ class AwaitableEvent(Generic[R]):
         Returns ``True`` if the notification triggered or
         ``False`` if an interrupt occured first.
         """
-        if interrupted:
-            return False
         async with until(interrupted):
             try:
                 result = await self._awaitable
