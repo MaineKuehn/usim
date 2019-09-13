@@ -135,6 +135,24 @@ class BaseResource(Generic[T]):
         This is *not* an Abstract Base Class.
         Subclasses do not need to implement
         :py:meth:`~.BaseResource._do_get` or :py:meth:`~.BaseResource._do_put`.
+
+    .. hint::
+
+        **Migrating to μSim**
+
+        There is no common base type for resources in μSim -- instead there
+        are several different types of resources made for various use-cases.
+        If you need to create a custom resource, you are free to choose
+        whatever interface is appropriate for your use-case.
+
+        μSim itself usually uses the ``await``, ``async for`` and ``async with``
+        depending on the intended use of a resource.
+        Commonly this means
+        ``await resource`` to get content from a resource,
+        ``await resource.put(...)`` to add content to a resource,
+        ``async for item in resource:`` to subscribe to a resource,
+        and
+        ``async with resource:`` to temporarily use a resource.
     """
     #: The type used to create :py:attr:`~.put_queue`
     PutQueue: ClassVar[Type[Sequence]] = list
