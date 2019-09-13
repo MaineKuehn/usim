@@ -44,7 +44,6 @@ Events (:py:mod:`usim.py.events`)
     :py:meth:`~usim.py.events.Event.succeed` and :py:meth:`~usim.py.events.Event.fail`
     them.
 
-
 Resources
 ---------
 
