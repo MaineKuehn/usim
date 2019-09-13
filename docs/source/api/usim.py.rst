@@ -44,8 +44,8 @@ Events (:py:mod:`usim.py.events`)
     :py:meth:`~usim.py.events.Event.succeed` and :py:meth:`~usim.py.events.Event.fail`
     them.
 
-Resources
----------
+Resources (:py:mod:`usim.py.resources`)
+---------------------------------------
 
 ``usim.py`` implements no resources yet.
 
@@ -57,3 +57,11 @@ Exceptions (:py:mod:`usim.py.exceptions`)
 :py:exc:`~usim.py.exceptions.Interrupt`\ (cause)   Exception to :py:meth:`~usim.py.events.Process.interrupt` a Process
 :py:exc:`~usim.py.exceptions.StopProcess`\ (value) Exception to :py:meth:`~usim.py.core.Environment.exit` a Process
 ================================================== ===================================================================
+
+Detailed Topics
+---------------
+
+.. toctree::
+    :maxdepth: 2
+
+    usim.py.resources

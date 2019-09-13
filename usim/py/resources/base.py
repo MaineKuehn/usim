@@ -100,10 +100,10 @@ class BaseResource(Generic[T]):
     Base class for all synchronised resources of :py:mod:`usim.py`
 
     This type codifies the basic semantics of :py:mod:`usim.py` resources:
-    processes can :py:meth:`~.put`: content into the resource or :py:meth:`~.get`:
+    processes can :py:meth:`~.put` content into the resource or :py:meth:`~.get`
     content out of the resource. Both actions return a :py:class:`~usim.py.events.Event`
-    which the process must ``yield``; once the event triggers, the content has been
-    successfully put into or gotten out of the resource.
+    which the process must ``yield``; once the event triggers, the process did
+    successfully get or put content into or out of the resource.
 
     .. code:: python3
 
