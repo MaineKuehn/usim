@@ -16,7 +16,7 @@ The ``usim.py`` package itself provides direct access to the most relevant objec
 However, they can be fetched from their respective submodules as well.
 """
 from .core import Environment
-from .exceptions import Interrupt, SimPyException, StopProcess
+from .exceptions import Interrupt
 from .events import Event, Timeout, Process, AllOf, AnyOf
 
 __all__ = ['Environment', 'Interrupt', 'Event', 'Timeout', 'Process', 'AllOf', 'AnyOf']
