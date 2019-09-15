@@ -102,7 +102,6 @@ class Resource(BaseResource):
         if len(self.users) < self._capacity:
             self.users.append(event)
             event.usage_since = self._env.now
-            print('trigger', self)
             event.succeed()
             return True
         return False
