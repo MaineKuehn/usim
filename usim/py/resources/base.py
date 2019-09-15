@@ -159,7 +159,7 @@ class BaseResource(Generic[T]):
     #: The type used to create :py:attr:`~.get_queue`
     GetQueue: ClassVar[Type[Sequence]] = list
 
-    def __init__(self, env: Environment, capacity: T):
+    def __init__(self, env: Environment, capacity):
         self._env = env
         self._capacity = capacity
         #: outstanding put events
@@ -209,8 +209,8 @@ class BaseResource(Generic[T]):
         self.get_queue = self.get_queue[len(triggered):]
 
     # NOTE: Per the SimPy spec, these are **PUBLIC**
-    def _do_get(self, get_event):
+    def _do_get(self, get_event) -> bool:
         raise NotImplementedError
 
-    def _do_put(self, get_event):
+    def _do_put(self, get_event) -> bool:
         raise NotImplementedError
