@@ -54,7 +54,7 @@ class Resource(BaseResource):
 
     @property
     def queue(self) -> List[Request]:
-        r"""Pending :py:class:`~.Request`\ s currently granted for the resource."""
+        r"""Pending :py:class:`~.Request`\ s currently waiting for the resource."""
         return self.put_queue
 
     @property
