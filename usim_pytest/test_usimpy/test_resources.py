@@ -1,9 +1,20 @@
+import pytest
+
 from usim.py.resources.resource import Resource
 
 from .utility import via_usimpy
 
 
 class TestResource:
+    def test_misuse(self, env):
+        with pytest.raises(ValueError):
+            Resource(env, capacity=0)
+        resource = Resource(env, capacity=2)
+        with pytest.raises(AttributeError):
+            resource.get()
+        with pytest.raises(AttributeError):
+            resource.put()
+
     @via_usimpy
     def test_congestion(self, env):
         """Capacity limits concurrently granted requests"""
