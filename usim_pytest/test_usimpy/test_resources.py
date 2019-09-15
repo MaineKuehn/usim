@@ -6,6 +6,7 @@ from .utility import via_usimpy
 class TestResource:
     @via_usimpy
     def test_congestion(self, env):
+        """Capacity limits concurrently granted requests"""
         resource = Resource(env, capacity=2)
 
         def hold_resource(duration: float):
@@ -18,3 +19,39 @@ class TestResource:
         claims = [env.process(hold_resource(1)) for _ in range(10)]
         yield claims[-1]
         assert env.now == 5
+
+    @via_usimpy
+    def test_scope_release(self, env):
+        """`with request:` releases claim automatically"""
+        resource = Resource(env, capacity=2)
+
+        def hold_resource(duration: float):
+            with resource.request() as request:
+                yield request
+                yield env.timeout(duration)
+
+        def touch_resource():
+            with resource.request():
+                yield env.timeout(0)
+
+        # 10 claims, 2 concurrent => 5 consecutive claiming pairs
+        claims = [env.process(touch_resource()) for _ in range(10)]\
+            + [env.process(hold_resource(1)) for _ in range(10)]
+        yield claims[-1]
+        assert env.now == 5
+
+    @via_usimpy
+    def test_release_idemptotent(self, env):
+        """Requests can be released multiple times"""
+        resource = Resource(env, capacity=1)
+        claim = resource.request()
+        yield claim
+        assert resource.count == 1
+        yield resource.release(claim)
+        assert resource.count == 0
+        yield resource.release(claim)
+        yield resource.release(claim)
+        yield resource.release(claim)
+        yield resource.release(claim)
+        assert resource.count == 0
+        assert env.now == 0
