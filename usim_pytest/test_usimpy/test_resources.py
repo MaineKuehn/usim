@@ -12,8 +12,9 @@ class TestResource:
         resource = Resource(env, capacity=2)
         with pytest.raises(AttributeError):
             resource.get()
-        with pytest.raises(AttributeError):
-            resource.put()
+        if __debug__:
+            with pytest.raises(AttributeError):
+                resource.put()
 
     @via_usimpy
     def test_congestion(self, env):
