@@ -1,4 +1,7 @@
-from typing import List
+from typing import List, Optional
+
+from sortedcontainers import SortedKeyList
+
 from ..core import Environment
 from .base import Put, Get, BaseResource
 
@@ -101,3 +104,48 @@ class Resource(BaseResource):
         event.succeed()
         # releasing always succeeds
         return True
+
+
+class PriorityRequest(Request):
+    """
+    :param priority: relative priority of this request; smaller is chosen first
+    :param preempt: whether to replace a lower-priority request
+                    if the ``resource`` is congested
+    """
+    def __init__(self, resource, priority: float = 0, preempt=True):
+        #: priority of this request, higher is chosen first
+        self.priority = priority
+        self.preempt = preempt
+        #: time at which the request was made
+        self.time = resource._env.now
+        #: time at which the request was granted
+        self.usage_since = None  # type: Optional[float]
+        #: sort key of this resource - requests with "smaller" key are chosen first
+        self.key = (self.priority, self.time, not self.preempt)
+        super(PriorityRequest, self).__init__(resource)
+
+
+class SortedQueue(SortedKeyList):
+    def __init__(self, maxlen=None):
+        if maxlen is not None:
+            raise NotImplementedError(
+                "'SortedQueue.maxlen' is not implemented "
+                "by the μSim compatibility layer"
+            )
+        super().__init__(key=lambda p_request: p_request.key)
+
+    # SortedKeyList does not support the "insert at <position>" methods
+    # of list - because positions are meaningless when items are sorted.
+    #
+    # The SimPy Resource API uses 'append' to mean 'push' so we provide
+    # the correct operation with the expected name.
+    def append(self, value):
+        self.add(value)
+
+
+class PriorityResource(Resource):
+    PutQueue = SortedQueue
+
+    def request(self, priority=0) -> PriorityRequest:
+        """Request usage of a ``resource`` with a given ``priority``"""
+        return PriorityRequest(self, priority)

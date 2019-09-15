@@ -1,12 +1,14 @@
+from typing import Type
+
 import pytest
 
-from usim.py.resources.resource import Resource
+from usim.py.resources.resource import Resource, PriorityResource
 
 from .utility import via_usimpy
 
 
 class TestResource:
-    resource_type = Resource
+    resource_type: Type[Resource] = Resource
 
     def test_misuse(self, env):
         with pytest.raises(ValueError):
@@ -68,3 +70,7 @@ class TestResource:
         yield resource.release(claim)
         assert resource.count == 0
         assert env.now == 0
+
+
+class TestPriorityResource(TestResource):
+    resource_type: Type[Resource] = PriorityResource
