@@ -74,7 +74,7 @@ class TestEvent:
     def test_callbacks(self, env):
         head = env.event()
         tail = env.event()
-        head.callbacks.append(tail)
+        head.callbacks.append(tail.trigger)
         head.succeed('Done')
         yield tail
         assert tail.value == head.value
