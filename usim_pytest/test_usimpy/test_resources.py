@@ -6,10 +6,12 @@ from .utility import via_usimpy
 
 
 class TestResource:
+    resource_type = Resource
+
     def test_misuse(self, env):
         with pytest.raises(ValueError):
-            Resource(env, capacity=0)
-        resource = Resource(env, capacity=2)
+            self.resource_type(env, capacity=0)
+        resource = self.resource_type(env, capacity=2)
         with pytest.raises(AttributeError):
             resource.get()
         with pytest.raises(AttributeError):
@@ -18,7 +20,7 @@ class TestResource:
     @via_usimpy
     def test_congestion(self, env):
         """Capacity limits concurrently granted requests"""
-        resource = Resource(env, capacity=2)
+        resource = self.resource_type(env, capacity=2)
 
         def hold_resource(duration: float):
             claim = resource.request()
@@ -34,7 +36,7 @@ class TestResource:
     @via_usimpy
     def test_scope_release(self, env):
         """`with request:` releases claim automatically"""
-        resource = Resource(env, capacity=2)
+        resource = self.resource_type(env, capacity=2)
 
         def hold_resource(duration: float):
             with resource.request() as request:
@@ -54,7 +56,7 @@ class TestResource:
     @via_usimpy
     def test_release_idemptotent(self, env):
         """Requests can be released multiple times"""
-        resource = Resource(env, capacity=1)
+        resource = self.resource_type(env, capacity=1)
         claim = resource.request()
         yield claim
         assert resource.count == 1
