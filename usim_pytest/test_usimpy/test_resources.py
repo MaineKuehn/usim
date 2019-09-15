@@ -2,7 +2,7 @@ from typing import Type
 
 import pytest
 
-from usim.py.resources.resource import Resource, PriorityResource
+from usim.py.resources.resource import Resource, PriorityResource, PreemptiveResource
 
 from .utility import via_usimpy
 
@@ -74,3 +74,7 @@ class TestResource:
 
 class TestPriorityResource(TestResource):
     resource_type: Type[Resource] = PriorityResource
+
+
+class TestPreemptiveResource(TestResource):
+    resource_type: Type[Resource] = PreemptiveResource

@@ -3,6 +3,7 @@ from typing import List, Optional
 from sortedcontainers import SortedKeyList
 
 from ..core import Environment
+from ..events import Process
 from .base import Put, Get, BaseResource
 
 
@@ -126,7 +127,7 @@ class PriorityRequest(Request):
                     if the ``resource`` is congested
 
     By default, the ordering of priority of requests is determined by their
-    ``priority``, then creation ``time``, then whether they ``preempt``\ s.
+    ``priority``, then creation ``time``, then whether they ``preempt``.
     Requests with smaller values and ``preempt=True`` are chosen first.
     """
     def __init__(self, resource, priority: float = 0, preempt=True):
@@ -174,3 +175,50 @@ class PriorityResource(Resource):
     def request(self, priority=0) -> PriorityRequest:
         """Request usage of a ``resource`` with a given ``priority``"""
         return PriorityRequest(self, priority)
+
+
+class Preempted(object):
+    """Information on a preemption, carried as the cause of an Interrupt"""
+    __slots__ = 'by', 'usage_since', 'resource'
+
+    def __init__(self, by: Process, usage_since: float, resource: 'PreemptiveResource'):
+        #: process that triggered the preemption
+        self.by = by
+        #: time since which the resource was used
+        self.usage_since = usage_since
+        #: the resource that was lost
+        self.resource = resource
+
+
+class PreemptiveResource(PriorityResource):
+    r"""
+    Resource with a fixed ``capacity`` of usage slots preempted with priorities
+
+    A process may :py:meth:`request` a single usage slot, which is granted
+    as soon as it becomes available. When all slots are taken, each further
+    :py:meth:`request` may preempt already granted :py:meth:`request`\ s of
+    worse priority. Otherwise, the request  is queued until a previous request
+    is :py:meth:`release`\ d and no request of better priority is queued.
+    """
+    def __init__(self, env: Environment, capacity: int):
+        super().__init__(env, capacity)
+        #: All :py:class:`~.Request`\ s currently granted for the resource.
+        self.users = SortedQueue()  # type: SortedQueue[PriorityRequest]
+
+    def _do_put(self, event: PriorityRequest):
+        if len(self.users) >= self.capacity and event.preempt:
+            # Check if we can preempt the least-priority process
+            preempt_candidate = self.users[-1]
+            if event.key < preempt_candidate.key:
+                self.users.remove(preempt_candidate)
+                preempt_candidate.proc.interrupt(
+                    Preempted(
+                        by=event.proc,
+                        usage_since=preempt_candidate.usage_since,
+                        resource=self
+                    ))
+                return True
+            else:
+                return False
+        else:
+            return super(PreemptiveResource, self)._do_put(event)
