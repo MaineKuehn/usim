@@ -5,7 +5,6 @@ from sortedcontainers import SortedKeyList
 from ..core import Environment
 from ..events import Process
 from .base import Put, Get, BaseResource
-from simpy.resources import resource
 
 
 class Request(Put):
