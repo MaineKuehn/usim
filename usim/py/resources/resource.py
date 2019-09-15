@@ -48,7 +48,7 @@ class Release(Get):
 
 
 class Resource(BaseResource):
-    """
+    r"""
     Resource with a fixed ``capacity`` of usage slots
 
     A process may :py:meth:`request` a single usage slot, which is granted
@@ -118,7 +118,7 @@ class Resource(BaseResource):
 
 
 class PriorityRequest(Request):
-    """
+    r"""
     Request usage of a ``resource`` with a given ``priority``
 
     :param priority: relative priority of this request; smaller is chosen first
@@ -161,7 +161,7 @@ class SortedQueue(SortedKeyList):
 
 
 class PriorityResource(Resource):
-    """
+    r"""
     Resource with a fixed ``capacity`` of usage slots granted with priorities
 
     A process may :py:meth:`request` a single usage slot, which is granted
