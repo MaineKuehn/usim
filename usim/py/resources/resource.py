@@ -48,6 +48,17 @@ class Release(Get):
 
 
 class Resource(BaseResource):
+    """
+    Resource with a fixed ``capacity`` of usage slots
+
+    A process may :py:meth:`request` a single usage slot, which is granted
+    as soon as it becomes available. When all slots are taken, each further
+    :py:meth:`request` is queued until a previous request is :py:meth:`release`\ d.
+
+    .. warning::
+
+        Both :py:meth:`~.put` and :py:meth:`~.get` cannot be used on this resource type.
+    """
     def __init__(self, env: Environment, capacity: int):
         if capacity <= 0:
             raise ValueError("capacity must be greater than 0")
@@ -108,9 +119,15 @@ class Resource(BaseResource):
 
 class PriorityRequest(Request):
     """
+    Request usage of a ``resource`` with a given ``priority``
+
     :param priority: relative priority of this request; smaller is chosen first
     :param preempt: whether to replace a lower-priority request
                     if the ``resource`` is congested
+
+    By default, the ordering of priority of requests is determined by their
+    ``priority``, then creation ``time``, then whether they ``preempt``\ s.
+    Requests with smaller values and ``preempt=True`` are chosen first.
     """
     def __init__(self, resource, priority: float = 0, preempt=True):
         #: priority of this request, higher is chosen first
@@ -144,6 +161,14 @@ class SortedQueue(SortedKeyList):
 
 
 class PriorityResource(Resource):
+    """
+    Resource with a fixed ``capacity`` of usage slots granted with priorities
+
+    A process may :py:meth:`request` a single usage slot, which is granted
+    as soon as it becomes available. When all slots are taken, each further
+    :py:meth:`request` is queued until a previous request is :py:meth:`release`\ d
+    and no request of better priority is queued.
+    """
     PutQueue = SortedQueue
 
     def request(self, priority=0) -> PriorityRequest:
