@@ -167,6 +167,11 @@ class BaseResource(Generic[T]):
         #: outstanding get events
         self.get_queue = self.GetQueue()
 
+    @property
+    def capacity(self):
+        """Maximum capacity of the resource"""
+        return self._capacity
+
     def put(self) -> Put[T]:
         """Create a request to put content into the resource"""
         return Put(self)
