@@ -5,6 +5,7 @@ from sortedcontainers import SortedKeyList
 from ..core import Environment
 from ..events import Process
 from .base import Put, Get, BaseResource
+from simpy.resources import resource
 
 
 class Request(Put):
@@ -205,8 +206,8 @@ class PreemptiveResource(PriorityResource):
         self.users = SortedQueue()  # type: SortedQueue[PriorityRequest]
 
     def _do_put(self, event: PriorityRequest):
+        # Check if we can preempt the least-priority process
         if len(self.users) >= self.capacity and event.preempt:
-            # Check if we can preempt the least-priority process
             preempt_candidate = self.users[-1]
             if event.key < preempt_candidate.key:
                 self.users.remove(preempt_candidate)
@@ -216,8 +217,4 @@ class PreemptiveResource(PriorityResource):
                         usage_since=preempt_candidate.usage_since,
                         resource=self
                     ))
-                return True
-            else:
-                return False
-        else:
-            return super(PreemptiveResource, self)._do_put(event)
+        return super(PreemptiveResource, self)._do_put(event)
