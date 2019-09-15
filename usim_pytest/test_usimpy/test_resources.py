@@ -2,6 +2,7 @@ from typing import Type
 
 import pytest
 
+from usim.py.events import Interrupt
 from usim.py.resources.resource import Resource, PriorityResource, PreemptiveResource
 
 from .utility import via_usimpy
@@ -78,3 +79,25 @@ class TestPriorityResource(TestResource):
 
 class TestPreemptiveResource(TestResource):
     resource_type: Type[Resource] = PreemptiveResource
+
+    @via_usimpy
+    def test_preemption(self, env):
+        resource = PreemptiveResource(env=env, capacity=1)
+        results = []
+
+        def hold_resource(idx: int, duration: float, priority: int):
+            while True:
+                with resource.request(priority=priority) as claim:
+                    try:
+                        yield claim
+                        yield env.timeout(duration)
+                    except Interrupt:
+                        continue
+                    else:
+                        results.append(idx)
+                        return
+
+        # launch claims with priority biased towards later laims
+        claims = [env.process(hold_resource(idx, 1, 10 - idx)) for idx in range(10)]
+        yield claims[0]
+        assert results == list(reversed(range(10)))
