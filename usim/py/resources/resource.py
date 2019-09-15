@@ -65,16 +65,15 @@ class Resource(BaseResource):
     # These do *not* raise a well-defined error in SimPy,
     # but instead fail with a follow-up AttributeError.
     # We raise said error *now* to have a better help message.
-    if __debug__:
-        def put(self):
-            raise AttributeError(
-                f"cannot put/get {self.__class__.__name__}, use request/request instead"
-            )
+    def put(self):
+        raise AttributeError(
+            f"cannot put/get {self.__class__.__name__}, use request/release instead"
+        )
 
-        def get(self):
-            raise AttributeError(
-                f"cannot put/get {self.__class__.__name__}, use request/request instead"
-            )
+    def get(self):
+        raise AttributeError(
+            f"cannot put/get {self.__class__.__name__}, use request/release instead"
+        )
 
     def request(self) -> Request:
         """Request usage of a ``resource``"""
