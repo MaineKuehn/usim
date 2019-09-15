@@ -27,12 +27,6 @@ class Request(Put):
     #: undocumented, set by Resource._do_get
     __slots__ = 'usage_since',
 
-    def __init__(self, resource: 'Resource'):
-        super().__init__(resource)
-
-    def succeed(self, value=None):
-        return super().succeed(value=value)
-
     def __exit__(self, exc_type, value, traceback):
         if self.triggered:
             self.resource.release(self)
