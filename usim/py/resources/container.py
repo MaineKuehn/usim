@@ -34,6 +34,45 @@ class Container(BaseResource):
     By default, a :py:class:`~.Container` has infinite capacity but
     starts empty. Note that it is not possible to have a higher initial
     content than maximum capacity.
+
+    .. hint::
+
+        **Migrating to μSim**
+
+        The closest equivalent of a :py:class:`~.Container` in μSim
+        are :py:class:`~usim.basics.Resources`. Each contains *multiple*
+        resource capacities which can be increased, decreased, set, borrowed
+        or claimed individually or together.
+        To emulate a :py:class:`~.Container`, use :py:class:`~usim.basics.Resources`
+        with a single resource type:
+
+        .. code:: python3
+
+            resources = Resources(capacity=8)
+            # put more capacity into the resource
+            await resource.increase(capacity=8)
+            # get some capacity from the resource
+            await resource.decrease(capacity=8)
+
+        It is always safe to :py:meth:`~usim.basics.Resources.increase`,
+        :py:meth:`~usim.basics.Resources.decrease` or
+        :py:meth:`~usim.basics.Resources.set` resources -- there is no need to
+        cancel requests.
+        To avoid leaking resources by not returning them, it is recommended
+        to either :py:meth:`~usim.basics.Resources.borrow` or
+        :py:meth:`~usim.basics.Resources.claim` resources -- this automatically
+        returns the resources at the end of a scope.
+
+        .. code:: python3
+
+            resources = Resources(apples=8, oranges=12)
+            # borrow resources when available, returning them automatically
+            async with resources.borrow(apples=2) as borrowed:
+                print(f'temporarily got {borrowed.levels.apples} apples!')
+
+        When temporarily holding resources, this is represented by yet another
+        resources instance. It can be passed around and further divided --
+        but is guaranteed never to exceed what was taken from the initial resource.
     """
     def __init__(self, env, capacity=float('inf'), init=0):
         if capacity <= 0:
