@@ -144,6 +144,9 @@ class FilterStore(Store[T]):
 
 
 class PriorityItem(NamedTuple):
+    """
+    Helper to sort an unorderable ``item`` by a ``priority``
+    """
     priority: float
     item: Any  # actually a T, but NamedTuple cannot be Generic in Py3.6
 
@@ -174,7 +177,7 @@ class PriorityStore(Store[T]):
 
     def _do_get(self, event):
         try:
-            item = self._items.pop()
+            item = self._items.pop(0)
         except IndexError:
             return False
         else:
