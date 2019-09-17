@@ -65,3 +65,20 @@ class TestContainer:
             with container.get(5) as request:
                 yield request
         assert env.now == 15
+
+    @via_usimpy
+    def test_congested_timeout(self, env):
+        container = Container(env, init=0)
+
+        def consumer():
+            with container.get(5) as request:
+                yield request | env.timeout(10)
+                if request.ok:
+                    yield env.timeout(5)
+
+        # create more consumers than we can serve
+        consumers = [env.process(consumer()) for _ in range(100)]
+        yield container.put(20)
+        for cons in consumers:
+            yield cons
+        assert env.now == 10
