@@ -37,7 +37,7 @@ class Store(BaseResource[T]):
 
         **Migrating to μSim**
 
-        To pass items between processes, use a :py:class:`~usim.basics.Queue`.
+        To pass items between activities, use a :py:class:`~usim.basics.Queue`.
         Queues store items for later retrieval:
 
         .. code:: python3
