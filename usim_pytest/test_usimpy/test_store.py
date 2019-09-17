@@ -2,7 +2,7 @@ from typing import Type
 
 import pytest
 
-from usim.py.resources.store import Store, FilterStore, PriorityStore
+from usim.py.resources.store import Store, FilterStore, PriorityStore, PriorityItem
 
 from .utility import via_usimpy
 
@@ -58,6 +58,27 @@ class TestStore:
 class TestFilterStore(TestStore):
     resource_type: Type[Store] = FilterStore
 
+    @via_usimpy
+    def test_filtered(self, env):
+        store = FilterStore(env)
+        request = store.get(lambda val: val == 1)
+        yield store.put(0)
+        assert not request.triggered
+        yield env.timeout(1)
+        assert not request.triggered
+        yield store.put(1)
+        assert (yield request) == 1
+        assert (yield store.get()) == 0
+
 
 class TestPriorityStore(TestStore):
     resource_type: Type[Store] = PriorityStore
+
+    @via_usimpy
+    def test_priority(self, env):
+        store = PriorityStore(env)
+        for item in range(10):
+            yield store.put(PriorityItem(100-item, item))
+        for item in reversed(range(10)):
+            stored = yield store.get()
+            assert stored.item == item
