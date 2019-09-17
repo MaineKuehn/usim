@@ -55,9 +55,9 @@ class TestStore:
         assert env.now == 0
 
 
-class TestFilterStore:
+class TestFilterStore(TestStore):
     resource_type: Type[Store] = FilterStore
 
 
-class TestPriorityStore:
+class TestPriorityStore(TestStore):
     resource_type: Type[Store] = PriorityStore
