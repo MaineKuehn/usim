@@ -78,7 +78,7 @@ class TestPriorityStore(TestStore):
     def test_priority(self, env):
         store = PriorityStore(env)
         for item in range(10):
-            yield store.put(PriorityItem(100-item, item))
+            yield store.put(PriorityItem(100 - item, item))
         for item in reversed(range(10)):
             stored = yield store.get()
             assert stored.item == item
