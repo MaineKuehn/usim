@@ -1,4 +1,4 @@
-from typing import TypeVar, List, Callable, NamedTuple, Generic
+from typing import TypeVar, List, Callable, NamedTuple, Any
 
 from sortedcontainers import SortedList
 
@@ -143,9 +143,9 @@ class FilterStore(Store[T]):
             return True
 
 
-class PriorityItem(NamedTuple, Generic[T]):
+class PriorityItem(NamedTuple):
     priority: float
-    item: T
+    item: Any  # actually a T, but NamedTuple cannot be Generic in Py3.6
 
     def __lt__(self, other: 'PriorityItem'):
         assert isinstance(other, PriorityItem)
