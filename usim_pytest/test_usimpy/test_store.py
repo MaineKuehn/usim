@@ -12,18 +12,18 @@ class TestStore:
 
     def test_misuse(self, env):
         with pytest.raises(ValueError):
-            Store(env, capacity=0)
+            self.resource_type(env, capacity=0)
 
     @via_usimpy
     def test_putget(self, env):
-        store = Store(env)
+        store = self.resource_type(env)
         item = object()
         yield store.put(item)
         assert (yield store.get()) is item
 
     @via_usimpy
     def test_pingpong(self, env):
-        store = Store(env)
+        store = self.resource_type(env)
         item = object()
         yield store.put(item)
         yield store.put((yield store.get()))
@@ -36,7 +36,7 @@ class TestStore:
 
     @via_usimpy
     def test_waitget(self, env):
-        store = Store(env)
+        store = self.resource_type(env)
         item = object()
         get = store.get()
         yield store.put(item)
@@ -44,7 +44,7 @@ class TestStore:
 
     @via_usimpy
     def test_waitput(self, env):
-        store = Store(env, capacity=1)
+        store = self.resource_type(env, capacity=1)
         puts = [store.put(num) for num in range(10)]
         for num in range(10):
             assert len(store.items) == 1
