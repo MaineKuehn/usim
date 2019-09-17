@@ -1,4 +1,6 @@
-from typing import TypeVar, List, Callable, NamedTuple
+from typing import TypeVar, List, Callable, NamedTuple, Generic
+
+from sortedcontainers import SortedList
 
 from .base import Get, Put, BaseResource
 from collections import deque
@@ -100,10 +102,10 @@ class FilterStoreGet(StoreGet[T]):
     """
     def __init__(self, resource, filter: Callable[[T], bool] = lambda item: True):
         self.filter = filter
-        super(FilterStoreGet, self).__init__(resource)
+        super().__init__(resource)
 
 
-class FilterStore(Store):
+class FilterStore(Store[T]):
     """
     Resource with a fixed ``capacity`` of slots for storing arbitrary objects
 
@@ -138,4 +140,43 @@ class FilterStore(Store):
             return False
         else:
             event.succeed(self._items.pop(index))
+            return True
+
+
+class PriorityItem(NamedTuple, Generic[T]):
+    priority: float
+    item: T
+
+    def __lt__(self, other: 'PriorityItem'):
+        assert isinstance(other, PriorityItem)
+        return self.priority < other.priority
+
+
+class PriorityStore(Store[T]):
+    """
+    Resource with a fixed ``capacity`` of slots for storing arbitrary objects in order
+
+    The :py:attr:`~.items` of the store are maintained in sorted order, with smaller
+    items stored and served first.
+    All items in the store must support ``a < b`` comparisons.
+    To store unorderable items, use :py:class:`~.PriorityItem`.
+    """
+    def __init__(self, env, capacity=float('inf')):
+        super().__init__(env, capacity)
+        self._items = SortedList()
+
+    def _do_put(self, event):
+        if len(self._items) < self._capacity:
+            self._items.add(event.item)
+            event.succeed()
+            return True
+        return False
+
+    def _do_get(self, event):
+        try:
+            item = self._items.pop()
+        except IndexError:
+            return False
+        else:
+            event.succeed(item)
             return True

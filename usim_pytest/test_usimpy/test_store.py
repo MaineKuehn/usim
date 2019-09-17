@@ -2,7 +2,7 @@ from typing import Type
 
 import pytest
 
-from usim.py.resources.store import Store, FilterStore
+from usim.py.resources.store import Store, FilterStore, PriorityStore
 
 from .utility import via_usimpy
 
@@ -57,3 +57,7 @@ class TestStore:
 
 class TestFilterStore:
     resource_type: Type[Store] = FilterStore
+
+
+class TestPriorityStore:
+    resource_type: Type[Store] = PriorityStore
