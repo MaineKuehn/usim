@@ -2,7 +2,7 @@ from typing import Type
 
 import pytest
 
-from usim.py.resources.store import Store
+from usim.py.resources.store import Store, FilterStore
 
 from .utility import via_usimpy
 
@@ -53,3 +53,7 @@ class TestStore:
         for put in puts:
             yield put
         assert env.now == 0
+
+
+class TestFilterStore:
+    resource_type: Type[Store] = FilterStore

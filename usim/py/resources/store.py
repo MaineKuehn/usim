@@ -1,4 +1,4 @@
-from typing import TypeVar, List
+from typing import TypeVar, List, Callable, NamedTuple
 
 from .base import Get, Put, BaseResource
 from collections import deque
@@ -58,8 +58,7 @@ class Store(BaseResource[T]):
     def __init__(self, env, capacity=float('inf')):
         if capacity <= 0:
             raise ValueError("capacity must be greater than 0")
-        super(Store, self).__init__(env, capacity)
-        #: currently available items
+        super().__init__(env, capacity)
         self._items = deque()
 
     @property
@@ -89,4 +88,54 @@ class Store(BaseResource[T]):
             return False
         else:
             event.succeed(item)
+            return True
+
+
+class FilterStoreGet(StoreGet[T]):
+    """
+    Request to get an ``item`` out of the ``resource`` if it passes ``filter``
+
+    The ``filter`` function is applied to all :py:attr:`~.FilterStore.items` of a store,
+    and the first for which ``filter(item)`` returns :py:const:`True` is the result.
+    """
+    def __init__(self, resource, filter: Callable[[T], bool] = lambda item: True):
+        self.filter = filter
+        super(FilterStoreGet, self).__init__(resource)
+
+
+class FilterStore(Store):
+    """
+    Resource with a fixed ``capacity`` of slots for storing arbitrary objects
+
+    Requests to :py:meth:`~.get` items support a ``filter``, which limits
+    the objects that satisfy the request. A request may not be satisfied if the
+    store contains only items that do not match the request ``filter``.
+    Pending requests remain queued until a valid item appears in the store.
+
+    While requests are *served* in first-in-first-out order, they are not
+    *granted* in first-in-first-out order if items fail the ``filter`` of
+    earlier requests. In addition, a request has to inspect *all* items in the
+    store to conclude it cannot be granted. In the worst case, a store with
+    ``n`` items and ``m`` request takes ``O(mn)`` to get or put items.
+    """
+    def __init__(self, env, capacity=float('inf')):
+        super().__init__(env, capacity)
+        self._items = []
+
+    def get(self, filter: Callable[[T], bool] = lambda item: True) -> FilterStoreGet[T]:
+        """Get an item out of the store that satisfies ``filter``"""
+        return FilterStoreGet(self, filter)
+
+    def _do_get(self, event: FilterStoreGet):
+        event_filter = event.filter
+        try:
+            index = next(
+                index for index, item
+                in enumerate(self._items)
+                if event_filter(item)
+            )
+        except StopIteration:
+            return False
+        else:
+            event.succeed(self._items.pop(index))
             return True
