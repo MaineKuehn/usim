@@ -23,7 +23,7 @@ class After(Condition):
     r"""
     The time range at and after a certain point in time
 
-    :param target: point in time from which on this condition is :py:const:`True`
+    :param date: point in time from which on this condition is :py:const:`True`
 
     The time range is *inclusive* of the time at `target`.
     If `await`\ ed before `target`, an :term:`activity` is
@@ -33,23 +33,23 @@ class After(Condition):
 
     The expression ``time >= target`` is equivalent to ``After(target)``.
     """
-    __slots__ = ('target', '_scheduled')
+    __slots__ = ('date', '_scheduled')
 
-    def __init__(self, target: float):
+    def __init__(self, date: float):
         super().__init__()
-        self.target = target
+        self.date = date
         self._scheduled = None
 
     def __bool__(self):
-        return __LOOP_STATE__.LOOP.time >= self.target
+        return __LOOP_STATE__.LOOP.time >= self.date
 
     def __invert__(self):
-        return Before(self.target)
+        return Before(self.date)
 
     def _ensure_trigger(self):
         if not self._scheduled:
             self._scheduled = True
-            __LOOP_STATE__.LOOP.schedule(self._async_trigger(), at=self.target)
+            __LOOP_STATE__.LOOP.schedule(self._async_trigger(), at=self.date)
 
     # we cannot schedule __trigger__ directly, since it is not async
     async def _async_trigger(self):
@@ -71,17 +71,17 @@ class After(Condition):
         super().__subscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(target={self.target})'
+        return f'{self.__class__.__name__}(date={self.date})'
 
     def __str__(self):
-        return f'usim.time >= {self.target}'
+        return f'usim.time >= {self.date}'
 
 
 class Before(Condition):
     r"""
     The time range before a certain point in time
 
-    :param target: point in time before which this condition is :py:const:`True`
+    :param date: point in time before which this condition is :py:const:`True`
 
     The time range is *exclusive* of the time at `target`.
     If `await`\ ed before `target`, an :term:`activity` is
@@ -91,17 +91,17 @@ class Before(Condition):
 
     The expression ``time < target`` is equivalent to ``Before(target)``.
     """
-    __slots__ = ('target',)
+    __slots__ = ('date',)
 
-    def __init__(self, target: float):
+    def __init__(self, date: float):
         super().__init__()
-        self.target = target
+        self.date = date
 
     def __bool__(self):
-        return __LOOP_STATE__.LOOP.time < self.target
+        return __LOOP_STATE__.LOOP.time < self.date
 
     def __invert__(self):
-        return After(self.target)
+        return After(self.date)
 
     def __await__(self) -> Generator[Any, None, bool]:
         # we will *never* wake up once the target has passed
@@ -114,17 +114,17 @@ class Before(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(target={self.target})'
+        return f'{self.__class__.__name__}(date={self.date})'
 
     def __str__(self):
-        return f'usim.time < {self.target}'
+        return f'usim.time < {self.date}'
 
 
 class Moment(Condition):
     r"""
     A certain point in time
 
-    :param target: point in time during which this condition is :py:const:`True`
+    :param date: point in time during which this condition is :py:const:`True`
 
     If `await`\ ed before `target`, an :term:`activity` is
     :term:`suspended <Suspension>` until :term:`time` is advanced to `target`.
@@ -135,16 +135,16 @@ class Moment(Condition):
 
     The expression ``time == target`` is equivalent to ``Moment(target)``.
     """
-    __slots__ = ('target', '_transition')
+    __slots__ = ('date', '_transition')
 
-    def __init__(self, target: float):
+    def __init__(self, date: float):
         super().__init__()
-        self.target = target
+        self.date = date
         # notification point at which we transition from before to after
-        self._transition = After(target)
+        self._transition = After(date)
 
     def __bool__(self):
-        return __LOOP_STATE__.LOOP.time == self.target
+        return __LOOP_STATE__.LOOP.time == self.date
 
     def __invert__(self):
         raise NotImplementedError(
@@ -158,7 +158,7 @@ class Moment(Condition):
         # we will *never* wake up once the target has passed
         # either we wake up in the same time frame,
         # or just hibernate indefinitely
-        if __LOOP_STATE__.LOOP.time == self.target:
+        if __LOOP_STATE__.LOOP.time == self.date:
             yield from postpone().__await__()
         elif not self._transition:
             yield from self._transition.__await__()
@@ -173,7 +173,7 @@ class Moment(Condition):
         self._transition.__unsubscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(target={self.target})'
+        return f'{self.__class__.__name__}(date={self.date})'
 
     def __str__(self):
         return f'usim.time == {self.date}'
