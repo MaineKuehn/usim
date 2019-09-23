@@ -41,34 +41,76 @@ Changing imports is all that is required to switch from SimPy to the μSim
 compatibility layer. The core of the `first SimPy example`_ is exactly the
 same for the μSim compatibility layer:
 
-.. code:: python3
+.. content-tabs::
 
-    >>> def car(env):
-    ...     while True:
-    ...         print('Start parking at %d' % env.now)
-    ...         parking_duration = 5
-    ...         yield env.timeout(parking_duration)
-    ...
-    ...         print('Start driving at %d' % env.now)
-    ...         trip_duration = 2
-    ...         yield env.timeout(trip_duration)
-    ...
+    .. tab-container:: usim
+        :title: μSim
+
+        .. code:: python3
+
+        >>> def car(env):
+        ...     while True:
+        ...         print('Start parking at %d' % env.now)
+        ...         parking_duration = 5
+        ...         yield env.timeout(parking_duration)
+        ...
+        ...         print('Start driving at %d' % env.now)
+        ...         trip_duration = 2
+        ...         yield env.timeout(trip_duration)
+        ...
+
+    .. tab-container:: simpy
+        :title: SimPy
+
+        .. code:: python3
+
+        >>> def car(env):
+        ...     while True:
+        ...         print('Start parking at %d' % env.now)
+        ...         parking_duration = 5
+        ...         yield env.timeout(parking_duration)
+        ...
+        ...         print('Start driving at %d' % env.now)
+        ...         trip_duration = 2
+        ...         yield env.timeout(trip_duration)
+        ...
 
 Running this example is *almost* the same as for SimPy:
 only the single line previously used to ``import simpy`` needs changing.
 
-.. code:: python3
+.. content-tabs::
 
-    >>> import usim.py as simpy  # import usim.py instead of simpy
-    >>> env = simpy.Environment()
-    >>> env.process(car(env))
-    <Process(car) object at 0x...>
-    >>> env.run(until=15)
-    Start parking at 0
-    Start driving at 5
-    Start parking at 7
-    Start driving at 12
-    Start parking at 14
+    .. tab-container:: usim
+        :title: μSim
+
+        .. code:: python3
+
+            >>> import usim.py as simpy  # import usim.py instead of simpy
+            >>> env = simpy.Environment()
+            >>> env.process(car(env))
+            <Process<car> object at 0x...>
+            >>> env.run(until=15)
+            Start parking at 0
+            Start driving at 5
+            Start parking at 7
+            Start driving at 12
+            Start parking at 14
+
+    .. tab-container:: simpy
+        :title: SimPy
+
+        .. code:: python3
+
+            >>> import simpy
+            >>> env = simpy.Environment()
+            >>> env.process(car(env))
+            <Process<car> object at 0x...>
+            >>> env.run(until=15)
+            Start parking at 0
+            Start driving at 5
+            Start parking at 7
+            Start driving at 12
+            Start parking at 14
 
 The ``usim.py`` layer not only provides the SimPy API, it can even interoperate with native
 μSim simulations. This allows combining simulations from μSim and SimPy, and
