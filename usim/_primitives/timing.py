@@ -71,10 +71,10 @@ class After(Condition):
         super().__subscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self.target})'.format(self=self)
+        return f'{self.__class__.__name__}(target={self.target})'
 
     def __str__(self):
-        return 'usim.time >= {}'.format(self.target)
+        return f'usim.time >= {self.target}'
 
 
 class Before(Condition):
@@ -114,10 +114,10 @@ class Before(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self.target})'.format(self=self)
+        return f'{self.__class__.__name__}(target={self.target})'
 
     def __str__(self):
-        return 'usim.time < {}'.format(self.target)
+        return f'usim.time < {self.target}'
 
 
 class Moment(Condition):
@@ -173,10 +173,10 @@ class Moment(Condition):
         self._transition.__unsubscribe__(waiter, interrupt)
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self.target})'.format(self=self)
+        return f'{self.__class__.__name__}(target={self.target})'
 
     def __str__(self):
-        return 'usim.time == {}'.format(self.target)
+        return f'usim.time == {self.date}'
 
 
 class Eternity(Condition):
@@ -205,7 +205,7 @@ class Eternity(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
-        return '{self.__class__.__name__}()'.format(self=self)
+        return f'{self.__class__.__name__}()'
 
     def __str__(self):
         return 'usim.eternity'
@@ -236,7 +236,7 @@ class Instant(Condition):
         return True  # noqa: B901
 
     def __repr__(self):
-        return '{self.__class__.__name__}()'.format(self=self)
+        return f'{self.__class__.__name__}()'
 
     def __str__(self):
         return 'usim.instant'
@@ -280,10 +280,10 @@ class Delay(Notification):
         __LOOP_STATE__.LOOP.schedule(waiter, interrupt, delay=self.duration)
 
     def __repr__(self):
-        return '{self.__class__.__name__}({self.duration})'.format(self=self)
+        return f'{self.__class__.__name__}(duration={self.duration})'
 
     def __str__(self):
-        return 'usim.time + {}'.format(self.duration)
+        return f'usim.time + {self.duration}'
 
     # NOTE: Python objects *always* have __bool__, which defaults
     # to True. We could debug-protect against misuse of bool(time + 3)
@@ -437,13 +437,21 @@ class Time:
                 "To get the current time, use 'time.now'"
             )
 
+    def __str__(self):
+        try:
+            now = self.now
+        except RuntimeError:
+            return 'usim.time'
+        else:
+            return f'usim.time @ {now}'
+
     def __repr__(self):
         try:
             now = self.now
         except RuntimeError:
             return '<detached handle usim.time>'
         else:
-            return '<attached handle usim.time @ {now}>'.format(now=now)
+            return f'<attached handle usim.time @ {now}>'
 
 
 time = Time()
