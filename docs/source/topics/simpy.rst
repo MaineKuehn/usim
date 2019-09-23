@@ -18,8 +18,10 @@ SimPy Compatibility
     provides most of the SimPy API. The only truly unsupported feature are scheduling
     priorities - due to its high concurrency, μSim is optimised for FIFO scheduling.
 
-    Using μSim in a SimPy Simulation
-    --------------------------------
+Using μSim in a SimPy Simulation
+--------------------------------
+
+.. content-tabs:: left-col
 
     As :py:mod:`usim.py` replicates the :py:mod:`simpy` API, it is sufficient
     to change imports to ``usim.py`` instead of ``simpy``. If your simulation
@@ -56,42 +58,23 @@ SimPy Compatibility
 
     Changing imports is all that is required to switch from SimPy to the μSim
     compatibility layer. The core of the `first SimPy example`_ is exactly the
-    same for the μSim compatibility layer:
+    same for the μSim compatibility layer.
 
 
 .. content-tabs:: right-col
 
-    .. tab-container:: usim
-        :title: μSim
+    .. code-block:: python3
 
-        .. code-block:: python3
-
-            >>> def car(env):
-            ...     while True:
-            ...         print('Start parking at %d' % env.now)
-            ...         parking_duration = 5
-            ...         yield env.timeout(parking_duration)
-            ...
-            ...         print('Start driving at %d' % env.now)
-            ...         trip_duration = 2
-            ...         yield env.timeout(trip_duration)
-            ...
-
-    .. tab-container:: simpy
-        :title: SimPy
-
-        .. code-block:: python3
-
-            >>> def car(env):
-            ...     while True:
-            ...         print('Start parking at %d' % env.now)
-            ...         parking_duration = 5
-            ...         yield env.timeout(parking_duration)
-            ...
-            ...         print('Start driving at %d' % env.now)
-            ...         trip_duration = 2
-            ...         yield env.timeout(trip_duration)
-            ...
+        >>> def car(env):
+        ...     while True:
+        ...         print('Start parking at %d' % env.now)
+        ...         parking_duration = 5
+        ...         yield env.timeout(parking_duration)
+        ...
+        ...         print('Start driving at %d' % env.now)
+        ...         trip_duration = 2
+        ...         yield env.timeout(trip_duration)
+        ...
 
 .. content-tabs:: left-col
 
@@ -143,8 +126,10 @@ SimPy Compatibility
         The :py:mod:`usim.py` documentation also describes how compatibility objects
         can be used directly in native μSim activities.
 
-    Interactions between μSim and SimPy
-    -----------------------------------
+Interactions between μSim and SimPy
+-----------------------------------
+
+.. content-tabs:: left-col
 
     The :py:mod:`usim.py` compatibility layer allows to use SimPy elements in μSim
     and vice versa. This works by translating the fundamental elements of each framework:
@@ -156,7 +141,9 @@ SimPy Compatibility
     This gives full access to all SimPy features from μSim --
     however, there is no equivalent to μSim's ``async for`` and ``async with`` in SimPy.
 
-    .. code:: python3
+.. content-tabs:: right-col
+
+    .. code-block:: python3
 
         >>> from usim import time
         >>> def car(env):
@@ -181,13 +168,17 @@ SimPy Compatibility
         Start driving at 12
         Start parking at 14
 
+.. content-tabs:: left-col
+
     Note that a :py:class:`~usim.py.Process` may directly ``await`` any :term:`activity`
     -- there is no need to wrap an :term:`activity` in another :py:class:`~usim.py.Process`.
     You can use all features of μSim in an :term:`activity`,
     even when it is ``yield``\ ed from a :py:class:`~usim.py.Process`.
 
-    Migrating from SimPy to μSim
-    ----------------------------
+Migrating from SimPy to μSim
+----------------------------
+
+.. content-tabs:: left-col
 
     To access the full capabilities of μSim, you should write native μSim simulations.
     Due to the compatibility layer, it is possible to migrate individual pieces.
@@ -195,7 +186,9 @@ SimPy Compatibility
     which ``await`` events. In addition, there is no environment that must be passed around
     -- all :py:mod:`usim` primitives automatically find their containing simulation.
 
-    .. code:: python3
+.. content-tabs:: right-col
+
+    .. code-block:: python3
 
         >>> from usim import run, time
         >>> async def car():
@@ -213,11 +206,15 @@ SimPy Compatibility
         # Start driving at 12
         # Start parking at 14
 
+.. content-tabs:: left-col
+
     When migrating a SimPy simulation to  μSim, keep in mind that μSim already provides
     many high-level features of simulations.
-    For example, μSim's ``async for`` works well to express repetitive tasks:
+    For example, μSim's ``async for`` works well to express repetitive tasks.
 
-    .. code:: python3
+.. content-tabs:: right-col
+
+    .. code-block:: python3
 
         >>> from usim import run, time, delay
         >>> async def car():
@@ -227,5 +224,5 @@ SimPy Compatibility
         ...         await (time + 2)
         ...         print(f'Start parking at {time.now}')
 
-    .. _SimPy: https://simpy.readthedocs.io/
-    .. _first SimPy example: https://simpy.readthedocs.io/en/latest/simpy_intro/basic_concepts.html
+.. _SimPy: https://simpy.readthedocs.io/
+.. _first SimPy example: https://simpy.readthedocs.io/en/latest/simpy_intro/basic_concepts.html
