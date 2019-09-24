@@ -35,7 +35,7 @@ Using μSim in a SimPy Simulation
 
         .. rubric:: Compatibility Imports
 
-        .. code-block::
+        .. code:: python
 
             # alias to expected name
             import usim.py as simpy
@@ -47,7 +47,7 @@ Using μSim in a SimPy Simulation
 
         .. rubric:: Native Imports
 
-        .. code-block::
+        .. code:: python
 
             # module import
             import simpy
@@ -63,7 +63,7 @@ Using μSim in a SimPy Simulation
 
 .. content-tabs:: right-col
 
-    .. code-block:: python3
+    .. code:: python3
 
         >>> def car(env):
         ...     while True:
@@ -86,7 +86,7 @@ Using μSim in a SimPy Simulation
     .. tab-container:: usim
         :title: μSim
 
-        .. code-block:: python3
+        .. code:: python3
 
             >>> import usim.py as simpy  # import usim.py instead of simpy
             >>> env = simpy.Environment()
@@ -102,7 +102,7 @@ Using μSim in a SimPy Simulation
     .. tab-container:: simpy
         :title: SimPy
 
-        .. code-block:: python3
+        .. code:: python3
 
             >>> import simpy
             >>> env = simpy.Environment()
@@ -143,11 +143,12 @@ Interactions between μSim and SimPy
 
 .. content-tabs:: right-col
 
-    .. code-block:: python3
+    .. rubric:: Partially migrated SimPy process
+
+    .. code:: python3
 
         >>> from usim import time
         >>> def car(env):
-        ...     """Partially migrated SimPy process"""
         ...     trip_duration = 2
         ...     parking_duration = 5
         ...     while True:
@@ -188,11 +189,12 @@ Migrating from SimPy to μSim
 
 .. content-tabs:: right-col
 
-    .. code-block:: python3
+    .. rubric:: Fully migrated SimPy process
+
+    .. code:: python3
 
         >>> from usim import run, time
         >>> async def car():
-        ...     """Fully migrated SimPy process"""
         ...     while True:
         ...         print(f'Start parking at {time.now}')
         ...         await (time + 5)
@@ -214,7 +216,9 @@ Migrating from SimPy to μSim
 
 .. content-tabs:: right-col
 
-    .. code-block:: python3
+    .. rubric:: μSim support of high-level features
+
+    .. code:: python3
 
         >>> from usim import run, time, delay
         >>> async def car():
@@ -224,5 +228,7 @@ Migrating from SimPy to μSim
         ...         await (time + 2)
         ...         print(f'Start parking at {time.now}')
 
-.. _SimPy: https://simpy.readthedocs.io/
-.. _first SimPy example: https://simpy.readthedocs.io/en/latest/simpy_intro/basic_concepts.html
+.. content-tabs:: left-col
+
+    .. _SimPy: https://simpy.readthedocs.io/
+    .. _first SimPy example: https://simpy.readthedocs.io/en/latest/simpy_intro/basic_concepts.html
