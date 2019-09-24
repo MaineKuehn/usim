@@ -47,14 +47,14 @@ Assertions and Debug Extensions
     The error includes some information to tell you what went wrong,
     and attempts to explain how to fix it.
 
-.. content-tabs:: left-col
-
     In addition to validating your simulation,
     assertion mode also provides rich exception messages.
     For example, erroneously using ``await time`` provides
     an Exception with additional help on intended usage.
 
 .. content-tabs:: right-col
+
+    .. rubric:: Rich error messages in assertion mode
 
     .. code:: none
 
@@ -111,6 +111,8 @@ Omitting Assertions
 
 .. content-tabs:: right-col
 
+    .. rubric:: Simulating in optimised mode
+
     .. code:: bash
 
         python3 -O my_simulation.py
@@ -127,6 +129,8 @@ Omitting Assertions
     the regular Python error message.
 
 .. content-tabs:: right-col
+
+    .. rubric:: Regular Python error messages in optimized mode
 
     .. code:: none
 
