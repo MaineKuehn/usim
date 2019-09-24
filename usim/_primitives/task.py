@@ -1,4 +1,5 @@
 from functools import wraps
+import reprlib
 import enum
 from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List,\
     TYPE_CHECKING
@@ -254,15 +255,15 @@ class Task(Awaitable[RT]):
                 cancellation.scheduled = True
                 __LOOP_STATE__.LOOP.schedule(self.__runner__, signal=cancellation)
 
+    @reprlib.recursive_repr()
     def __repr__(self):
-        return '<%s of %s (%s)>' % (
-            self.__class__.__name__, self.payload,
-            'outstanding' if self._result is None else (
-                'result={!r}'.format(self._result[0])
-                if self._result[1] is None
-                else
-                'signal={!r}'.format(self._result[1])
-            ),
+        child_status = 'active' if self._result is None else (
+            f'result={self._result[0]!r}'
+            if self._result[1] is None else
+            f'signal={self._result[1]!r}'
+        )
+        return (
+            f'<{self.__class__.__name__} object payload={self.payload}[{child_status}] parent={self.parent}>'
         )
 
     def __del__(self):
@@ -298,7 +299,7 @@ class Done(Condition):
         self.__trigger__()
 
     def __repr__(self):
-        return '<%s for %r>' % (self.__class__.__name__, self._task)
+        return f'<{self.__class__.__name__} for {self._task!r}>'
 
 
 class NotDone(Condition):
@@ -316,4 +317,4 @@ class NotDone(Condition):
         return self._done
 
     def __repr__(self):
-        return '<%s for %r>' % (self.__class__.__name__, self._done._task)
+        return f'<{self.__class__.__name__} for {self._done._task!r}>'
