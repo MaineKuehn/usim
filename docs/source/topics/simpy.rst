@@ -121,6 +121,8 @@ Using μSim in a SimPy Simulation
     μSim simulations. This allows combining simulations from μSim and SimPy, and
     to gradually convert simulations.
 
+.. content-tabs:: right-col
+
     .. hint::
 
         The :py:mod:`usim.py` documentation also describes how compatibility objects
