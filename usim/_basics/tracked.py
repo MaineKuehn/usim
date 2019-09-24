@@ -75,14 +75,10 @@ class AsyncComparison(Condition):
             self.__trigger__()
 
     def __str__(self):
-        return '%s %s %s' % (
-            self._left, self._operator_symbol[self._condition], self._right
-        )
+        return f'{self._left} {self._operator_symbol[self._condition]} {self._right}'
 
     def __repr__(self):
-        return '%s(%r, operator.%s, %r)' % (
-            self.__class__.__name__, self._left, self._condition.__name__, self._right
-        )
+        return f'{self.__class__.__name__}({self._left!r}, operator.{self._condition.__name__}, {self._right!r})'
 
 
 class Tracked(Generic[V]):
@@ -241,7 +237,7 @@ class Tracked(Generic[V]):
             )
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self._value)
+        return f'{self.__class__.__name__}({self._value})'
 
 
 class AsyncOperation(Generic[V, RHS]):
@@ -284,11 +280,7 @@ class AsyncOperation(Generic[V, RHS]):
         ).__await__()
 
     def __str__(self):
-        return '%s %s %s' % (
-            self._base, self._operator_symbol[self._operator], self._rhs
-        )
+        return f'{self._base} {self._operator_symbol[self._operator]} {self._rhs}'
 
     def __repr__(self):
-        return '%s(%r, operator.%s, %r)' % (
-            self.__class__.__name__, self._base, self._operator.__name__, self._rhs
-        )
+        return f'{self.__class__.__name__}({self._base!r}, operator.{self._operator.__name__}, {self._rhs!r})'
