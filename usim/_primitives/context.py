@@ -353,8 +353,9 @@ class Scope:
 
     def __repr__(self):
         return (
-            f'<{self.__class__.__name__} in {self._activity} @ {id(self)}'
-            f' , children={self._children}, volatile={self._volatile_children}, done={bool(self._body_done)}>'
+            f'<{self.__class__.__name__} in {self._activity} @ {id(self)}, '
+            f'children={self._children}, volatile={self._volatile_children}, '
+            f'done={bool(self._body_done)}>'
         )
 
 
@@ -385,8 +386,11 @@ class InterruptScope(Scope):
 
     def __repr__(self):
         return (
-            f'<{self.__class__.__name__} in {self._activity} @ {id(self)}, notification={self._notification}'
-            f' , children={self._children}, volatile={self._volatile_children}, done={bool(self._body_done)}>'
+            f'<{self.__class__.__name__} in {self._activity} @ {id(self)}, '
+            f'notification={self._notification}, '
+            f'children={self._children}, '
+            f'volatile={self._volatile_children}, '
+            f'done={bool(self._body_done)}>'
         )
 
 

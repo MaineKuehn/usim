@@ -263,7 +263,8 @@ class Task(Awaitable[RT]):
             f'signal={self._result[1]!r}'
         )
         return (
-            f'<{self.__class__.__name__} object payload={self.payload}[{child_status}] parent={self.parent}>'
+            f'<{self.__class__.__name__} object payload={self.payload}[{child_status}] '
+            f'parent={self.parent}>'
         )
 
     def __del__(self):

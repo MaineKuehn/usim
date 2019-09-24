@@ -86,7 +86,8 @@ class Lock:
             self._owner = candidate
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}, owner={self._owner!r}, depth={self._depth}>'
+        return f'<{self.__class__.__name__}, owner={self._owner!r}, '\
+               f'depth={self._depth}>'
 
     if __debug__:
         def __enter__(self):

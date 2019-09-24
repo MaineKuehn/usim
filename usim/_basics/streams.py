@@ -116,7 +116,8 @@ class Channel(AsyncIterable, Generic[ST]):
         await postpone()
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}, consumers={len(self._consumer_buffers)}, closed={self._closed}>'
+        return f'<{self.__class__.__name__}, '\
+               f'consumers={len(self._consumer_buffers)}, closed={self._closed}>'
 
 
 class Queue(AsyncIterable, Generic[ST]):
@@ -193,7 +194,8 @@ class Queue(AsyncIterable, Generic[ST]):
         await postpone()
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}, buffer=[{", ".join(map(repr, self._buffer))}]>'
+        return f'<{self.__class__.__name__}, '\
+               f'buffer=[{", ".join(map(repr, self._buffer))}]>'
 
 
 Stream = Union[Channel, Queue]
