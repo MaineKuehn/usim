@@ -93,6 +93,8 @@ Handling Concurrent Exceptions
     of exceptions -- for example, ``Concurrent[LookupError]`` matches both
     ``Concurrent[KeyError]`` and ``Concurrent[IndexError]``.
 
+.. content-tabs:: right-col
+
     .. note::
 
         μSim considers the use of a :py:class:`~usim.Scope` an implementation detail of
