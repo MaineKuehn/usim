@@ -87,9 +87,15 @@ class TestPriorityStore(TestStore):
         priorities = 0, 12, -16, 1e6
         for prio_a in priorities:
             for prio_b in priorities:
-                assert (PriorityItem(prio_a, 3) > PriorityItem(prio_b, 4)) == (prio_a > prio_b)
-                assert (PriorityItem(prio_a, 3) < PriorityItem(prio_b, 4)) == (prio_a < prio_b)
-                assert (PriorityItem(prio_a, 3) >= PriorityItem(prio_b, 4)) == (prio_a >= prio_b)
-                assert (PriorityItem(prio_a, 3) <= PriorityItem(prio_b, 4)) == (prio_a <= prio_b)
-                assert (PriorityItem(prio_a, 3) == PriorityItem(prio_b, 4)) == (prio_a == prio_b)
-                assert (PriorityItem(prio_a, 3) != PriorityItem(prio_b, 4)) == (prio_a != prio_b)
+                assert (PriorityItem(prio_a, 3) > PriorityItem(prio_b, 4))\
+                    == (prio_a > prio_b)
+                assert (PriorityItem(prio_a, 3) < PriorityItem(prio_b, 4))\
+                    == (prio_a < prio_b)
+                assert (PriorityItem(prio_a, 3) >= PriorityItem(prio_b, 4))\
+                    == (prio_a >= prio_b)
+                assert (PriorityItem(prio_a, 3) <= PriorityItem(prio_b, 4))\
+                    == (prio_a <= prio_b)
+                assert (PriorityItem(prio_a, 3) == PriorityItem(prio_b, 4))\
+                    == (prio_a == prio_b)
+                assert (PriorityItem(prio_a, 3) != PriorityItem(prio_b, 4))\
+                    == (prio_a != prio_b)
