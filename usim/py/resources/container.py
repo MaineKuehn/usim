@@ -48,11 +48,11 @@ class Container(BaseResource):
 
         .. code:: python3
 
-            resources = Resources(capacity=8)
-            # put more capacity into the resource
-            await resource.increase(capacity=8)
-            # get some capacity from the resource
-            await resource.decrease(capacity=8)
+            resources = Resources(level=8)
+            # put some content into the resource
+            await resource.increase(level=8)
+            # get some content from the resource
+            await resource.decrease(level=8)
 
         It is always safe to :py:meth:`~usim.basics.Resources.increase`,
         :py:meth:`~usim.basics.Resources.decrease` or
