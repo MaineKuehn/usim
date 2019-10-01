@@ -86,7 +86,7 @@ class Container(BaseResource):
 
     @property
     def level(self):
-        """The current amount of the content in the container"""
+        """The current amount of available content in the container"""
         return self._level
 
     def put(self, amount=1) -> ContainerPut:
