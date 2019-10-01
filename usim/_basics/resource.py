@@ -167,14 +167,14 @@ class Resources(BaseResources[T]):
         resources = Resources(cores=8, memory=4000)
 
         # increase the resource supply available
-        resources.increase(memory=2000)
+        await resources.increase(memory=2000)
 
         # temporarily remove resources
         async with resources.borrow(cores=2, memory=6000):
             await computation
 
         # decrease the resource supply available
-        resources.decrease(cores=4)
+        await resources.decrease(cores=4)
 
     A :py:class:`~.Capacities` guarantees that it is always possible
     to increase the level of available resources.
