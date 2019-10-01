@@ -1,4 +1,5 @@
 from typing import TypeVar, List, Callable, NamedTuple, Any
+from functools import total_ordering
 
 from sortedcontainers import SortedList
 
@@ -143,9 +144,18 @@ class FilterStore(Store[T]):
             return True
 
 
+@total_ordering
 class PriorityItem(NamedTuple):
     """
     Helper to sort an unorderable ``item`` by a ``priority``
+
+    This class implements a total ordering based on ``priority``;
+    ``item`` is ignored for comparisons. This allows using an arbitrary
+    ``item`` in a :py:class:`~.PriorityStore` with a well-defined ``priority``.
+
+    The original :py:class:`simpy.resources.store.PriorityItem` only provides
+    ``a < b`` ordering. Support for total ordering is provided by :py:mod:`usim.py`
+    for consistency.
     """
     priority: float
     item: Any  # actually a T, but NamedTuple cannot be Generic in Py3.6
@@ -153,6 +163,11 @@ class PriorityItem(NamedTuple):
     def __lt__(self, other: 'PriorityItem'):
         assert isinstance(other, PriorityItem)
         return self.priority < other.priority
+
+    def __eq__(self, other):
+        if not isinstance(other, PriorityItem):
+            return NotImplemented
+        return self.priority == other.priority
 
 
 class PriorityStore(Store[T]):
