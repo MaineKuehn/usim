@@ -97,14 +97,16 @@ class Container(BaseResource):
         """Get ``amount`` of content out of the container"""
         return ContainerGet(self, amount)
 
-    def _do_put(self, event: ContainerPut):
+    def _do_put(self, event: ContainerPut) -> bool:
         if self._capacity - self._level >= event.amount:
             self._level += event.amount
             event.succeed()
             return True
+        return False
 
-    def _do_get(self, event: ContainerGet):
+    def _do_get(self, event: ContainerGet) -> bool:
         if self._level >= event.amount:
             self._level -= event.amount
             event.succeed()
             return True
+        return False
