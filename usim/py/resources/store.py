@@ -1,5 +1,4 @@
 from typing import TypeVar, List, Callable, NamedTuple, Any
-from functools import total_ordering
 
 from sortedcontainers import SortedList
 
@@ -144,7 +143,6 @@ class FilterStore(Store[T]):
             return True
 
 
-@total_ordering
 class PriorityItem(NamedTuple):
     """
     Helper to sort an unorderable ``item`` by a ``priority``
@@ -153,21 +151,40 @@ class PriorityItem(NamedTuple):
     ``item`` is ignored for comparisons. This allows using an arbitrary
     ``item`` in a :py:class:`~.PriorityStore` with a well-defined ``priority``.
 
-    The original :py:class:`simpy.resources.store.PriorityItem` only provides
-    ``a < b`` ordering. Support for total ordering is provided by :py:mod:`usim.py`
-    for consistency.
+    The original :py:class:`simpy.resources.store.PriorityItem` only properly provides
+    ``a < b`` ordering; all other comparisons may compare ``item``. :py:mod:`usim.py`
+    provides well-defined total ordering.
     """
     priority: float
     item: Any  # actually a T, but NamedTuple cannot be Generic in Py3.6
 
+    # Note: NamedTuple already makes all comparisons as a tuple,
+    # e.g. (self.priority, self.item) < (other.priority, other.item)
+    # This is totally *not* the point of this class. We need to define
+    # all comparisons methods to hide those from NamedTuple.
     def __lt__(self, other: 'PriorityItem'):
-        assert isinstance(other, PriorityItem)
+        if not isinstance(other, PriorityItem):
+            return NotImplemented
         return self.priority < other.priority
+
+    def __gt__(self, other: 'PriorityItem'):
+        if not isinstance(other, PriorityItem):
+            return NotImplemented
+        return self.priority > other.priority
+
+    def __le__(self, other):
+        return self < other or self == other
+
+    def __ge__(self, other):
+        return self > other or self == other
 
     def __eq__(self, other):
         if not isinstance(other, PriorityItem):
             return NotImplemented
         return self.priority == other.priority
+
+    def __ne__(self, other):
+        return not self == other
 
 
 class PriorityStore(Store[T]):
