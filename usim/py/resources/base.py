@@ -185,7 +185,7 @@ class BaseResource(Generic[T]):
         Trigger all possible put events
 
         Called when a ``Put`` event was created or a ``Get`` event triggered.
-        This trigger scheme handles a new request to an unconstested resource
+        This trigger scheme handles a new request to an uncontested resource
         (the ``Put`` succeeds immediately),
         as well as a full one (the ``Get`` may serve a waiting ``Put``).
 
@@ -199,7 +199,7 @@ class BaseResource(Generic[T]):
         Trigger all possible put events
 
         Called when a ``Get`` event was created or a ``Put`` event triggered.
-        This trigger scheme handles a new request to an unconstested resource
+        This trigger scheme handles a new request to an uncontested resource
         (the ``Get`` succeeds immediately),
         as well as a full one (the ``Put`` may serve a waiting ``Get``).
 

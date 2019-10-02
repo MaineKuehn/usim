@@ -30,7 +30,7 @@ Events (:py:mod:`usim.py.events`)
 ---------------------------------
 
 ============================================================= ===================================================================
-:py:class:`~usim.py.events.Event`\ (env)                      Event that is manually triggered'),
+:py:class:`~usim.py.events.Event`\ (env)                      Event that is manually triggered,
 :py:class:`~usim.py.events.Timeout`\ (env, delay, value=None) Event that triggers after a ``delay``
 :py:class:`~usim.py.events.Process`\ (env, generator)         Active event that processes an event-yielding generator
 :py:class:`~usim.py.events.AllOf`\ (env, events)              Event that triggers once all ``events`` succeed
