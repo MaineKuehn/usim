@@ -60,7 +60,7 @@ class Resource(BaseResource):
 
         Both :py:meth:`~.put` and :py:meth:`~.get` cannot be used on this resource type.
     """
-    def __init__(self, env: Environment, capacity: int):
+    def __init__(self, env: Environment, capacity: int = 1):
         if capacity <= 0:
             raise ValueError("capacity must be greater than 0")
         super().__init__(env, capacity)
