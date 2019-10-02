@@ -47,7 +47,16 @@ Events (:py:mod:`usim.py.events`)
 Resources (:py:mod:`usim.py.resources`)
 ---------------------------------------
 
-``usim.py`` implements no resources yet.
+============================================================================= ============================================================================================
+:py:exc:`~usim.py.resources.resource.Resource`\ (env, capacity=1)             Resource with a fixed capacity of usage slots
+:py:exc:`~usim.py.resources.resource.PriorityResource`\ (env, capacity=1)     Resource with a fixed capacity of usage slots granted with priorities
+:py:exc:`~usim.py.resources.resource.PreemptiveResource`\ (env, capacity=1)   Resource with a fixed capacity of usage slots preempted with priorities
+:py:exc:`~usim.py.resources.container.Container`\ (env, capacity=inf, init=0) Resource with a fixed capacity of continuous, indistinguishable content
+:py:exc:`~usim.py.resources.store.Store`\ (env, capacity=inf)                 Resource with a fixed capacity of slots for storing arbitrary objects
+:py:exc:`~usim.py.resources.store.PriorityItem`\ (priority, item)             Wrap an arbitrary item with an orderable priority.
+:py:exc:`~usim.py.resources.store.PriorityStore`\ (env, capacity=inf)         Resource with capacity slots for storing objects in priority order.
+:py:exc:`~usim.py.resources.store.FilterStore`\ (env, capacity=inf)           Resource with capacity slots for storing arbitrary objects supporting filtered get requests.
+============================================================================= ============================================================================================
 
 Exceptions (:py:mod:`usim.py.exceptions`)
 -----------------------------------------
