@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 from usim import Scope, time, instant, Concurrent
@@ -175,3 +177,37 @@ class TestScoping:
             async with Scope() as scope:
                 scope.do(fail_pass, after=-1)
         fail_pass.close()
+
+    @via_usim
+    async def test_teardown_late(self):
+        """Test that the scope may receive failures during shutdown"""
+        async def fail_late(scope):
+            await scope
+            raise KeyError
+
+        with pytest.raises(Concurrent[KeyError]):
+            async with Scope() as scope:
+                scope.do(fail_late(scope))
+
+    @via_usim
+    async def test_spawn_late(self):
+        """Test spawning during graceful shutdown"""
+        async def spawn_late(scope):
+            await scope
+            scope.do(time + 10)
+
+        async with Scope() as scope:
+            scope.do(spawn_late(scope))
+        assert time.now == 10
+
+    @via_usim
+    async def test_spawn_after_shutdown(self):
+        async def activity(value):
+            return value
+
+        async with Scope() as scope:
+            pass
+        payload = activity(3)
+        with pytest.raises(RuntimeError):
+            scope.do(payload)
+        assert inspect.getcoroutinestate(payload) == inspect.CORO_CLOSED

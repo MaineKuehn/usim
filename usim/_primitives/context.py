@@ -1,9 +1,9 @@
 from typing import Coroutine, List, TypeVar, Any, Optional, Tuple
 
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
-from .notification import Notification
+from .notification import Notification, postpone
 from .flag import Flag
-from .task import Task, TaskClosed, TaskState, TaskCancelled
+from .task import Task, TaskClosed, TaskCancelled, try_close
 from .concurrent_exception import Concurrent
 
 
@@ -21,6 +21,15 @@ class CancelScope(CoreInterrupt):
     def __init__(self, subject: 'Scope', *token):
         super().__init__(*token)
         self.subject = subject
+
+
+class ScopeClosed(RuntimeError):
+    """A :py:class:`~.Scope` has been closed and cannot be used anymore"""
+    __slots__ = 'scope',
+
+    def __init__(self, scope):
+        #: scope which has been used after close
+        self.scope = scope
 
 
 class Scope:
@@ -80,8 +89,8 @@ class Scope:
             do_some(scope)  # pass scope around to do activities in it
             on_done(scope)  # pass scope around to await its end
     """
-    __slots__ = '_children', '_body_done', '_activity', '_volatile_children',\
-                '_cancel_self', '_interruptable'
+    __slots__ = '_children', '_body_done', '_activity', '_volatile_children', \
+                '_child_failures', '_cancel_self', '_interruptable'
 
     #: Exceptions which are *not* re-raised from concurrent tasks
     SUPPRESS_CONCURRENT = (
@@ -93,8 +102,12 @@ class Scope:
     )
 
     def __init__(self):
+        #: currently living child tasks
         self._children = []  # type: List[Task]
+        #: currently living child tasks that we won't wait for
         self._volatile_children = []  # type: List[Task]
+        #: failures encountered in children
+        self._child_failures = []  # type: List[BaseException]
         # the scope body is finished and we do/did __aexit__
         self._body_done = Flag()
         # we can still be cancelled/interrupted asynchronously
@@ -120,6 +133,7 @@ class Scope:
         :param after: delay after which to start the activity
         :param at: point in time at which to start the activity
         :param volatile: whether the activity is aborted at the end of the scope
+        :raises ScopeClosed: if the scope has ended already
         :return: representation of the ongoing activity
 
         All non-``volatile`` activities are ``await``\ ed at the end of the scope.
@@ -146,7 +160,20 @@ class Scope:
         Aborting ``volatile`` activities is not graceful:
         :py:class:`GeneratorExit` is raised in the activity,
         which must exit without ``await``\ ing or ``yield``\ ing anything.
+
+        The scope assumes exclusive ownership of the ``payload``:
+        no activity should modify the ``payload`` directly.
+        The scope takes the responsibility to ``await`` and
+        cleanup the payload as needed.
+
+        It is not possible to :py:meth:`~.do` activities after the scope has ended.
+        A :py:exc:`~.ScopeClosed` exception is raised in this case.
         """
+        if not self._interruptable:
+            # we have been given the payload with the expectation of managing it
+            # close it now since no-one else should expect to own it
+            try_close(payload)
+            raise ScopeClosed(self)
         assert after is None or at is None,\
             "start date must be either absolute or relative"
         # resolve "now" to what the event loop expects
@@ -158,7 +185,7 @@ class Scope:
             "start date must not be in the past"
         assert at is None or at > __LOOP_STATE__.LOOP.time,\
             "start date must not be in the past"
-        child_task = Task(payload, self, delay=after, at=at)
+        child_task = Task(payload, self, delay=after, at=at, volatile=volatile)
         __LOOP_STATE__.LOOP.schedule(
             child_task.__runner__,
         )
@@ -173,13 +200,24 @@ class Scope:
         if self._interruptable:
             __LOOP_STATE__.LOOP.schedule(self._activity, self._cancel_self)
 
+    def __child_finished__(self, child: Task, failed: bool):
+        assert child.parent is self
+        if failed:
+            self.__cancel__()
+            self._child_failures.append(child.__exception__)
+        if child.__volatile__:
+            self._volatile_children.remove(child)
+        else:
+            self._children.remove(child)
+
     def _disable_interrupts(self):
         self._interruptable = False
         self._cancel_self.revoke()
 
     async def _await_children(self):
-        for child in self._children:
-            await child.done
+        while self._children:
+            for child in self._children[:]:
+                await child.done
 
     def _close_children(self):
         """Forcefully close all child non-volatile tasks"""
@@ -246,6 +284,8 @@ class Scope:
         """
         try:
             await self._await_children()
+            # we must always postpone to receive signals, even if there are no children
+            await postpone()
         except BaseException as err:
             return self._aexit_forceful(type(err), err)
         else:
@@ -265,13 +305,11 @@ class Scope:
         suppress = self.SUPPRESS_CONCURRENT
         promote = self.PROMOTE_CONCURRENT
         concurrent = []
-        for child in self._children:
-            if child.status is TaskState.FAILED:
-                exc = child.__exception__
-                if isinstance(exc, promote):
-                    return exc, None
-                if not isinstance(exc, suppress):
-                    concurrent.append(exc)
+        for exc in self._child_failures:
+            if isinstance(exc, promote):
+                return exc, None
+            if not isinstance(exc, suppress):
+                concurrent.append(exc)
         if concurrent:
             exc = Concurrent(*concurrent)
             # exc.__cause__ shows up in the stacktrace before exc

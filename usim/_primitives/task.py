@@ -104,14 +104,20 @@ class Task(Awaitable[RT]):
     :note: This class should not be instantiated directly.
            Always use a :py:class:`~.Scope` to create it.
     """
-    __slots__ = 'payload', '_result', '__runner__', '_cancellations', '_done', 'parent'
+    __slots__ = 'payload', '_result', '__runner__', '_cancellations', '_done',\
+                '__volatile__', 'parent'
 
-    def __init__(self, payload: Coroutine[Any, Any, RT], parent: 'Scope', delay, at):
+    def __init__(
+            self,
+            payload: Coroutine[Any, Any, RT], parent: 'Scope',
+            delay: Optional[float], at: Optional[float], volatile: bool,
+    ):
         @wraps(payload)
         async def payload_wrapper():
             # check for a pre-run cancellation
             if self._result is not None:
                 try_close(self.payload)
+                self.parent.__child_finished__(self, failed=True)
                 return
             try:
                 # We suspend the Task internally instead of waiting to start
@@ -129,21 +135,24 @@ class Task(Awaitable[RT]):
                     self, err.subject
                 )
                 self._result = None, err.__transcript__
+                self.parent.__child_finished__(self, failed=False)
             except GeneratorExit:
                 # We are NOT allowed to do any async once the generator
                 # exits forcefully.
                 # We should only receive GeneratorExit due to a forceful
                 # termination in self.__close__ or during cleanup.
-                pass
+                self.parent.__child_finished__(self, failed=False)
             except BaseException as err:
                 self._result = None, err
-                self.parent.__cancel__()
+                self.parent.__child_finished__(self, failed=True)
             else:
                 self._result = result, None
+                self.parent.__child_finished__(self, failed=False)
             for cancellation in self._cancellations:
                 cancellation.revoke()
             try_close(self.payload)
             self._done.__set_done__()
+        self.__volatile__ = volatile
         self._cancellations = []  # type: List[CancelTask]
         self._result = None  \
             # type: Optional[Tuple[Optional[RT], Optional[BaseException]]]
