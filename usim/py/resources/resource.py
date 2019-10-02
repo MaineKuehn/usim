@@ -130,14 +130,14 @@ class PriorityRequest(Request):
     Requests with smaller values and ``preempt=True`` are chosen first.
     """
     def __init__(self, resource, priority: float = 0, preempt=True):
-        #: priority of this request, higher is chosen first
+        #: priority of this request, lower is chosen first
         self.priority = priority
         self.preempt = preempt
         #: time at which the request was made
         self.time = resource._env.now
         #: time at which the request was granted
         self.usage_since = None  # type: Optional[float]
-        #: sort key of this resource - requests with "smaller" key are chosen first
+        #: sort key of this resource - requests with smaller key are chosen first
         self.key = (self.priority, self.time, not self.preempt)
         super(PriorityRequest, self).__init__(resource)
 
@@ -183,7 +183,7 @@ class Preempted(object):
     def __init__(self, by: Process, usage_since: float, resource: 'PreemptiveResource'):
         #: process that triggered the preemption
         self.by = by
-        #: time since which the resource was used
+        #: time since when the resource was used
         self.usage_since = usage_since
         #: the resource that was lost
         self.resource = resource
