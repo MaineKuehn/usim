@@ -123,10 +123,7 @@ class Connective(Condition):
         return True
 
     def __repr__(self):
-        return '%s(%s)' % (
-            self.__class__.__name__,
-            ', '.join(repr(child) for child in self._children)
-        )
+        return f'{self.__class__.__name__}({", ".join(map(repr, self._children))})'
 
 
 class All(Connective):
@@ -149,7 +146,7 @@ class All(Connective):
         return Any(*(~child for child in self._children))
 
     def __str__(self):
-        return '(%s)' % ' & '.join(str(child) for child in self._children)
+        return f'({" & ".join(map(str, self._children))})'
 
 
 class Any(Connective):
@@ -172,4 +169,4 @@ class Any(Connective):
         return All(*(~child for child in self._children))
 
     def __str__(self):
-        return '(%s)' % ' | '.join(str(child) for child in self._children)
+        return f'({" | ".join(map(str, self._children))})'

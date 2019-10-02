@@ -64,6 +64,12 @@ class BaseResources(Generic[T]):
         borrowed_levels = self.borrow(**amounts).limits
         return ClaimedResources(self, borrowed_levels)
 
+    def __repr__(self):
+        content = ', '.join(
+            f'{key}={item}' for key, item in self._available.value
+        )
+        return f'{self.__class__.__name__}({content})'
+
 
 class BorrowedResources(BaseResources[T]):
     """

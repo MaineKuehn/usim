@@ -1,105 +1,143 @@
 Usage Assertions and Performance
 ================================
 
-In order to help writing correct simulations,
-μSim uses a wide range of usage assertions.
-These generally verify argument values and types in advance,
-so that you can pinpoint where errors originate.
+.. container:: left-col
 
-At the same time, μSim strives to provide
-best performance for correct simulations.
-Once you have verified your simulation,
-you can omit all consistency assertions with zero cost.
+    In order to help writing correct simulations,
+    μSim uses a wide range of usage assertions.
+    These generally verify argument values and types in advance,
+    so that you can pinpoint where errors originate.
 
-:note: μSim runs in assertion mode by default.
+.. container:: left-col
+
+    At the same time, μSim strives to provide
+    best performance for correct simulations.
+    Once you have verified your simulation,
+    you can omit all consistency assertions with zero cost.
+
+.. container:: content-tabs right-col
+
+    .. note:: μSim runs in assertion mode by default.
 
 Assertions and Debug Extensions
 -------------------------------
 
-μSim uses assertions when checking
-the internal logic of simulations.
-For example, :term:`time` in a simulation must always advance
-into the future -
-assertions protect against creating events in the past:
+.. content-tabs:: left-col
 
-.. code:: python3
+    μSim uses assertions when checking
+    the internal logic of simulations.
+    For example, :term:`time` in a simulation must always advance
+    into the future -
+    assertions protect against creating events in the past.
 
-    >>> from usim import time, run
-    >>>
-    >>> async def wait(delay):
-    ...     await (time + delay)
-    ...
-    >>> run(wait(-20))  # delay until a time that has already passed
+.. content-tabs:: right-col
 
-When run regularly, this will fail with an :py:exc:`AssertionError`.
-The error includes some information to tell you what went wrong,
-and attempts to explain how to fix it.
+    .. code:: python3
 
-In addition to validating your simulation,
-assertion mode also provides rich exception messages.
-For example, erroneously using ``await time`` provides
-an Exception with additional help on intended usage:
+        >>> from usim import time, run
+        >>>
+        >>> async def wait(delay):
+        ...     await (time + delay)
+        ...
+        >>> run(wait(-20))  # delay until a time that has already passed
 
-.. code:: none
+.. content-tabs:: left-col
 
-    TypeError: 'time' cannot be used in 'await' expression
+    When run regularly, this will fail with an :py:exc:`AssertionError`.
+    The error includes some information to tell you what went wrong,
+    and attempts to explain how to fix it.
 
-    Use 'time' to derive operands for specific expressions:
-    * 'await (time + duration)' to delay for a specific duration
-    * 'await (time == date)' to proceed at a specific point in time
-    * 'await (time >= date)' to proceed at or after a point in time
-    * 'await (time < date)' to indefinitely block after a point in time
+    In addition to validating your simulation,
+    assertion mode also provides rich exception messages.
+    For example, erroneously using ``await time`` provides
+    an Exception with additional help on intended usage.
 
-    To get the current time, use 'time.now'
+.. content-tabs:: right-col
+
+    .. rubric:: Rich error messages in assertion mode
+
+    .. code:: none
+
+        TypeError: 'time' cannot be used in 'await' expression
+
+        Use 'time' to derive operands for specific expressions:
+        * 'await (time + duration)' to delay for a specific duration
+        * 'await (time == date)' to proceed at a specific point in time
+        * 'await (time >= date)' to proceed at or after a point in time
+        * 'await (time < date)' to indefinitely block after a point in time
+
+        To get the current time, use 'time.now'
 
 Reacting to Usage Errors
 ------------------------
 
-The purpose of assertions is to help simulation developers
-detect and remove inconsistencies and logic errors.
-They are not meant for the simulation itself to
-react to or even attempt recovery.
+.. content-tabs:: left-col
 
-.. code:: python3
+    The purpose of assertions is to help simulation developers
+    detect and remove inconsistencies and logic errors.
+    They are not meant for the simulation itself to
+    react to or even attempt recovery.
 
-    >>> try:
-    ...     risk.take_chance()
-    ... except KeyError:  # correct - recover from exception state
-    ...     risk.recover()
-    ... except AssertionError:  # incorrect - recover from corruption
-    ...     risk.recover()
+    When an assertion of μSim fails, this means your simulation
+    is in an undefined state.
+    Instead of trying to recover, you should fix the root cause
+    of the erroneous condition.
 
-When an assertion of μSim fails, this means your simulation
-is in an undefined state.
-Instead of trying to recover, you should fix the root cause
-of the erroneous condition.
+.. content-tabs:: right-col
+
+    .. code:: python3
+
+        >>> try:
+        ...     risk.take_chance()
+        ... except KeyError:  # correct - recover from exception state
+        ...     risk.recover()
+        ... except AssertionError:  # incorrect - recover from corruption
+        ...     risk.recover()
 
 Omitting Assertions
 -------------------
 
-While assertions are important for verification,
-they incur a runtime performance overhead.
-If you trust your simulation to not need assertions,
-you can switch off all assertions to gain performance.
+.. content-tabs:: left-col
 
-Starting Python with the :option:`-O` flag disables
-μSim's assertion mode:
+    While assertions are important for verification,
+    they incur a runtime performance overhead.
+    If you trust your simulation to not need assertions,
+    you can switch off all assertions to gain performance.
 
-.. code:: bash
+.. content-tabs:: left-col
 
-    python3 -O my_simulation.py
+    Starting Python with the :option:`-O` flag disables
+    μSim's assertion mode.
 
-In optimised mode, assertions are completely removed from μSim.
-There is no runtime overhead from checking debug mode versus optimised mode.
+.. content-tabs:: right-col
 
-In addition to disabling assertions, rich exception messages are removed as well.
-For example, erroneously using ``await time`` provides
-the regular Python error message.
+    .. rubric:: Simulating in optimised mode
 
-.. code:: none
+    .. code:: bash
 
-    TypeError: object Time can't be used in 'await' expression
+        python3 -O my_simulation.py
 
-Notably, optimised mode throws the same exceptions as assertion mode
-(except for :py:exc:`AssertionError`).
-Only the error message differs.
+.. content-tabs:: left-col
+
+    In optimised mode, assertions are completely removed from μSim.
+    There is no runtime overhead from checking debug mode versus optimised mode.
+
+.. content-tabs:: left-col
+
+    In addition to disabling assertions, rich exception messages are removed as well.
+    For example, erroneously using ``await time`` provides
+    the regular Python error message.
+
+.. content-tabs:: right-col
+
+    .. rubric:: Regular Python error messages in optimized mode
+
+    .. code:: none
+
+        TypeError: object Time can't be used in 'await' expression
+
+.. content-tabs:: left-col
+
+    Notably, optimised mode throws the same exceptions as assertion mode
+    (except for :py:exc:`AssertionError`).
+    Only the error message differs.

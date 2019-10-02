@@ -62,13 +62,10 @@ class ResourceLevels(Generic[T]):
             yield field, getattr(self, field)
 
     def __repr__(self):
-        return '%s(%s)' % (
-            self.__class__.__name__,
-            ', '.join(
-                '%s=%s' % (name, getattr(self, name))
-                for name in self.__fields__
-            )
+        content = ', '.join(
+            f'{key}={item}' for key, item in self
         )
+        return f'{self.__class__.__name__}({content})'
 
 
 def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
