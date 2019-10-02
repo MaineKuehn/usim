@@ -121,8 +121,8 @@ class PriorityRequest(Request):
     r"""
     Request usage of a ``resource`` with a given ``priority``
 
-    :param priority: relative priority of this request; smaller is chosen first
-    :param preempt: whether to replace a lower-priority request
+    :param priority: order of this request; smaller is chosen first
+    :param preempt: whether to replace a request that has worse priority
                     if the ``resource`` is congested
 
     By default, the ordering of priority of requests is determined by their
