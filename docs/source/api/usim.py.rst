@@ -86,7 +86,9 @@ Exceptions (:py:mod:`usim.py.exceptions`)
 Detailed Topics
 ---------------
 
-.. toctree::
-    :maxdepth: 2
+.. content-tabs:: left-col
 
-    usim.py.resources
+    .. toctree::
+        :maxdepth: 2
+
+        usim.py.resources
