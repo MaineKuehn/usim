@@ -101,9 +101,10 @@ class BaseResource(Generic[T]):
 
     This type codifies the basic semantics of :py:mod:`usim.py` resources:
     processes can :py:meth:`~.put` content into the resource or :py:meth:`~.get`
-    content out of the resource. Both actions return a :py:class:`~usim.py.events.Event`
-    which the process must ``yield``; once the event triggers, the process did
+    content out of the resource. Both actions return an
+    :py:class:`~usim.py.events.Event`; once the event triggers, the process did
     successfully get or put content into or out of the resource.
+    Processes should ``yield`` this even to wait for success of their request.
 
     .. code:: python3
 
@@ -180,7 +181,7 @@ class BaseResource(Generic[T]):
         """Create a request to get content out of the resource"""
         return Get(self)
 
-    def _trigger_put(self, get_event):
+    def _trigger_put(self, get_event: Get):
         """
         Trigger all possible put events
 
@@ -194,7 +195,7 @@ class BaseResource(Generic[T]):
         triggered = list(takewhile(self._do_put, self.put_queue))
         self.put_queue = self.put_queue[len(triggered):]
 
-    def _trigger_get(self, put_event):
+    def _trigger_get(self, put_event: Put):
         """
         Trigger all possible put events
 
@@ -209,8 +210,20 @@ class BaseResource(Generic[T]):
         self.get_queue = self.get_queue[len(triggered):]
 
     # NOTE: Per the SimPy spec, these are **PUBLIC**
-    def _do_get(self, get_event) -> bool:
-        raise NotImplementedError
+    def _do_get(self, get_event: Get) -> bool:
+        """
+        Trigger a :py:class:`~.Get` event if possible
 
-    def _do_put(self, get_event) -> bool:
-        raise NotImplementedError
+        :param get_event: the event that may be triggered
+        :return: whether another event may be triggered
+        """
+        raise NotImplementedError("'_do_get' must be overridden in subclasses")
+
+    def _do_put(self, get_event: Put) -> bool:
+        """
+        Trigger a :py:class:`~.Put` event if possible
+
+        :param get_event: the event that may be triggered
+        :return: whether another event may be triggered
+        """
+        raise NotImplementedError("'_do_put' must be overridden in subclasses")

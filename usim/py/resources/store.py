@@ -51,6 +51,8 @@ class Store(BaseResource[T]):
         In addition to adding or retrieving individual items, it is possible to
         subscribe to a queue by iteration:
 
+        .. code:: python3
+
             async for item in queue:
                 print(item)
 
@@ -105,6 +107,11 @@ class FilterStoreGet(StoreGet[T]):
         super().__init__(resource)
 
 
+def accept_any(item: Any) -> bool:
+    """Default :py:class:`~.FilterStore` filter to accept any item"""
+    return True
+
+
 class FilterStore(Store[T]):
     """
     Resource with a fixed ``capacity`` of slots for storing arbitrary objects
@@ -124,7 +131,7 @@ class FilterStore(Store[T]):
         super().__init__(env, capacity)
         self._items = []
 
-    def get(self, filter: Callable[[T], bool] = lambda item: True) -> FilterStoreGet[T]:
+    def get(self, filter: Callable[[T], bool] = accept_any) -> FilterStoreGet[T]:
         """Get an item out of the store that satisfies ``filter``"""
         return FilterStoreGet(self, filter)
 

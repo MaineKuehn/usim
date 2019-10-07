@@ -17,6 +17,33 @@ Resources synchronize processes by sharing or exchanging objects, data or owners
 :py:mod:`~usim.py.resources.base`      Common interface inherited by all resource types
 ====================================== ==========================================================================
 
+Just like the :py:mod:`usim.py`, :py:mod:`usim.py.resources` is a drop-in replacement
+for :py:mod:`simpy.resources`.
+It is possible to use :py:mod:`usim.py` resources both in :py:mod:`usim.py` processes
+as well as regular :py:mod:`usim` activities.
+
+.. content-tabs::
+
+    .. tab-container:: usim
+        :title: μSim
+
+        .. code:: python3
+
+            async def block(resource: Resource):
+                with resource.get() as request:
+                    await request
+                    await (time + 5)
+
+    .. tab-container:: simpy
+        :title: SimPy
+
+        .. code:: python3
+
+            def block(env, resource: Resource):
+                with resource.get() as request:
+                    yield request
+                    yield env.timeout(5)
+
 .. note::
 
     μSim only replicates the *public, documented* API of SimPy's resources.
@@ -42,10 +69,13 @@ resource in or out of the resource.
 .. autoclass:: usim.py.resources.base.BaseResource
     :members:
 
+    .. automethod:: _do_put
+    .. automethod:: _do_get
+
 Each request to
 :py:class:`~usim.py.resources.base.BaseResource.put` or
 :py:class:`~usim.py.resources.base.BaseResource.get`
-resources in or out of a resource is represented by a
+resources is represented by an
 :py:class:`~usim.py.events.Event`.
 It is possible, but not necessary, for a process/activity to ``yield``/``await``
 such a request to wait for its success.
