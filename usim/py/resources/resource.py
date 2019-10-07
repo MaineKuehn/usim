@@ -81,11 +81,13 @@ class Resource(BaseResource):
     # but instead fail with a follow-up AttributeError.
     # We raise said error *now* to have a better help message.
     def put(self):
+        """Not supported, use :py:meth:`~.request` instead"""
         raise AttributeError(
             f"cannot put/get {self.__class__.__name__}, use request/release instead"
         )
 
     def get(self):
+        """Not supported, use :py:meth:`~.release` instead"""
         raise AttributeError(
             f"cannot put/get {self.__class__.__name__}, use request/release instead"
         )
@@ -177,7 +179,14 @@ class PriorityResource(Resource):
 
 
 class Preempted(object):
-    """Information on a preemption, carried as the cause of an Interrupt"""
+    """
+    Information on a preemption, carried as the cause of an Interrupt
+
+    A process which did successfully :py:meth:`~.PreemptiveResource.request` a resource
+    may be preempted by a request of better priority.
+    The initial process then receives a :py:class:`~.Interrupt`, whose
+    :py:attr:`~.Interrupt.cause` is an instance of this class.
+    """
     __slots__ = 'by', 'usage_since', 'resource'
 
     def __init__(self, by: Process, usage_since: float, resource: 'PreemptiveResource'):
