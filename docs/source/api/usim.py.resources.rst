@@ -10,11 +10,12 @@
 μSim replicates all resource types provided by SimPy.
 Resources synchronize processes by sharing or exchanging objects, data or ownership.
 
-====================================== ====================================================================
+====================================== ==========================================================================
 :py:mod:`~usim.py.resources.resource`  Resources with a fixed ``capacity`` of usage slots
 :py:mod:`~usim.py.resources.container` Resources with ``capacity`` of continuous, indistinguishable content
+:py:mod:`~usim.py.resources.store`     Resources with a fixed ``capacity`` of slots for storing arbitrary objects
 :py:mod:`~usim.py.resources.base`      Common interface inherited by all resource types
-====================================== ====================================================================
+====================================== ==========================================================================
 
 .. note::
 
@@ -111,8 +112,8 @@ and preemption (:py:class:`~usim.py.resources.resource.PreemptiveResource`).
 .. autoclass:: usim.py.resources.resource.Preempted
     :members:
 
-Containers -- Permanent Resource Exchange
------------------------------------------
+Containers -- Continuous Resource Exchange
+------------------------------------------
 
 A ``Container`` models the exchange of resources between process:
 processes may
@@ -133,7 +134,7 @@ do not need to be conserved.
     temporary transfer of ownership.
 
 .. py:module:: usim.py.resources.container
-    :synopsis: Permanent Resource Exchange
+    :synopsis: Continuous Resource Exchange
 
 .. autoclass:: usim.py.resources.container.Container
     :members:
@@ -142,4 +143,37 @@ do not need to be conserved.
     :members:
 
 .. autoclass:: usim.py.resources.container.ContainerGet
+    :members:
+
+Stores -- Distinct Object Exchange
+----------------------------------
+
+The ``Store`` types implement various forms of queues:
+an ordered container from which items can be removed and added.
+Variants of the basic :py:class:`~usim.py.resources.store.Store`
+support item priorities (:py:class:`~usim.py.resources.store.PriorityStore`)
+and item filtering (:py:class:`~usim.py.resources.store.FilterStore`).
+
+.. py:module:: usim.py.resources.store
+    :synopsis: Distinct Object Exchange
+
+.. autoclass:: usim.py.resources.store.Store
+    :members:
+
+.. autoclass:: usim.py.resources.store.PriorityStore
+    :members:
+
+.. autoclass:: usim.py.resources.store.PriorityItem
+    :members:
+
+.. autoclass:: usim.py.resources.store.FilterStore
+    :members:
+
+.. autoclass:: usim.py.resources.store.StoreGet
+    :members:
+
+.. autoclass:: usim.py.resources.store.StorePut
+    :members:
+
+.. autoclass:: usim.py.resources.store.FilterStoreGet
     :members:
