@@ -111,8 +111,8 @@ and preemption (:py:class:`~usim.py.resources.resource.PreemptiveResource`).
 .. autoclass:: usim.py.resources.resource.Preempted
     :members:
 
-Container -- Permanent Resource Exchange
-----------------------------------------
+Containers -- Permanent Resource Exchange
+-----------------------------------------
 
 A ``Container`` models the exchange of resources between process:
 processes may
