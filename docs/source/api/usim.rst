@@ -14,6 +14,5 @@ Submodules
 
 .. toctree::
 
-   usim.basics
    usim.typing
 
