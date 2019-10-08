@@ -12,7 +12,7 @@
 
    source/tutorial/overview
    source/topics/overview
-   source/api/overview
+   source/api/usim
    source/api/usim.py
    source/glossary
 
