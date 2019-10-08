@@ -8,6 +8,9 @@ from ._primitives.locks import Lock
 from ._primitives.context import until, Scope, VolatileTaskClosed
 from ._primitives.task import TaskCancelled, TaskState, TaskClosed, CancelTask
 from ._primitives.concurrent_exception import Concurrent
+from ._basics.streams import Channel, Queue, StreamClosed
+from ._basics.tracked import Tracked
+from ._basics.resource import Capacities, Resources, ResourcesUnavailable
 
 
 __all__ = [
@@ -17,6 +20,8 @@ __all__ = [
     'TaskCancelled', 'VolatileTaskClosed', 'TaskClosed', 'TaskState', 'CancelTask',
     'Flag', 'Lock',
     'Concurrent',
+    'Channel', 'Queue', 'StreamClosed',
+    'Tracked', 'Capacities', 'Resources', 'ResourcesUnavailable',
 ]
 
 

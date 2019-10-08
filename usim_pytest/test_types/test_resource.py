@@ -3,7 +3,7 @@ import math
 from typing import Type
 
 from usim import Scope, time, until
-from usim.basics import Resources, Capacities, ResourcesUnavailable
+from usim import Resources, Capacities, ResourcesUnavailable
 from usim._basics.resource import BaseResources
 
 from ..utility import via_usim, assertion_mode

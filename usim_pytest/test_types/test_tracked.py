@@ -2,7 +2,7 @@ import operator
 import pytest
 
 from usim import Scope, time
-from usim.basics import Tracked
+from usim import Tracked
 
 from ..utility import via_usim, assertion_mode
 
