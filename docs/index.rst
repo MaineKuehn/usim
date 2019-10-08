@@ -13,8 +13,8 @@
    source/tutorial/overview
    source/topics/overview
    source/api/overview
+   source/api/usim.py
    source/glossary
-   source/api/modules
 
 μSim is a discrete-event simulation framework
 using the asynchronous programming features of Python.

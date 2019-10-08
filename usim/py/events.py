@@ -156,8 +156,8 @@ class Event(Generic[V]):
         assert self.callbacks is not None,\
             f'{self.__class__.__name__} can invoke callbacks only once'
         callbacks, self.callbacks = self.callbacks, None
-        for callback in callbacks:  # type: Event
-            callback.trigger(self)
+        for callback in callbacks:  # type: Callable[[E], None]
+            callback(self)
         value, exception = self._value
         if exception is not None and not self.defused:
             raise exception

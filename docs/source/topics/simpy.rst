@@ -16,7 +16,7 @@ SimPy Compatibility
     To allow running, integrating and migrating existing SimPy simulations,
     μSim has an inbuilt compatibility layer: the :py:mod:`usim.py` module
     provides most of the SimPy API. The only truly unsupported feature are scheduling
-    priorities - due to its high concurrency, μSim is optimised for FIFO scheduling.
+    priorities - due to its high concurrency, μSim is optimised for FIFO scheduling. [#prio]_
 
 Using μSim in a SimPy Simulation
 --------------------------------
@@ -232,5 +232,8 @@ Migrating from SimPy to μSim
 
 .. content-tabs:: left-col
 
+
+    .. [#prio] Of course, μSim allows implementing priorities in the simulation itself,
+               such as a :py:class:`~usim.py.resources.resource.PriorityResource`.
     .. _SimPy: https://simpy.readthedocs.io/
     .. _first SimPy example: https://simpy.readthedocs.io/en/latest/simpy_intro/basic_concepts.html
