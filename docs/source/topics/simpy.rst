@@ -1,3 +1,5 @@
+.. _simpy_compatibility:
+
 SimPy Compatibility
 ===================
 

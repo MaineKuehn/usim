@@ -10,6 +10,12 @@ Logically, the API can be divided into different topics, however.
 In addition, :py:mod:`usim.typing` allows for type annotations to statically
 verify simulations.
 
+.. hint::
+
+    μSim provides a :ref:`compatibility layer <simpy_compatibility>`
+    to the `SimPy`_ simulation framework.
+    The :py:mod:`usim.py` package is a drop-in replacement for :py:mod:`simpy`.
+
 Starting a Simulation
 ---------------------
 
@@ -35,3 +41,6 @@ Detailed Topics
     :maxdepth: 2
 
     timing
+    usim.typing
+
+.. _SimPy: https://simpy.readthedocs.io/
