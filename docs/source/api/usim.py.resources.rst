@@ -8,7 +8,7 @@
    :hidden:
 
 μSim replicates all resource types provided by SimPy.
-Resources synchronize processes by sharing or exchanging objects, data or ownership.
+Resources synchronize processes by sharing or exchanging objects, data, or ownership.
 
 ====================================== ==========================================================================
 :py:mod:`~usim.py.resources.resource`  Resources with a fixed ``capacity`` of usage slots
@@ -145,7 +145,7 @@ and preemption (:py:class:`~usim.py.resources.resource.PreemptiveResource`).
 Containers -- Continuous Resource Exchange
 ------------------------------------------
 
-A ``Container`` models the exchange of resources between process:
+A ``Container`` models the exchange of resources between processes:
 processes may
 produce resources and :py:meth:`~usim.py.resources.container.Container.put`
 them into the container, or

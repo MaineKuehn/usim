@@ -56,8 +56,7 @@ class BaseRequest(Event[T]):
         are no longer needed. This may happen when a process is interrupted
         while waiting for a request.
 
-
-        Cancelling is idempotent: if the request has already been triggered or canceled,
+        Cancelling is idempotent: If the request has already been triggered or canceled,
         :py:meth:`~.cancel` can still be called without error.
         """
         raise NotImplementedError
@@ -163,9 +162,9 @@ class BaseResource(Generic[T]):
     def __init__(self, env: Environment, capacity):
         self._env = env
         self._capacity = capacity
-        #: outstanding put events
+        #: pending put events
         self.put_queue = self.PutQueue()
-        #: outstanding get events
+        #: pending get events
         self.get_queue = self.GetQueue()
 
     @property
