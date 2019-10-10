@@ -1,7 +1,7 @@
 ---
 name: Bug report
 about: Report an error that should be fixed
-title: "[Bug]"
+title: "<Enter short description of observed bug>"
 labels: bug
 assignees: ''
 
