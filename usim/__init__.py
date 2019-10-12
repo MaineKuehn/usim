@@ -18,10 +18,11 @@ __all__ = [
     'time', 'eternity', 'instant', 'interval', 'delay',
     'until', 'Scope',
     'TaskCancelled', 'VolatileTaskClosed', 'TaskClosed', 'TaskState', 'CancelTask',
-    'Flag', 'Lock',
     'Concurrent',
+    'Flag', 'Tracked',
+    'Lock',
     'Channel', 'Queue', 'StreamClosed',
-    'Tracked', 'Capacities', 'Resources', 'ResourcesUnavailable',
+    'Capacities', 'Resources', 'ResourcesUnavailable',
 ]
 
 

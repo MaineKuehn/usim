@@ -20,7 +20,7 @@ verify simulations.
 Starting a Simulation
 ---------------------
 
-Simulations in μSim always defined based on a number of initial root
+Simulations in μSim are always defined based on a number of initial root
 :term:`activities <activity>`,
 which may branch out to more :term:`activities <activity>`.
 A simulation is started by calling :py:func:`usim.run`, passing in its
@@ -52,6 +52,100 @@ in ``async for`` block.
 
 :py:data:`usim.delay`
     Repeat after fixed delays, in addition to any time spent in a block.
+
+Branching and Multitasking
+--------------------------
+
+An :term:`activity` may not only ``await`` another,
+it may also run one or more :term:`activities <activity>` concurrently.
+This requires opening a scope in an ``async with`` context
+which defines the lifetime of child activities.
+
+:py:class:`usim.Scope`
+    An :term:`asynchronous context manager` which can concurrently
+    run :term:`activities <activity>` until it is closed.
+    Forcefully closed if an exception occurs
+    in the hosting :term:`activity` or a child.
+
+:py:func:`usim.until`
+    A :py:class:`~usim.Scope` that is also forcefully closed
+    when a specific notification triggers.
+
+Each child :term:`activity` is represented by a :py:class:`~usim.typing.Task`.
+These can be inspected for their current status,
+and various exceptions are unique to them.
+
+:py:class:`usim.TaskState`
+    Enum describing the possible :py:meth:`~usim.typing.Task.status`
+    of a :py:class:`~usim.typing.Task`.
+
+:py:exc:`usim.TaskClosed` and :py:exc:`usim.VolatileTaskClosed`
+    The exception value of a :py:class:`~usim.typing.Task` that was forcefully
+    closed by its :py:class:`~usim.Scope`.
+
+:py:exc:`usim.CancelTask` and :py:exc:`usim.TaskCancelled`
+    Exception used to :py:meth:`~usim.typing.Task.cancel`
+    a :py:class:`~usim.typing.Task`,
+    and the resulting exception value of the :py:class:`~usim.typing.Task`.
+
+During a :py:class:`usim.Scope`,
+multiple child activities may fail with an exception at the same time.
+The :py:class:`usim.Scope` collects and propagates all exceptions from child activities.
+
+:py:exc:`usim.Concurrent`
+    Exception that propagates all exceptions from child activities at once;
+    also occurs if only a single child activity fails.
+    Never includes an exception raised in the scope itself.
+
+Synchronising Conditions
+------------------------
+
+μSim allows to model any boolean that may change at a later time
+as a :py:class:`~usim.typing.Condition`.
+These can be combined and negated to derive new :py:class:`~usim.typing.Condition`\ s.
+
+:py:class:`usim.Flag`
+    A :py:class:`~usim.typing.Condition` with a fixed value which can be explicitly
+    :py:meth:`~usim.Flag.set` to either :py:data:`True` or :py:data:`False`.
+
+It is common for types to return a :py:class:`~usim.typing.Condition` instead of
+a plain :py:class:`bool`.
+
+:py:class:`usim.Tracked`
+    A mutable value which can be explicitly :py:meth:`~usim.Tracked.set` or modified
+    using arithmetic operators, such as ``+``, ``-``, ``*`` or ``/``.
+    Comparison operators, such as ``==``, ``<=`` or ``>``, provide
+    a :py:class:`~usim.typing.Condition` which triggers once the value matches.
+
+Sharing State
+-------------
+
+:py:class:`usim.Lock`
+    Ensure mutually exclusive access by for multiple activities.
+
+:py:class:`usim.Channel`
+    Broadcast messages to multiple subscribers.
+
+:py:class:`usim.Queue`
+    Send and receive unique messages.
+
+:py:class:`usim.StreamClosed`
+    Exception for operations not support by a closed
+    :py:class:`~usim.Channel` or :py:class:`~usim.Queue`
+
+Modelling Resources
+-------------------
+
+:py:class:`usim.Resources`
+    Supply of named resources which can be temporarily borrowed
+    or permanently produced/consumed.
+
+:py:class:`usim.Capacities`
+    Fixed supply of named resources which can be temporarily borrowed.
+
+:py:class:`usim.ResourcesUnavailable`
+    Exception raised when an attempt to :py:meth:`~usim.Resources.claim`
+    resources fails.
 
 Detailed Topics
 ---------------
