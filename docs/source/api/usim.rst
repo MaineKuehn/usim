@@ -129,7 +129,7 @@ Sharing State
 :py:class:`usim.Queue`
     Send and receive unique messages.
 
-:py:class:`usim.StreamClosed`
+:py:exc:`usim.StreamClosed`
     Exception for operations not support by a closed
     :py:class:`~usim.Channel` or :py:class:`~usim.Queue`
 
@@ -143,7 +143,7 @@ Modelling Resources
 :py:class:`usim.Capacities`
     Fixed supply of named resources which can be temporarily borrowed.
 
-:py:class:`usim.ResourcesUnavailable`
+:py:exc:`usim.ResourcesUnavailable`
     Exception raised when an attempt to :py:meth:`~usim.Resources.claim`
     resources fails.
 
@@ -154,6 +154,10 @@ Detailed Topics
     :maxdepth: 2
 
     usim_timing
+    usim_branching
+    usim_synchronising
+    usim_sharing
+    usim_resources
     usim.typing
 
 .. _SimPy: https://simpy.readthedocs.io/
