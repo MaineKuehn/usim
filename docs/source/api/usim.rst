@@ -42,7 +42,7 @@ of a simulation.
     A point in time indefinitely far into the future.
 
 :py:data:`usim.instant`
-    A point in time from the current moment.
+    A point in time indistinguishable from the current moment.
 
 In addition, recurring actions can be repeated at specific delays or intervals
 in ``async for`` block.
