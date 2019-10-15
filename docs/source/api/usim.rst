@@ -6,7 +6,7 @@
 
 The :py:mod:`usim` package provides access to the entire μSim API in one
 convenient, flat namespace.
-Logically, the API can be divided into different topics, however.
+Logically, the API can be divided into different topics.
 In addition, :py:mod:`usim.typing` allows for type annotations to statically
 verify simulations.
 
@@ -39,7 +39,7 @@ of a simulation.
     For example, ``await (time + 20)`` delays for 20 time units.
 
 :py:data:`usim.eternity`
-    A point in time indefinitely far into the future
+    A point in time indefinitely far into the future.
 
 :py:data:`usim.instant`
     A point in time from the current moment.
@@ -64,7 +64,7 @@ which defines the lifetime of child activities.
 :py:class:`usim.Scope`
     An :term:`asynchronous context manager` which can concurrently
     run :term:`activities <activity>` until it is closed.
-    Forcefully closed if an exception occurs
+    A scope is forcefully closed if an exception occurs
     in the hosting :term:`activity` or a child.
 
 :py:func:`usim.until`
@@ -121,7 +121,7 @@ Sharing State
 -------------
 
 :py:class:`usim.Lock`
-    Ensure mutually exclusive access by for multiple activities.
+    Ensure mutually exclusive access for multiple activities.
 
 :py:class:`usim.Channel`
     Broadcast messages to multiple subscribers.
@@ -130,7 +130,7 @@ Sharing State
     Send and receive unique messages.
 
 :py:exc:`usim.StreamClosed`
-    Exception for operations not support by a closed
+    Exception for operations not supported by a closed
     :py:class:`~usim.Channel` or :py:class:`~usim.Queue`
 
 Modelling Resources
