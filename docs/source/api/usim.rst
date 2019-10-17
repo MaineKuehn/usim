@@ -68,12 +68,12 @@ which defines the lifetime of child activities.
     in the hosting :term:`activity` or a child.
 
 :py:func:`usim.until`
-    A :py:class:`~usim.Scope` that is also forcefully closed
-    when a specific notification triggers.
+    A :py:class:`~usim.Scope` that is forcefully closed
+    if a specific notification triggers.
 
 Each child :term:`activity` is represented by a :py:class:`~usim.typing.Task`.
-These can be inspected for their current status,
-and various exceptions are unique to them.
+Tasks can be inspected for their current status,
+and various exceptions only occur when interacting with tasks.
 
 :py:class:`usim.TaskState`
     Enum describing the possible :py:meth:`~usim.typing.Task.status`
@@ -120,6 +120,11 @@ a plain :py:class:`bool`.
 Sharing State
 -------------
 
+Concurrently running :term:`activities <activity>` frequently need to access,
+modify or exchange state between them.
+μSim provides several types to easily write :term:`activities <activity>` that
+safely share state.
+
 :py:class:`usim.Lock`
     Ensure mutually exclusive access for multiple activities.
 
@@ -135,6 +140,10 @@ Sharing State
 
 Modelling Resources
 -------------------
+
+Simulations commonly revolve around resources which are produced/consumed,
+blocked or waited for.
+μSim implements a range of generic, read-to-use resources for various use-cases.
 
 :py:class:`usim.Resources`
     Supply of named resources which can be temporarily borrowed
