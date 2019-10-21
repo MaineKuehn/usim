@@ -121,7 +121,7 @@ Sharing State
 -------------
 
 Concurrently running :term:`activities <activity>` frequently need to access,
-modify or exchange state between them.
+modify or exchange state.
 μSim provides several types to easily write :term:`activities <activity>` that
 safely share state.
 
@@ -143,7 +143,7 @@ Modelling Resources
 
 Simulations commonly revolve around resources which are produced/consumed,
 blocked or waited for.
-μSim implements a range of generic, read-to-use resources for various use-cases.
+μSim implements a range of generic, ready-to-use resources for various use-cases.
 
 :py:class:`usim.Resources`
     Supply of named resources which can be temporarily borrowed
