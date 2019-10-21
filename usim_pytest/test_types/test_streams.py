@@ -2,7 +2,7 @@ import pytest
 from typing import Type
 
 from usim import time, Scope
-from usim.basics import Queue, Channel, StreamClosed
+from usim import Queue, Channel, StreamClosed
 from usim.typing import Stream
 
 from ..utility import via_usim, turnstamp

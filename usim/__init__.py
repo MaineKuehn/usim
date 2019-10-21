@@ -6,16 +6,23 @@ from ._primitives.timing import Time, Eternity, Instant, interval, delay
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
 from ._primitives.context import until, Scope, VolatileTaskClosed
-from ._primitives.task import TaskCancelled, TaskState, TaskClosed
+from ._primitives.task import TaskCancelled, TaskState, TaskClosed, CancelTask
 from ._primitives.concurrent_exception import Concurrent
+from ._basics.streams import Channel, Queue, StreamClosed
+from ._basics.tracked import Tracked
+from ._basics.resource import Capacities, Resources, ResourcesUnavailable
 
 
 __all__ = [
     'run',
     'time', 'eternity', 'instant', 'interval', 'delay',
-    'until', 'Scope', 'TaskCancelled', 'VolatileTaskClosed', 'TaskClosed', 'TaskState',
-    'Flag', 'Lock',
+    'until', 'Scope',
+    'TaskCancelled', 'VolatileTaskClosed', 'TaskClosed', 'TaskState', 'CancelTask',
     'Concurrent',
+    'Flag', 'Tracked',
+    'Lock',
+    'Channel', 'Queue', 'StreamClosed',
+    'Capacities', 'Resources', 'ResourcesUnavailable',
 ]
 
 
