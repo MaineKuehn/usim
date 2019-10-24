@@ -15,7 +15,9 @@ class Pipe:
         self.throughput = throughput
         self._subscribed = {}
 
-    def transfer(self, total: float, throughput: Optional[float] = None) -> Awaitable:
+    async def transfer(
+            self, total: float, throughput: Optional[float] = None
+    ) -> Awaitable:
         """
         Wait until some total volume has been transferred
 
@@ -29,7 +31,7 @@ class Pipe:
         """
         raise NotImplementedError
 
-    def stream(
+    async def stream(
             self,
             each: float,
             total: float = float('inf'),
@@ -56,6 +58,6 @@ class Pipe:
             progress = 0
             while progress < total:
                 progress += await self.transfer(
-                    total=min(each, total-progress), throughput=throughput
+                    total=min(each, total - progress), throughput=throughput
                 )
                 yield
