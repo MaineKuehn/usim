@@ -1,12 +1,7 @@
-from typing import AsyncIterable, Optional, NamedTuple, List, Dict
+from typing import AsyncIterable, Optional, Dict
 
-from .._primitives.flag import Flag
-
-
-class Transfer(NamedTuple):
-    total: float
-    throughput: float
-    transferred: List[float]
+from .._primitives.notification import Notification, suspend
+from .._core.loop import __LOOP_STATE__
 
 
 class Pipe:
@@ -21,7 +16,9 @@ class Pipe:
     def __init__(self, throughput: float):
         assert throughput > 0
         self.throughput = throughput
-        self._subscribed: Dict[Flag, Transfer] = {}
+        self._congested = Notification()
+        self._delay_scale = 1.0
+        self._subscriptions: Dict[object, float] = {}
 
     async def transfer(
             self, total: float, throughput: Optional[float] = None
@@ -34,11 +31,39 @@ class Pipe:
             await network.transfer(total=50e9)
 
         :param total: absolute volume to transfer before resuming
-        :param throughput: maximum throughput at
+        :param throughput: maximum throughput
         :return:
         """
-        notification = Flag()
-        await notification
+        transferred = 0
+        identifier = object()
+        throughput = throughput if throughput is not None else self.throughput
+        self._add_subscriber(identifier, throughput)
+        while transferred < total:
+            window_start = __LOOP_STATE__.LOOP.time
+            window_throughput = throughput * self._delay_scale
+            with self._congested.__subscription__():
+                await suspend(
+                    delay=(total - transferred) / window_throughput, until=None,
+                )
+            window_end = __LOOP_STATE__.LOOP.time
+            transferred += (window_end - window_start) * window_throughput
+
+    def _add_subscriber(self, identifier, throughput):
+        self._subscriptions[identifier] = throughput
+        self._throttle_subscribers()
+
+    def _del_subscriber(self, identifier):
+        del self._subscriptions[identifier]
+        self._throttle_subscribers()
+
+    def _throttle_subscribers(self):
+        desired_throughput = sum(self._subscriptions.values())
+        if desired_throughput > self.throughput:
+            self._delay_scale = desired_throughput / self.throughput
+            self._congested.__awake_all__()
+        elif self._delay_scale != 1.0:
+            self._delay_scale = 1.0
+            self._congested.__awake_all__()
 
     async def stream(
             self,
@@ -64,9 +89,9 @@ class Pipe:
                 await self.transfer(total=each, throughput=throughput)
                 yield
         else:
-            progress = 0
-            while progress < total:
-                progress += await self.transfer(
-                    total=min(each, total - progress), throughput=throughput
-                )
+            chunks, remainder = divmod(total, each)
+            for _ in range(int(chunks)):
+                await self.transfer(total=each, throughput=throughput)
                 yield
+            await self.transfer(total=remainder, throughput=throughput)
+            yield
