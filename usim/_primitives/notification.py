@@ -1,4 +1,4 @@
-from typing import List, Tuple, Coroutine
+from typing import List, Tuple, Coroutine, Optional
 from contextlib import contextmanager
 
 from .._core.loop import Interrupt, __LOOP_STATE__, __HIBERNATE__
@@ -33,7 +33,7 @@ async def postpone():
         wake_up.revoke()
 
 
-async def suspend(*, delay: float, until: float):
+async def suspend(*, delay: Optional[float], until: Optional[float]):
     """
     Suspend a coroutine until a future time step
 
