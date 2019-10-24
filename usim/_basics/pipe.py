@@ -1,4 +1,12 @@
-from typing import Awaitable, AsyncIterable, Optional
+from typing import AsyncIterable, Optional, NamedTuple, List, Dict
+
+from .._primitives.flag import Flag
+
+
+class Transfer(NamedTuple):
+    total: float
+    throughput: float
+    transferred: List[float]
 
 
 class Pipe:
@@ -13,11 +21,11 @@ class Pipe:
     def __init__(self, throughput: float):
         assert throughput > 0
         self.throughput = throughput
-        self._subscribed = {}
+        self._subscribed: Dict[Flag, Transfer] = {}
 
     async def transfer(
             self, total: float, throughput: Optional[float] = None
-    ) -> Awaitable:
+    ):
         """
         Wait until some total volume has been transferred
 
@@ -29,7 +37,8 @@ class Pipe:
         :param throughput: maximum throughput at
         :return:
         """
-        raise NotImplementedError
+        notification = Flag()
+        await notification
 
     async def stream(
             self,
