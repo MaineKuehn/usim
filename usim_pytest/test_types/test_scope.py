@@ -211,3 +211,17 @@ class TestScoping:
         with pytest.raises(RuntimeError):
             scope.do(payload)
         assert inspect.getcoroutinestate(payload) == inspect.CORO_CLOSED
+
+    @via_usim
+    async def test_close_volatile(self):
+        """All volatile children are closed at end of scope"""
+        async def activity():
+            await (time + 10)
+
+        async with Scope() as scope:
+            volatile_children = [scope.do(activity(), volatile=True) for _ in range(5)]
+            for child in volatile_children:
+                assert not child.done
+        assert (time == 0)
+        for child in volatile_children:
+            assert child.done
