@@ -47,6 +47,7 @@ class Pipe:
                 )
             window_end = __LOOP_STATE__.LOOP.time
             transferred += (window_end - window_start) * window_throughput
+        self._del_subscriber(identifier)
 
     def _add_subscriber(self, identifier, throughput):
         self._subscriptions[identifier] = throughput
