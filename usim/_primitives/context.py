@@ -222,13 +222,13 @@ class Scope:
     def _close_children(self):
         """Forcefully close all child non-volatile tasks"""
         reason = TaskClosed("closed at end of scope '%s'" % self)
-        for child in self._children:
+        for child in self._children.copy():
             child.__close__(reason=reason)
 
     def _close_volatile(self):
         """Forcefully close all volatile child tasks"""
         reason = VolatileTaskClosed("closed at end of scope '%s'" % self)
-        for child in self._volatile_children:
+        for child in self._volatile_children.copy():
             child.__close__(reason=reason)
 
     async def __aenter__(self):
