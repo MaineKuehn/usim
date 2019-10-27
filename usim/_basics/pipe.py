@@ -6,12 +6,7 @@ from .._core.loop import __LOOP_STATE__
 
 class Pipe:
     """
-    .. code:: python3
-
-        network = Pipe(throughput=100)
-
-        async with network.block(throughput=50):
-            await network.transfer(10000, throughput=100)
+    Shared handle to transport continuous volumes with a maximum total throughput
     """
     def __init__(self, throughput: float):
         assert throughput > 0
