@@ -17,12 +17,12 @@ class Pipe:
         assert throughput > 0
         self.throughput = throughput
         self._congested = Notification()
-        self._delay_scale = 1.0
+        self._throughput_scale = 1.0
         self._subscriptions: Dict[object, float] = {}
 
     async def transfer(
             self, total: float, throughput: Optional[float] = None
-    ):
+    ) -> None:
         """
         Wait until some total volume has been transferred
 
@@ -32,7 +32,6 @@ class Pipe:
 
         :param total: absolute volume to transfer before resuming
         :param throughput: maximum throughput
-        :return:
         """
         transferred = 0
         identifier = object()
@@ -40,7 +39,7 @@ class Pipe:
         self._add_subscriber(identifier, throughput)
         while transferred < total:
             window_start = __LOOP_STATE__.LOOP.time
-            window_throughput = throughput * self._delay_scale
+            window_throughput = throughput * self._throughput_scale
             with self._congested.__subscription__():
                 await suspend(
                     delay=(total - transferred) / window_throughput, until=None,
@@ -60,10 +59,10 @@ class Pipe:
     def _throttle_subscribers(self):
         desired_throughput = sum(self._subscriptions.values())
         if desired_throughput > self.throughput:
-            self._delay_scale = desired_throughput / self.throughput
+            self._throughput_scale = self.throughput / desired_throughput
             self._congested.__awake_all__()
-        elif self._delay_scale != 1.0:
-            self._delay_scale = 1.0
+        elif self._throughput_scale != 1.0:
+            self._throughput_scale = 1.0
             self._congested.__awake_all__()
 
     async def stream(
@@ -73,7 +72,7 @@ class Pipe:
             throughput: Optional[float] = None,
     ) -> AsyncIterable:
         """
-        Wait between transferring chunks of some total volume
+        Iteratively transfer chunks of some total volume
 
         .. code:: python3
 
