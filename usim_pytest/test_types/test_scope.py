@@ -140,11 +140,17 @@ class TestExceptions:
 
     @via_usim
     async def test_fail_nested(self):
+        """Nested failures may be handled"""
         async def inner_raise(exc: BaseException):
             async with Scope() as scope:
                 scope.do(async_raise(exc))
 
+        # raising is valid
         with pytest.raises(Concurrent):
+            async with Scope() as scope:
+                scope.do(inner_raise(KeyError()))
+        # handling is valid
+        with pytest.raises(Concurrent[Concurrent[KeyError]]):
             async with Scope() as scope:
                 scope.do(inner_raise(KeyError()))
 
