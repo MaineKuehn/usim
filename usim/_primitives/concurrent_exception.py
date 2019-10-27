@@ -157,13 +157,13 @@ class MetaConcurrent(type):
             return cls
         # Cls[item]
         elif type(item) is not tuple:
-            assert issubclass(item, Exception),\
+            assert issubclass(item, (Exception, cls)),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
             item = (item,)
         # Cls[item1, item2]
         else:
             assert all(
-                (child is ...) or issubclass(child, Exception) for child in item
+                (child is ...) or issubclass(child, (Exception, cls)) for child in item
             ),\
                 f'{cls.__name__!r} may only be specialised by Exception subclasses'
         return cls._get_specialisation(item)
