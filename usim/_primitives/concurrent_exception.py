@@ -157,15 +157,19 @@ class MetaConcurrent(type):
             return cls
         # Cls[item]
         elif type(item) is not tuple:
-            assert issubclass(item, (Exception, cls)),\
-                f'{cls.__name__!r} may only be specialised by Exception subclasses'
+            assert issubclass(item, (Exception, cls)), (
+                f'{cls.__name__!r} may only be specialised by Exception subclasses, '
+                f'not {item}'
+            )
             item = (item,)
         # Cls[item1, item2]
         else:
             assert all(
                 (child is ...) or issubclass(child, (Exception, cls)) for child in item
-            ),\
-                f'{cls.__name__!r} may only be specialised by Exception subclasses'
+            ), (
+                f'{cls.__name__!r} may only be specialised by Exception subclasses, '
+                f'not {item}'
+            )
         return cls._get_specialisation(item)
 
     def _get_specialisation(cls, item):
@@ -182,9 +186,12 @@ class MetaConcurrent(type):
         except KeyError:
             inclusive = ... in unique_spec
             specialisations = tuple(child for child in unique_spec if child is not ...)
-            spec = ", ".join(  # the specialisation string "KeyError, IndexError, ..."
+            # the specialisation string "KeyError, IndexError, ..."
+            spec = ", ".join(
                 child.__name__ for child in specialisations
             ) + (', ...' if inclusive else '')
+            # the specialised subclass, as in
+            #
             # class 'cls.__name__[spec]'(cls, specialisations, inclusive):
             #   pass
             #
