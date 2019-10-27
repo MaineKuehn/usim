@@ -93,5 +93,6 @@ class Pipe:
             for _ in range(int(chunks)):
                 await self.transfer(total=each, throughput=throughput)
                 yield
-            await self.transfer(total=remainder, throughput=throughput)
-            yield
+            if remainder:
+                await self.transfer(total=remainder, throughput=throughput)
+                yield
