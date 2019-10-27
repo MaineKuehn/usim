@@ -3,8 +3,8 @@ from usim import time, Pipe, Scope
 from ..utility import via_usim
 
 
-async def aenumerate(aiterable):
-    count = 0
+async def aenumerate(aiterable, start=0):
+    count = start
     async for item in aiterable:
         yield count, item
         count += 1
@@ -38,19 +38,19 @@ class TestPipe:
     @via_usim
     async def test_stream_uncontested(self):
         pipe = Pipe(throughput=2)
-        async for idx, _ in aenumerate(pipe.stream(0.5, 1)):
+        async for idx, _ in aenumerate(pipe.stream(each=0.5, total=1, throughput=1), 1):
             assert (time == idx * 0.5)
-        async for idx, _ in aenumerate(pipe.stream(0.5, 2)):
-            assert (time == idx * 0.25)
+        async for idx, _ in aenumerate(pipe.stream(each=0.5, total=1), 1):
+            assert (time == idx * 0.25 + 1)
 
     @via_usim
     async def test_stream_contested(self):
         async def assert_stream(stream, delta):
-            async for idx, _ in aenumerate(stream):
+            async for idx, _ in aenumerate(stream, 1):
                 assert (time == idx * delta)
 
         pipe = Pipe(throughput=2)
         async with Scope() as scope:
-            scope.do(assert_stream(pipe.stream(1, 10), 1))
-            scope.do(assert_stream(pipe.stream(1, 10), 1))
+            scope.do(assert_stream(pipe.stream(each=1, total=10), 1))
+            scope.do(assert_stream(pipe.stream(each=1, total=10), 1))
         assert (time == 10)
