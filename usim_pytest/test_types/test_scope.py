@@ -138,6 +138,16 @@ class TestExceptions:
                     scope.do(async_raise(KeyError(), 0))
                     raise exc_type
 
+    @via_usim
+    async def test_fail_nested(self):
+        async def inner_raise(exc: BaseException):
+            async with Scope() as scope:
+                scope.do(async_raise(exc))
+
+        with pytest.raises(Concurrent):
+            async with Scope() as scope:
+                scope.do(inner_raise(KeyError()))
+
 
 class TestScoping:
     @via_usim
