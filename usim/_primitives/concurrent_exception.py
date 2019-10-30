@@ -316,3 +316,25 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
         return \
             f'<object usim.{self.__class__.__name__} '\
             f'of {", ".join(map(repr, self.children))}>'
+
+    def flattened(self) -> 'Concurrent':
+        """
+        Collapse nested Concurrent exceptions
+
+        Recursively collapses nested ``Concurrent`` exceptions to provide a single
+        ``Concurrent`` exception containing all :py:attr:`~.children` of the hierarchy.
+        For example, flattening a ``Concurrent(Concurrent(KeyError()), IndexError())``
+        provides a ``Concurrent(KeyError(), IndexError())``.
+        """
+        if Concurrent not in self.__specialisations__:
+            return self
+        leaves = []
+        for child in self.children:
+            if isinstance(child, Concurrent):
+                leaves.extend(child.flattened().children)
+            else:
+                leaves.append(child)
+        flat = Concurrent(*leaves)
+        flat.__cause__ = self.__cause__
+        flat.__context__ = self.__context__
+        return flat
