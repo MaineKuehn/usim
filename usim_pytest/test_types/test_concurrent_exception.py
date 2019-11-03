@@ -126,3 +126,26 @@ class TestConcurrent:
         assert not issubclass(
             Concurrent[KeyError, LookupError], Concurrent[KeyError, RuntimeError]
         )
+
+    def test_flattened_type(self):
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError())).flattened()), Concurrent[KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), KeyError()).flattened()),
+            Concurrent[KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), IndexError()).flattened()),
+            Concurrent[KeyError, IndexError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(LookupError()), IndexError()).flattened()),
+            Concurrent[LookupError, IndexError]
+        )
+
+    def test_flattened_value(self):
+        children = KeyError(), KeyError(), IndexError()
+        assert Concurrent(
+            Concurrent(children[0]), *children[1:]
+        ).flattened().children == children
