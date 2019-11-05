@@ -201,6 +201,28 @@ Handling Multiple Exceptions
     Finally, we recommend using ``Concurrent[...]`` only if you want to suppress
     concurrent exceptions unconditionally.
 
+Propagating Exceptions Best-Practices
+-------------------------------------
+
+.. content-tabs:: left-col
+
+    Whether an :term:`activity` uses concurrency or not is usually not obvious.
+    Unless explicitly documented, a :py:exc:`~usim.Concurrent` exception propagating
+    out of an :term:`activity` is likely unexpected.
+    As such, avoid propagating :py:exc:`~usim.Concurrent` exceptions whenever possible!
+
+    All abstractions in μSim convert internal :py:exc:`~usim.Concurrent` exceptions
+    to regular exceptions.
+    Only :py:class:`~usim.Scope` and derived types may raise
+    :py:exc:`~usim.Concurrent` exceptions when exiting an ``async with`` context.
+    The intention is to hide implementation details,
+    while allowing full control on expected concurrency.
+
+    We strongly recommend to similarly avoid propagating
+    :py:exc:`~usim.Concurrent` exceptions if possible.
+    When unavoidable, do not expose nested concurrency but
+    propagate a :py:meth:`~usim.Concurrent.flattened` exception if necessary.
+
 
     .. [#debug] For the use of :py:exc:`AssertionError` by μSim,
                 see also :doc:`./debug`.
