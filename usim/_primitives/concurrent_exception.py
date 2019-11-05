@@ -327,7 +327,7 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
         For example, flattening a ``Concurrent(Concurrent(KeyError()), IndexError())``
         provides a ``Concurrent(KeyError(), IndexError())``.
         """
-        if not self.__specialisations__:
+        if not any(isinstance(exc, Concurrent) for exc in self.children):
             return self
         leaves = []
         for child in self.children:
