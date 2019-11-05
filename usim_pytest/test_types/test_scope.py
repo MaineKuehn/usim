@@ -153,6 +153,16 @@ class TestExceptions:
         with pytest.raises(Concurrent[Concurrent[KeyError]]):
             async with Scope() as scope:
                 scope.do(inner_raise(KeyError()))
+        with pytest.raises(Concurrent[Concurrent]):
+            async with Scope() as scope:
+                scope.do(inner_raise(KeyError()))
+        with pytest.raises(Concurrent[Concurrent]):
+            # this layer is expected to let the exception pass through
+            try:
+                async with Scope() as scope:
+                    scope.do(inner_raise(KeyError()))
+            except Concurrent[Concurrent[IndexError]]:
+                assert False
 
 
 class TestScoping:

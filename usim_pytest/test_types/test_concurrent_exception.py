@@ -144,6 +144,23 @@ class TestConcurrent:
             Concurrent[LookupError, IndexError]
         )
 
+    def test_unflattend_type(self):
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()))), Concurrent[Concurrent[KeyError]]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), KeyError())),
+            Concurrent[Concurrent[KeyError], KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), IndexError())),
+            Concurrent[Concurrent[KeyError], IndexError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(LookupError()), IndexError())),
+            Concurrent[Concurrent[LookupError], IndexError]
+        )
+
     def test_flattened_value(self):
         children = KeyError(), KeyError(), IndexError()
         assert Concurrent(
