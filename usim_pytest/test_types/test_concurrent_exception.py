@@ -10,6 +10,11 @@ class FakeConcurrent:
 
 class TestConcurrent:
     """Test the semantics of ``usim.Concurrent``"""
+    def test_misuse(self):
+        base_case = Concurrent[KeyError]
+        with pytest.raises(TypeError):
+            base_case[IndexError]
+
     def test_generic(self):
         """Generic ``Concurrent`` is a catch-all"""
         with pytest.raises(Concurrent):
@@ -128,6 +133,7 @@ class TestConcurrent:
         )
 
     def test_flattened_type(self):
+        """Flattening ``Concurrent[[Concurrent[a], b, ...]`` type-checks to flat case"""
         assert issubclass(
             type(Concurrent(Concurrent(KeyError())).flattened()), Concurrent[KeyError]
         )
@@ -152,6 +158,7 @@ class TestConcurrent:
         )
 
     def test_unflattend_type(self):
+        """Unflattened ``Concurrent[[Concurrent[a], b, ...]`` type-checks precisely"""
         assert issubclass(
             type(Concurrent(Concurrent(KeyError()))), Concurrent[Concurrent[KeyError]]
         )
