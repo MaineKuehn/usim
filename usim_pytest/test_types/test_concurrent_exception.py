@@ -143,6 +143,13 @@ class TestConcurrent:
             type(Concurrent(Concurrent(LookupError()), IndexError()).flattened()),
             Concurrent[LookupError, IndexError]
         )
+        assert issubclass(
+            type(Concurrent(KeyError()).flattened()), Concurrent[KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError())).flattened().flattened()),
+            Concurrent[KeyError],
+        )
 
     def test_unflattend_type(self):
         assert issubclass(
