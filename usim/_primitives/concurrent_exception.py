@@ -14,7 +14,7 @@ class MetaConcurrent(type):
     # metaclass instance fields - i.e. class fields
     # used to define specialisations of a base type
     inclusive: bool
-    specialisations: Optional[Tuple[Type[Exception]]]
+    specialisations: 'Optional[Tuple[Type[Union[Concurrent, Exception]], ...]]'
     template: 'MetaConcurrent'
     __specialisations__: WeakValueDictionary
 
@@ -34,7 +34,7 @@ class MetaConcurrent(type):
         bases: Tuple[Type, ...],
         namespace: Dict[str, Any],
         specialisations:
-            Optional[Tuple[Type[Exception], ...]] = None,
+            'Optional[Tuple[Type[Union[Concurrent, Exception]], ...]]' = None,
         inclusive: bool = True,
         **kwargs,
     ):
@@ -142,8 +142,9 @@ class MetaConcurrent(type):
         item:  # [Exception] or [...] or [Exception, ...]
             Union[
                 Type[Exception],
+                'Type[Concurrent]',
                 'ellipsis',
-                Tuple[Union[Type[Exception], 'ellipsis'], ...]
+                'Tuple[Union[Type[Concurrent], Type[Exception], "ellipsis"], ...]',
             ]
     ):
         """``cls[item]`` - used to specialise ``cls`` with ``item``"""
@@ -291,11 +292,11 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
     #: Basic template of specialisation
     template: ClassVar[MetaConcurrent]
     #: Exceptions that occurred concurrently
-    children: Tuple[Exception, ...]
+    children: 'Tuple[Union[Concurrent, Exception], ...]'
 
     # __new__ automatically specialises Concurrent to match its children.
     # Concurrent(A(), B()) => Concurrent[A, B](A(), B())
-    def __new__(cls: 'Type[Concurrent]', *children: Exception):
+    def __new__(cls: 'Type[Concurrent]', *children: 'Union[Concurrent, Exception]'):
         if not children:
             assert cls.specialisations is None,\
                 f"specialisation {cls.specialisations} does not match"\
@@ -304,7 +305,7 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
         special_cls = cls[tuple(type(child) for child in children)]
         return super().__new__(special_cls)
 
-    def __init__(self, *children: Exception):
+    def __init__(self, *children: 'Union[Concurrent, Exception]'):
         super().__init__(children)
         self.children = children
 
