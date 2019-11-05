@@ -221,7 +221,7 @@ Propagating Exceptions Best-Practices
     We strongly recommend to similarly avoid propagating
     :py:exc:`~usim.Concurrent` exceptions if possible.
     When unavoidable, do not expose nested concurrency but
-    propagate a :py:meth:`~usim.Concurrent.flattened` exception if necessary.
+    propagate a :py:meth:`~usim.Concurrent.flattened` exception.
 
 
     .. [#debug] For the use of :py:exc:`AssertionError` by μSim,
