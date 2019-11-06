@@ -22,6 +22,18 @@ class TestPipe:
             scope.do(pipe.transfer(total=1, throughput=1))
             scope.do(pipe.transfer(total=1, throughput=1))
         assert (time == 3)
+        async with Scope() as scope:
+            scope.do(pipe.transfer(total=0.5, throughput=0.5))
+            scope.do(pipe.transfer(total=0.5, throughput=0.5))
+            scope.do(pipe.transfer(total=0.5, throughput=0.5))
+            scope.do(pipe.transfer(total=0.5, throughput=0.5))
+        assert (time == 4)
+        async with Scope() as scope:
+            scope.do(pipe.transfer(total=0.5, throughput=0.5))
+            scope.do(pipe.transfer(total=0.5, throughput=0.5))
+            scope.do(pipe.transfer(total=0.25, throughput=0.5))
+            scope.do(pipe.transfer(total=0.25, throughput=0.5))
+        assert (time == 5)
 
     @via_usim
     async def test_transfer_contested(self):
@@ -34,3 +46,15 @@ class TestPipe:
             scope.do(pipe.transfer(total=1, throughput=2))
             scope.do(pipe.transfer(total=1, throughput=2))
         assert (time == 3)
+        async with Scope() as scope:
+            scope.do(pipe.transfer(total=1, throughput=2))
+            scope.do(pipe.transfer(total=1, throughput=2))
+            scope.do(pipe.transfer(total=1, throughput=2))
+            scope.do(pipe.transfer(total=1, throughput=2))
+        assert (time == 5)
+        async with Scope() as scope:
+            scope.do(pipe.transfer(total=2, throughput=2))
+            scope.do(pipe.transfer(total=2, throughput=2))
+            scope.do(pipe.transfer(total=1, throughput=2))
+            scope.do(pipe.transfer(total=1, throughput=2))
+        assert (time == 8)
