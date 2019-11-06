@@ -1,4 +1,4 @@
-from typing import AsyncIterable, Optional, Dict
+from typing import Optional, Dict
 
 from .._primitives.notification import Notification, suspend
 from .._core.loop import __LOOP_STATE__
