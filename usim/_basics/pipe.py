@@ -6,10 +6,32 @@ from .._core.loop import __LOOP_STATE__
 
 class Pipe:
     """
-    Shared handle to transport continuous volumes with a maximum total throughput
+    Shared transport for resources with a limited total throughput
+
+    :parm throughput: limit of total throughput
+
+    The throughput limit of a pipe is defined when a :py:class:`Pipe`
+    is created.
+    Afterwards, :term:`activities <activity>` may temporarily request transfers
+    through the :py:class:`Pipe` with a maximum throughput.
+    If the sum of throughput from all transfers exceeds the throughput limit,
+    transfers are throttled accordingly.
+
+    .. code:: python3
+
+        connection = Pipe(throughput=3)
+
+        # transfers below limit
+        await connection.transfer(total=10, throughput=2)  # takes 5 time units
+
+        # transfers above limit
+        async with Scope() as scope:  # takes 10 time units
+            scope.do(connection.transfer(15, throughput=3)
+            scope.do(connection.transfer(15, throughput=3)
+
     """
     def __init__(self, throughput: float):
-        assert throughput > 0
+        assert throughput > 0, 'throughput must be positive'
         self.throughput = throughput
         self._congested = Notification()
         self._throughput_scale = 1.0
@@ -21,13 +43,25 @@ class Pipe:
         """
         Wait until some total volume has been transferred
 
+        :param total: absolute volume to transfer before resuming
+        :param throughput: maximum throughput of transfer
+
+        The effective ``throughput`` is bounded by the transfer's ``throughput``
+        as well as the Pipe's :py:attr:`~.throughput` weighted
+        by all transfers' ``throughput``. For example, if two transfers each request
+        the entire :py:attr:`~.throughput`, each receives only half.
+
         .. code:: python3
 
-            await network.transfer(total=50e9)
+            network = Pipe(throughput=64)
+            await network.transfer(total=50 * 1024, throughput=128)  # transfer with 64
 
-        :param total: absolute volume to transfer before resuming
-        :param throughput: maximum throughput
+        If ``throughput`` is not given, it defaults to the Pipe's
+        :py:attr:`~.throughput` limit.
         """
+        assert total > 0, 'total must be positive'
+        assert throughput is None or throughput > 0,\
+            'throughput must be positive or None'
         transferred = 0
         identifier = object()
         throughput = throughput if throughput is not None else self.throughput
