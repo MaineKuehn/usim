@@ -329,13 +329,13 @@ class Concurrent(BaseException, metaclass=MetaConcurrent):
         """
         if not any(isinstance(exc, Concurrent) for exc in self.children):
             return self
-        leaves = []
+        leafs = []
         for child in self.children:
             if isinstance(child, Concurrent):
-                leaves.extend(child.flattened().children)
+                leafs.extend(child.flattened().children)
             else:
-                leaves.append(child)
-        flat = Concurrent(*leaves)
+                leafs.append(child)
+        flat = Concurrent(*leafs)
         flat.__cause__ = self.__cause__
         flat.__context__ = self.__context__
         return flat
