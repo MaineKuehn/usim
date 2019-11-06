@@ -93,35 +93,3 @@ class Pipe:
         elif self._throughput_scale != 1.0:
             self._throughput_scale = 1.0
             self._congested.__awake_all__()
-
-    async def stream(
-            self,
-            each: float,
-            total: float = float('inf'),
-            throughput: Optional[float] = None,
-    ) -> AsyncIterable:
-        """
-        Iteratively transfer chunks of some total volume
-
-        .. code:: python3
-
-            async for _ in network.stream(each=10e3, total=50e9):
-                ...
-
-        :param each:
-        :param total:
-        :param throughput:
-        :return:
-        """
-        if total == float('inf'):
-            while True:
-                await self.transfer(total=each, throughput=throughput)
-                yield
-        else:
-            chunks, remainder = divmod(total, each)
-            for _ in range(int(chunks)):
-                await self.transfer(total=each, throughput=throughput)
-                yield
-            if remainder:
-                await self.transfer(total=remainder, throughput=throughput)
-                yield
