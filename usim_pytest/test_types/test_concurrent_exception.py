@@ -10,6 +10,11 @@ class FakeConcurrent:
 
 class TestConcurrent:
     """Test the semantics of ``usim.Concurrent``"""
+    def test_misuse(self):
+        base_case = Concurrent[KeyError]
+        with pytest.raises(TypeError):
+            base_case[IndexError]
+
     def test_generic(self):
         """Generic ``Concurrent`` is a catch-all"""
         with pytest.raises(Concurrent):
@@ -126,3 +131,52 @@ class TestConcurrent:
         assert not issubclass(
             Concurrent[KeyError, LookupError], Concurrent[KeyError, RuntimeError]
         )
+
+    def test_flattened_type(self):
+        """Flattening ``Concurrent[[Concurrent[a], b, ...]`` type-checks to flat case"""
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError())).flattened()), Concurrent[KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), KeyError()).flattened()),
+            Concurrent[KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), IndexError()).flattened()),
+            Concurrent[KeyError, IndexError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(LookupError()), IndexError()).flattened()),
+            Concurrent[LookupError, IndexError]
+        )
+        assert issubclass(
+            type(Concurrent(KeyError()).flattened()), Concurrent[KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError())).flattened().flattened()),
+            Concurrent[KeyError],
+        )
+
+    def test_unflattend_type(self):
+        """Unflattened ``Concurrent[[Concurrent[a], b, ...]`` type-checks precisely"""
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()))), Concurrent[Concurrent[KeyError]]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), KeyError())),
+            Concurrent[Concurrent[KeyError], KeyError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(KeyError()), IndexError())),
+            Concurrent[Concurrent[KeyError], IndexError]
+        )
+        assert issubclass(
+            type(Concurrent(Concurrent(LookupError()), IndexError())),
+            Concurrent[Concurrent[LookupError], IndexError]
+        )
+
+    def test_flattened_value(self):
+        children = KeyError(), KeyError(), IndexError()
+        assert Concurrent(
+            Concurrent(children[0]), *children[1:]
+        ).flattened().children == children
