@@ -1,6 +1,8 @@
+import pytest
+
 from usim import time, Pipe, Scope
 
-from ..utility import via_usim
+from ..utility import via_usim, assertion_mode
 
 
 async def aenumerate(aiterable, start=0):
@@ -11,6 +13,19 @@ async def aenumerate(aiterable, start=0):
 
 
 class TestPipe:
+    @assertion_mode
+    @via_usim
+    async def test_debug_misuse(self):
+        with pytest.raises(AssertionError):
+            Pipe(throughput=0)
+        with pytest.raises(AssertionError):
+            Pipe(throughput=-10)
+        pipe = Pipe(throughput=10)
+        with pytest.raises(AssertionError):
+            await pipe.transfer(total=-10, throughput=20)
+        with pytest.raises(AssertionError):
+            await pipe.transfer(total=10, throughput=0)
+
     @via_usim
     async def test_transfer_uncongested(self):
         pipe = Pipe(throughput=2)
