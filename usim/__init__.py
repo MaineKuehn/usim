@@ -11,6 +11,7 @@ from ._primitives.concurrent_exception import Concurrent
 from ._basics.streams import Channel, Queue, StreamClosed
 from ._basics.tracked import Tracked
 from ._basics.resource import Capacities, Resources, ResourcesUnavailable
+from ._basics.pipe import Pipe
 
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     'Lock',
     'Channel', 'Queue', 'StreamClosed',
     'Capacities', 'Resources', 'ResourcesUnavailable',
+    'Pipe',
 ]
 
 

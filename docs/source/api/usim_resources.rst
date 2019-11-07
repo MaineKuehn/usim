@@ -9,3 +9,6 @@ Resource Modelling
 
 .. autoexception:: usim.ResourcesUnavailable
     :members:
+
+.. autoclass:: usim.Pipe
+    :members:
