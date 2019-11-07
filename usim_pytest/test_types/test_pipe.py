@@ -12,7 +12,7 @@ async def aenumerate(aiterable, start=0):
 
 class TestPipe:
     @via_usim
-    async def test_transfer_uncontested(self):
+    async def test_transfer_uncongested(self):
         pipe = Pipe(throughput=2)
         await pipe.transfer(total=1, throughput=1)
         assert (time == 1)
@@ -36,7 +36,7 @@ class TestPipe:
         assert (time == 5)
 
     @via_usim
-    async def test_transfer_contested(self):
+    async def test_transfer_congested(self):
         pipe = Pipe(throughput=2)
         await pipe.transfer(total=2, throughput=4)
         assert (time == 1)

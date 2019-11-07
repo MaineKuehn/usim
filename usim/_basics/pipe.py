@@ -8,7 +8,7 @@ class Pipe:
     """
     Shared transport for resources with a limited total throughput
 
-    :parm throughput: limit of total throughput
+    :param throughput: limit of total throughput
 
     The throughput limit of a pipe is defined when a :py:class:`Pipe`
     is created.
