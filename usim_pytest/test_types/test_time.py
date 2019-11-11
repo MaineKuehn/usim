@@ -173,3 +173,13 @@ class TestTimeIteration:
             if iteration == 5:
                 break
             iteration += 1
+
+    @via_usim
+    async def test_interval_exceeded(self):
+        iteration = 0
+        async for _ in interval(20):
+            await (time + 40)
+            iteration += 1
+            if iteration >= 2:
+                break
+        assert True
