@@ -458,7 +458,7 @@ time = Time()
 
 
 class IntervalExceeded(Exception):
-    """An :py:func:`interval` was postponed too long"""
+    """An :py:func:`interval` was suspended too long"""
 
 
 async def interval(period) -> AsyncIterable[float]:
@@ -466,6 +466,7 @@ async def interval(period) -> AsyncIterable[float]:
     Iterate through time by intervals of ``period``
 
     :param period: on each step, pause with a ``period`` since the last step
+    :raises IntervalExceeded: if the loop body is suspended for more than ``period``
 
     Asynchronous iteration pauses and provides the current time at each step.
 
@@ -480,7 +481,12 @@ async def interval(period) -> AsyncIterable[float]:
 
     Using interval causes iteration to *resume at* regular times,
     even if the current activity is :term:`suspended <Suspension>`
-    in the loop body - the pause is shortened if necessary.
+    in the loop body - the pause is shortened as necessary.
+    This effectively creates a "clock" that ticks every ``period``
+    and runs the loop body.
+
+    If the interval cannot be adhered, e.g. because loop body is suspended for longer
+    than ``period``, :py:exc:`~.IntervalExceeded` is raised.
 
     .. seealso:: :py:func:`~.delay` if you want to always *pause for* the same time
     """
