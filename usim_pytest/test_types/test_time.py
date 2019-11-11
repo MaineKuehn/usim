@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from usim import time, until, eternity, instant, delay, interval
+from usim import time, until, eternity, instant, delay, interval, IntervalExceeded
 
 from ..utility import via_usim, assertion_mode
 
@@ -176,10 +176,10 @@ class TestTimeIteration:
 
     @via_usim
     async def test_interval_exceeded(self):
-        iteration = 0
-        async for _ in interval(20):
-            await (time + 40)
-            iteration += 1
-            if iteration >= 2:
-                break
-        assert True
+        try:
+            async for _ in interval(20):
+                await (time + 40)
+        except IntervalExceeded:
+            assert True
+        else:
+            assert False

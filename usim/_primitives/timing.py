@@ -457,6 +457,10 @@ class Time:
 time = Time()
 
 
+class IntervalExceeded(Exception):
+    """An :py:func:`interval` was postponed too long"""
+
+
 async def interval(period) -> AsyncIterable[float]:
     """
     Iterate through time by intervals of ``period``
@@ -483,6 +487,8 @@ async def interval(period) -> AsyncIterable[float]:
     loop = __LOOP_STATE__.LOOP
     last_time = loop.time
     while True:
+        if time.now > last_time + period:
+            raise IntervalExceeded()
         await (time == last_time + period)
         last_time = loop.time
         yield last_time
