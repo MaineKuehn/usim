@@ -2,9 +2,16 @@ import math
 
 import pytest
 
-from usim import time, until, eternity, instant, delay, interval
+from usim import time, until, eternity, instant, delay, interval, IntervalExceeded
 
 from ..utility import via_usim, assertion_mode
+
+
+async def aenumerate(aiterable, start=0):
+    count = start
+    async for item in aiterable:
+        yield count, item
+        count += 1
 
 
 class TestTime:
@@ -153,6 +160,15 @@ class TestTimeCondition:
 
 class TestTimeIteration:
     @via_usim
+    async def test_misuse(self):
+        with pytest.raises(ValueError):
+            async for _ in delay(-1):
+                pass
+        with pytest.raises(ValueError):
+            async for _ in interval(-1):
+                pass
+
+    @via_usim
     async def test_delay(self):
         start, iteration = time.now, 0
         async for now in delay(20):
@@ -161,6 +177,18 @@ class TestTimeIteration:
             assert time.now - now == 5
             assert time.now == start + iteration * 25
             if iteration == 5:
+                break
+
+    @via_usim
+    async def test_delay_exact(self):
+        async for idx, _ in aenumerate(delay(0)):
+            assert time.now == 0
+            if idx > 5:
+                break
+        async for idx, _ in aenumerate(delay(0)):
+            assert time.now == idx * 5
+            await (time + 5)
+            if idx > 5:
                 break
 
     @via_usim
@@ -173,3 +201,27 @@ class TestTimeIteration:
             if iteration == 5:
                 break
             iteration += 1
+
+    @via_usim
+    async def test_interval_exceeded(self):
+        """It is an error to exceed an interval"""
+        try:
+            async for _ in interval(20):
+                await (time + 40)
+        except IntervalExceeded:
+            assert True
+        else:
+            assert False
+
+    @via_usim
+    async def test_interval_exact(self):
+        """It is not an error to exactly match an interval"""
+        try:
+            async for idx, _ in aenumerate(interval(20)):
+                await (time + 20)
+                if idx == 5:
+                    break
+        except IntervalExceeded:
+            assert False
+        else:
+            assert True

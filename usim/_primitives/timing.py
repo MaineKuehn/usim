@@ -15,7 +15,7 @@ time can represent more than 285 million years of time accurately.
 from typing import Coroutine, Generator, Any, AsyncIterable, Union
 
 from .._core.loop import __LOOP_STATE__, __HIBERNATE__, Interrupt as CoreInterrupt
-from .notification import postpone, Notification
+from .notification import postpone, suspend, Notification
 from .condition import Condition
 
 
@@ -457,11 +457,16 @@ class Time:
 time = Time()
 
 
+class IntervalExceeded(Exception):
+    """An :py:func:`interval` was suspended too long"""
+
+
 async def interval(period) -> AsyncIterable[float]:
     """
     Iterate through time by intervals of ``period``
 
     :param period: on each step, pause with a ``period`` since the last step
+    :raises IntervalExceeded: if the loop body is suspended for more than ``period``
 
     Asynchronous iteration pauses and provides the current time at each step.
 
@@ -476,14 +481,26 @@ async def interval(period) -> AsyncIterable[float]:
 
     Using interval causes iteration to *resume at* regular times,
     even if the current activity is :term:`suspended <Suspension>`
-    in the loop body - the pause is shortened if necessary.
+    in the loop body - the pause is shortened as necessary.
+    This effectively creates a "clock" that ticks every ``period``
+    and runs the loop body.
+    If the loop body is suspended for longer than ``period`` so that a regular
+    interval cannot be met, :py:exc:`~.IntervalExceeded` is raised.
 
     .. seealso:: :py:func:`~.delay` if you want to always *pause for* the same time
     """
+    if period < 0:
+        raise ValueError('period must not be negative')
     loop = __LOOP_STATE__.LOOP
     last_time = loop.time
     while True:
-        await (time == last_time + period)
+        remaining_delay = last_time + period - time.now
+        if remaining_delay < 0:
+            raise IntervalExceeded()
+        elif remaining_delay > 0:
+            await suspend(delay=remaining_delay, until=None)
+        else:
+            await postpone()
         last_time = loop.time
         yield last_time
 
@@ -511,8 +528,14 @@ async def delay(period) -> AsyncIterable[float]:
 
     .. seealso:: :py:func:`~.interval` if you want to *resume at* regular times
     """
+    if period < 0:
+        raise ValueError('period must not be negative')
     loop = __LOOP_STATE__.LOOP
-    waiter = time + period
-    while True:
-        await waiter
-        yield loop.time
+    if period > 0:
+        while True:
+            await suspend(delay=period, until=None)
+            yield loop.time
+    else:
+        while True:
+            await postpone()
+            yield loop.time

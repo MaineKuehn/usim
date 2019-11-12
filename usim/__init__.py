@@ -2,7 +2,8 @@ from typing import Coroutine
 
 from .__about__ import __version__  # noqa: F401
 from ._core.loop import Loop as _Loop
-from ._primitives.timing import Time, Eternity, Instant, interval, delay
+from ._primitives.timing import Time, Eternity, Instant, interval, delay,\
+    IntervalExceeded
 from ._primitives.flag import Flag
 from ._primitives.locks import Lock
 from ._primitives.context import until, Scope, VolatileTaskClosed
@@ -16,7 +17,7 @@ from ._basics.pipe import Pipe
 
 __all__ = [
     'run',
-    'time', 'eternity', 'instant', 'interval', 'delay',
+    'time', 'eternity', 'instant', 'interval', 'delay', 'IntervalExceeded',
     'until', 'Scope',
     'TaskCancelled', 'VolatileTaskClosed', 'TaskClosed', 'TaskState', 'CancelTask',
     'Concurrent',
