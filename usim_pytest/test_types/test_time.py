@@ -183,6 +183,7 @@ class TestTimeIteration:
 
     @via_usim
     async def test_interval_exceeded(self):
+        """It is an error to exceed an interval"""
         try:
             async for _ in interval(20):
                 await (time + 40)
@@ -193,6 +194,7 @@ class TestTimeIteration:
 
     @via_usim
     async def test_interval_exact(self):
+        """It is not an error to exactly match an interval"""
         try:
             async for idx, _ in aenumerate(interval(20)):
                 await (time + 20)
