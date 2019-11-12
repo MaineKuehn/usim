@@ -485,7 +485,7 @@ async def interval(period) -> AsyncIterable[float]:
     This effectively creates a "clock" that ticks every ``period``
     and runs the loop body.
     If the loop body is suspended for longer than ``period`` so that a regular
-    cannot be met, :py:exc:`~.IntervalExceeded` is raised.
+    interval cannot be met, :py:exc:`~.IntervalExceeded` is raised.
 
     .. seealso:: :py:func:`~.delay` if you want to always *pause for* the same time
     """
