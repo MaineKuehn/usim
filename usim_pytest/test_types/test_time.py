@@ -190,3 +190,15 @@ class TestTimeIteration:
             assert True
         else:
             assert False
+
+    @via_usim
+    async def test_interval_exact(self):
+        try:
+            async for idx, _ in aenumerate(interval(20)):
+                await (time + 20)
+                if idx == 5:
+                    break
+        except IntervalExceeded:
+            assert False
+        else:
+            assert True
