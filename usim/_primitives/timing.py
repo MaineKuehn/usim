@@ -15,7 +15,7 @@ time can represent more than 285 million years of time accurately.
 from typing import Coroutine, Generator, Any, AsyncIterable, Union
 
 from .._core.loop import __LOOP_STATE__, __HIBERNATE__, Interrupt as CoreInterrupt
-from .notification import postpone, Notification
+from .notification import postpone, suspend, Notification
 from .condition import Condition
 
 
@@ -492,9 +492,13 @@ async def interval(period) -> AsyncIterable[float]:
     loop = __LOOP_STATE__.LOOP
     last_time = loop.time
     while True:
-        if time.now > last_time + period:
+        remaining_delay = last_time + period - time.now
+        if remaining_delay < 0:
             raise IntervalExceeded()
-        await (time == last_time + period)
+        elif remaining_delay > 0:
+            await suspend(delay=remaining_delay, until=None)
+        else:
+            await postpone()
         last_time = loop.time
         yield last_time
 
@@ -523,7 +527,6 @@ async def delay(period) -> AsyncIterable[float]:
     .. seealso:: :py:func:`~.interval` if you want to *resume at* regular times
     """
     loop = __LOOP_STATE__.LOOP
-    waiter = time + period
     while True:
-        await waiter
+        await suspend(delay=period, until=None)
         yield loop.time
