@@ -160,6 +160,15 @@ class TestTimeCondition:
 
 class TestTimeIteration:
     @via_usim
+    async def test_misuse(self):
+        with pytest.raises(ValueError):
+            async for _ in delay(-1):
+                pass
+        with pytest.raises(ValueError):
+            async for _ in interval(-1):
+                pass
+
+    @via_usim
     async def test_delay(self):
         start, iteration = time.now, 0
         async for now in delay(20):

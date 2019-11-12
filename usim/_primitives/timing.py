@@ -489,6 +489,8 @@ async def interval(period) -> AsyncIterable[float]:
 
     .. seealso:: :py:func:`~.delay` if you want to always *pause for* the same time
     """
+    if period < 0:
+        raise ValueError('period must not be negative')
     loop = __LOOP_STATE__.LOOP
     last_time = loop.time
     while True:
@@ -526,6 +528,8 @@ async def delay(period) -> AsyncIterable[float]:
 
     .. seealso:: :py:func:`~.interval` if you want to *resume at* regular times
     """
+    if period < 0:
+        raise ValueError('period must not be negative')
     loop = __LOOP_STATE__.LOOP
     while True:
         await suspend(delay=period, until=None)
