@@ -180,6 +180,18 @@ class TestTimeIteration:
                 break
 
     @via_usim
+    async def test_delay_exact(self):
+        async for idx, _ in aenumerate(delay(0)):
+            assert time.now == 0
+            if idx > 5:
+                break
+        async for idx, _ in aenumerate(delay(0)):
+            assert time.now == idx * 5
+            await (time + 5)
+            if idx > 5:
+                break
+
+    @via_usim
     async def test_interval(self):
         start, iteration = time.now, 1
         async for now in interval(20):

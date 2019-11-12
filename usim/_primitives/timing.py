@@ -531,6 +531,11 @@ async def delay(period) -> AsyncIterable[float]:
     if period < 0:
         raise ValueError('period must not be negative')
     loop = __LOOP_STATE__.LOOP
-    while True:
-        await suspend(delay=period, until=None)
-        yield loop.time
+    if period == 0:
+        while True:
+            await postpone()
+            yield loop.time
+    else:
+        while True:
+            await suspend(delay=period, until=None)
+            yield loop.time
