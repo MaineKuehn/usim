@@ -7,6 +7,13 @@ from usim import time, until, eternity, instant, delay, interval, IntervalExceed
 from ..utility import via_usim, assertion_mode
 
 
+async def aenumerate(aiterable, start=0):
+    count = start
+    async for item in aiterable:
+        yield count, item
+        count += 1
+
+
 class TestTime:
     @via_usim
     async def test_representable(self):

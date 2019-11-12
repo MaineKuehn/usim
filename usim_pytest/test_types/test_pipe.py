@@ -5,13 +5,6 @@ from usim import time, Pipe, Scope
 from ..utility import via_usim, assertion_mode
 
 
-async def aenumerate(aiterable, start=0):
-    count = start
-    async for item in aiterable:
-        yield count, item
-        count += 1
-
-
 class TestPipe:
     @assertion_mode
     @via_usim
