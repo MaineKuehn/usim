@@ -1,7 +1,7 @@
 category: changed
 summary: "μSim flattened into the ``usim`` namespace"
 description: |
-  μSim simulation use a single flat namespace, the ``usim`` package.
+  μSim simulations use a single flat namespace, the ``usim`` package.
   Types that are not used directly but merely for type annotations are
   available in the ``usim.typing`` package.
 pull requests:
