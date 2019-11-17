@@ -73,6 +73,9 @@ class Pipe:
                 await suspend(
                     delay=(total - transferred) / window_throughput, until=None,
                 )
+                # At this point, we have been suspended for as long as calculated.
+                # Barring float *imprecision* we have transferred the desired volume.
+                break
             window_end = __LOOP_STATE__.LOOP.time
             transferred += (window_end - window_start) * window_throughput
         self._del_subscriber(identifier)
