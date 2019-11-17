@@ -1,0 +1,18 @@
+category: added
+summary: "full SimPy compatibility layer"
+description: |
+  The :py:mod:`usim.py` packages is a drop-in replacement for the common
+  :py:mod:`simpy` package. It replicates all of SimPy's simulation primitives,
+  and provides an Environment with most relevant public features.
+
+  When hosting a SimPy simulation in μSim, μSim activities and notifications are
+  mapped seamlessly onto SimPy processes and events -- and vice versa. This allows
+  to run, integrate and/or migrate existing SimPy simulations to μSim easily.
+pull requests:
+- 25
+- 47
+- 49
+- 50
+- 51
+- 52
+version: 0.4.0
