@@ -1,0 +1,8 @@
+category: fixed
+summary: "Scopes clean up children after failures"
+description: |
+  Handling of Scope child tasks was previously ill-defined which could
+  lead to errors and leaks of child tasks.
+pull requests:
+- 48
+version: 0.4.0

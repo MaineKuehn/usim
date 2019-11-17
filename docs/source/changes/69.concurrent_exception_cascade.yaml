@@ -1,0 +1,15 @@
+category: fixed
+summary: "Concurrent exceptions may cascade through nested scopes"
+description: |
+  The :py:class:`usim.Concurrent` exception rejects nested BaseExceptions;
+  so far excluding other Concurrent exceptions as well. This caused any
+  unhandled errors in nested Scopes to crash outer Scopes, and removed
+  the original traceback information as a side-effect.
+
+  Concurrent exceptions are now allowed inside another. This makes it
+  well-defined to have unhandled exceptions in nested Scopes. Note that
+  the recommendation is still to handle Concurrent exceptions early, and
+  propagate regular exceptions whenever possible.
+pull requests:
+- 69
+version: 0.4.2

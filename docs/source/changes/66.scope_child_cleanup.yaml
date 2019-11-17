@@ -1,0 +1,8 @@
+category: fixed
+summary: "Scopes clean up all children on exit"
+description: |
+  An implicit deletion while iterating caused Scopes to clean up
+  only every second child task.
+pull requests:
+- 66
+version: 0.4.1

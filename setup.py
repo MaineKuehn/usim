@@ -30,7 +30,7 @@ if __name__ == '__main__':
             'docs': ["sphinx", "sphinx_rtd_theme", "sphinxcontrib-trio",
                      "sphinxcontrib-contentui"],
             'test': TESTS_REQUIRE,
-            'contrib': ['flake8', 'flake8-bugbear'] + TESTS_REQUIRE,
+            'contrib': ['flake8', 'flake8-bugbear', 'change-log'] + TESTS_REQUIRE,
         },
         # metadata for package search
         license='MIT',

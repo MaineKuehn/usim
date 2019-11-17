@@ -1,0 +1,9 @@
+category: added
+summary: "Pipe resource type to simulate pipes/fluxes of limited throughput"
+description: |
+  The :py:class:`usim.Pipe` represents a connection of limited throughput.
+  Activities may share a pipe for transfers, which automatically adjusts
+  the time to complete each transfer.
+pull requests:
+- 61
+version: 0.4.0
