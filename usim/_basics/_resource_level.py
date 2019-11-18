@@ -25,10 +25,10 @@ class ResourceLevels(Generic[T]):
         print(resources.levels.b)  # 4
         print(resources.levels.c)  # raises AttributeError
 
-    :py:class:`~.ResourceLevels` allow no additional attributes other than their
-    initial resources, but their values may be changed.
-    The special attribute :py:attr:`~.__zero__` is always present and provides
-    an instance for which all values are zero.
+    :py:class:`~.ResourceLevels` subtypes allow no additional attributes other than
+    their initial resources, but their values may be changed.
+    Instantiating a subtype requires resource levels to be specified by keyword;
+    missing resource are set to zero.
 
     Each resource always uses the same :py:class:`~.ResourceLevels` subtype.
     Binary operators for comparisons and arithmetic can be applied for
