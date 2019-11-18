@@ -93,35 +93,35 @@ class ResourceLevels(Generic[T]):
 
     @abstractmethod
     def __add__(self, other: 'ResourceLevels[T]') -> 'ResourceLevels[T]':
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __sub__(self, other: 'ResourceLevels[T]') -> 'ResourceLevels[T]':
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __gt__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __ge__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __le__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __lt__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __eq__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __ne__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     def __iter__(self):
         for field in self.__fields__:
