@@ -22,6 +22,8 @@ class BaseResources(Generic[T]):
     """
     _levels_type: Type[ResourceLevels[T]]
     _available: Tracked[ResourceLevels[T]]
+    #: ResourceLevels representing no available resources
+    _zero: ResourceLevels[T]
 
     @property
     def levels(self) -> ResourceLevels[T]:
@@ -49,7 +51,7 @@ class BaseResources(Generic[T]):
         :return: async context to borrow resources
         """
         borrowed_levels = self._levels_type(**amounts)
-        assert self._levels_type.__zero__ <= borrowed_levels,\
+        assert self._zero <= borrowed_levels,\
             'cannot borrow negative amounts'
         return BorrowedResources(self, borrowed_levels)
 
@@ -86,8 +88,9 @@ class BorrowedResources(BaseResources[T]):
 
     def __init__(self, resources: 'BaseResources', debits: ResourceLevels):
         self._resources = resources
+        self._zero = self._levels_type()
         self._debits = debits
-        self._available = Tracked(self._levels_type.__zero__)
+        self._available = Tracked(self._levels_type())
 
     async def __aenter__(self):
         # do not postpone if we can resume immediately
@@ -195,8 +198,9 @@ class Resources(BaseResources[T]):
         __zero__ = __zero__ if __zero__ is not None else\
             type(next(iter(capacity.values())))()  # bare type invocation must be zero
         self._levels_type = __specialise__(__zero__, capacity.keys())
+        self._zero = self._levels_type()
         self._available = Tracked(self._levels_type(**capacity))
-        assert self._available >= self._levels_type.__zero__,\
+        assert self._available >= self._zero,\
             'initial capacities must be greater than or equal to zero'
 
     async def set(self, **amounts: T):
@@ -210,7 +214,7 @@ class Resources(BaseResources[T]):
         below zero. If a resource is not specified, its level remains
         unchanged.
         """
-        assert self._levels_type.__zero__ <= self._levels_type(**amounts),\
+        assert self._zero <= self._levels_type(**amounts),\
             'cannot increase by negative amounts'
         new_levels = dict(self._available.value).copy()
         new_levels.update(amounts)
@@ -228,7 +232,7 @@ class Resources(BaseResources[T]):
         unchanged.
         """
         delta = self._levels_type(**amounts)
-        assert self._levels_type.__zero__ <= delta,\
+        assert self._zero <= delta,\
             'cannot increase by negative amounts'
         await self.__insert_resources__(delta)
 
@@ -244,8 +248,8 @@ class Resources(BaseResources[T]):
         level remains unchanged.
         """
         delta = self._levels_type(**amounts)
-        assert self._levels_type.__zero__ <= delta,\
+        assert self._zero <= delta,\
             'cannot decrease by negative amounts'
-        assert self._levels_type.__zero__ <= (self._available.value - delta),\
+        assert self._zero <= (self._available.value - delta),\
             'cannot decrease below zero'
         await self.__remove_resources__(delta)
