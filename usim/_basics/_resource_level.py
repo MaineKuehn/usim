@@ -78,9 +78,6 @@ class ResourceLevels(Generic[T]):
     #: cache of currently used specialisations to avoid
     #: recreating/duplicating commonly used types
     __specialisation_cache__ = WeakValueDictionary()
-    #: instance of this specialisation
-    #: with all values as zero
-    __zero__: 'ResourceLevels' = None
 
     def __init__(self, **kwargs: T):
         raise TypeError(
@@ -164,9 +161,6 @@ def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
         def __ne__(self, other):
             return not self == other
 
-    SpecialisedResourceLevels.__zero__ = SpecialisedResourceLevels(
-        **dict.fromkeys(fields, zero)
-    )
     ResourceLevels.__specialisation_cache__[fields] = SpecialisedResourceLevels
     return SpecialisedResourceLevels
 
