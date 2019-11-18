@@ -4,7 +4,11 @@
 usim.typing module
 ==================
 
+.. py:module:: usim.typing
+    :synopsis: μSim type hints
+
 .. automodule:: usim.typing
     :members:
     :undoc-members:
     :show-inheritance:
+    :noindex:

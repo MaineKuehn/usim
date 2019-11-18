@@ -152,6 +152,9 @@ blocked or waited for.
 :py:class:`usim.Capacities`
     Fixed supply of named resources which can be temporarily borrowed.
 
+:py:class:`usim.typing.ResourceLevels`
+    Current, expected or desired levels of resources.
+
 :py:exc:`usim.ResourcesUnavailable`
     Exception raised when an attempt to :py:meth:`~usim.Resources.claim`
     resources fails.

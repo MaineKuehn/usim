@@ -7,55 +7,121 @@ T = TypeVar('T')
 
 
 class ResourceLevels(Generic[T]):
-    """Base class for named resource levels"""
+    """
+    Common class for named resource levels
+
+    Representation for the levels of multiple named resources. Every set of resources,
+    such as :py:class:`usim.Resources` or :py:class:`usim.Capacities`, specializes a
+    :py:class:`~.ResourceLevels` subclass with one attribute for each named resource.
+    For example, ``Resources(a=3, b=4)`` uses a :py:class:`~.ResourceLevels` with
+    attributes ``a`` and ``b``.
+
+    .. code:: python3
+
+        from usim import Resources
+
+        resources = Resources(a=3, b=4)
+        print(resources.levels.a)  # 3
+        print(resources.levels.b)  # 4
+        print(resources.levels.c)  # raises AttributeError
+
+    :py:class:`~.ResourceLevels` subtypes allow no additional attributes other than
+    their initial resources, but their values may be changed.
+    Instantiating a subtype requires resource levels to be specified by keyword;
+    missing resource are set to zero.
+
+    Each resource always uses the same :py:class:`~.ResourceLevels` subtype.
+    Binary operators for comparisons and arithmetic can be applied for
+    instances of the same subtype.
+
+    .. describe::  levels_a + levels_b
+                   levels_a - levels_b
+
+        Elementwise addition/subtraction of values.
+
+    .. describe::  levels_a > levels_b
+                   levels_a >= levels_b
+                   levels_a <= levels_b
+                   levels_a < levels_b
+
+        Strict elementwise comparison of values.
+        :py:data:`True` if the comparison is satisfied by each element pair,
+        :py:data:`False` otherwise.
+
+    .. describe:: levels_a == levels_b
+
+        Total elementwise equality of values.
+        :py:data:`True` if each element pair is equal,
+        :py:data:`False` otherwise.
+        The inverse of ``levels_a != levels_b``.
+
+    .. describe:: levels_a != levels_b
+
+        Partial elementwise unequality of values.
+        :py:data:`False` if each element pair is equal,
+        :py:data:`True` otherwise.
+        The inverse of ``levels_a == levels_b``.
+
+    In addition, iteration on a :py:class:`~.ResourceLevels` subtype yields
+    ``field, value`` pairs. This is similar to :py:meth:`dict.items`.
+
+    .. describe:: for field, value in levels_a
+
+        Iterate over the current ``field, value`` pairs.
+
+    .. describe:: dict(levels_a)
+
+        Create :py:class:`dict` of ``field: value`` pairs.
+    """
     __slots__ = ()
-    __fields__ = ()  # type: Tuple[str]
+    __fields__: Tuple[str] = ()
     #: cache of currently used specialisations to avoid
     #: recreating/duplicating commonly used types
     __specialisation_cache__ = WeakValueDictionary()
-    #: instance of this specialisation
-    #: with all values as zero
-    zero = None  # type: ResourceLevels
 
     def __init__(self, **kwargs: T):
+        spec_name = f'{__specialise__.__module__}.{__specialise__.__qualname__}'
         raise TypeError(
-            'Base class %r cannot be instantiated.' % self.__class__.__name__
-            + 'Use %s.%s to declare subtypes with valid resource level names.' % (
-                __specialise__.__module__, __specialise__.__name__
-            )
+            f'Base class {self.__class__.__name__} cannot be instantiated.\n'
+            '\n'
+            f'The {self.__class__.__name__} type is intended to be automatically\n'
+            'subclassed by resources. You should not encounter the base class during\n'
+            'well-behaved simulations.\n'
+            '\n'
+            f'Use {spec_name} to declare subtypes with valid resource level names.\n'
         )
 
     @abstractmethod
     def __add__(self, other: 'ResourceLevels[T]') -> 'ResourceLevels[T]':
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __sub__(self, other: 'ResourceLevels[T]') -> 'ResourceLevels[T]':
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __gt__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __ge__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __le__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __lt__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __eq__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def __ne__(self, other: 'ResourceLevels[T]') -> bool:
-        pass
+        raise NotImplementedError
 
     def __iter__(self):
         for field in self.__fields__:
@@ -99,9 +165,6 @@ def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
         def __ne__(self, other):
             return not self == other
 
-    SpecialisedResourceLevels.zero = SpecialisedResourceLevels(
-        **dict.fromkeys(fields, zero)
-    )
     ResourceLevels.__specialisation_cache__[fields] = SpecialisedResourceLevels
     return SpecialisedResourceLevels
 
