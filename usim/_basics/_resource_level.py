@@ -11,15 +11,67 @@ class ResourceLevels(Generic[T]):
     Common class for named resource levels
 
     Representation for the levels of multiple named resources. Every set of resources,
-    such as :py:class:`usim.Resources` or :py:class:`usim.Capacities`, specialises
-    :py:class:`~.ResourceLevels` to provide one attribute for each named resource.
+    such as :py:class:`usim.Resources` or :py:class:`usim.Capacities`, specializes a
+    :py:class:`~.ResourceLevels` subclass with one attribute for each named resource.
     For example, ``Resources(a=3, b=4)`` uses a :py:class:`~.ResourceLevels` with
     attributes ``a`` and ``b``.
+
+    .. code:: python3
+
+        from usim import Resources
+
+        resources = Resources(a=3, b=4)
+        print(resources.levels.a)  # 3
+        print(resources.levels.b)  # 4
+        print(resources.levels.c)  # raises AttributeError
 
     :py:class:`~.ResourceLevels` allow no additional attributes other than their
     initial resources, but their values may be changed.
     The special attribute :py:attr:`~.__zero__` is always present and provides
-    an instance where all values are zero.
+    an instance for which all values are zero.
+
+    Each resource always uses the same :py:class:`~.ResourceLevels` subtype.
+    Binary operators for comparisons and arithmetic can be applied for
+    instances of the same subtype.
+
+    .. describe::  levels_a + levels_b
+                   levels_a - levels_b
+
+        Elementwise addition/subtraction of values.
+
+    .. describe::  levels_a > levels_b
+                   levels_a >= levels_b
+                   levels_a <= levels_b
+                   levels_a < levels_b
+
+        Strict elementwise comparison of values.
+        :py:data:`True` if the comparison is satisfied by each element pair,
+        :py:data:`False` otherwise.
+
+    .. describe:: levels_a == levels_b
+
+        Total elementwise equality of values.
+        :py:data:`True` if each element pair is equal,
+        :py:data:`False` otherwise.
+        The inverse of ``levels_a != levels_b``.
+
+    .. describe:: levels_a != levels_b
+
+        Partial elementwise unequality of values.
+        :py:data:`False` if each element pair is equal,
+        :py:data:`True` otherwise.
+        The inverse of ``levels_a == levels_b``.
+
+    In addition, iteration on a :py:class:`~.ResourceLevels` subtype yields
+    ``field, value`` pairs. This is similar to :py:meth:`dict.items`.
+
+    .. describe:: for field, value in levels_a
+
+        Iterate over the current ``field, value`` pairs.
+
+    .. describe:: dict(levels_a)
+
+        Create :py:class:`dict` of ``field: value`` pairs.
     """
     __slots__ = ()
     __fields__ = ()  # type: Tuple[str]
