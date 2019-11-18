@@ -80,11 +80,15 @@ class ResourceLevels(Generic[T]):
     __specialisation_cache__ = WeakValueDictionary()
 
     def __init__(self, **kwargs: T):
+        spec_name = f'{__specialise__.__module__}.{__specialise__.__qualname__}'
         raise TypeError(
-            'Base class %r cannot be instantiated.' % self.__class__.__name__
-            + 'Use %s.%s to declare subtypes with valid resource level names.' % (
-                __specialise__.__module__, __specialise__.__name__
-            )
+            f'Base class {self.__class__.__name__} cannot be instantiated.\n'
+            '\n'
+            f'The {self.__class__.__name__} type is intended to be automatically\n'
+            'subclassed by resources. You should not encounter the base class during\n'
+            'well-behaved simulations.\n'
+            '\n'
+            f'Use {spec_name} to declare subtypes with valid resource level names.\n'
         )
 
     @abstractmethod
