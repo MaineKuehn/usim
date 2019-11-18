@@ -7,7 +7,20 @@ T = TypeVar('T')
 
 
 class ResourceLevels(Generic[T]):
-    """Base class for named resource levels"""
+    """
+    Common class for named resource levels
+
+    Representation for the levels of multiple named resources. Every set of resources,
+    such as :py:class:`usim.Resources` or :py:class:`usim.Capacities`, specialises
+    :py:class:`~.ResourceLevels` to provide one attribute for each named resource.
+    For example, ``Resources(a=3, b=4)`` uses a :py:class:`~.ResourceLevels` with
+    attributes ``a`` and ``b``.
+
+    :py:class:`~.ResourceLevels` allow no additional attributes other than their
+    initial resources, but their values may be changed.
+    The special attribute :py:attr:`~.__zero__` is always present and provides
+    an instance where all values are zero.
+    """
     __slots__ = ()
     __fields__ = ()  # type: Tuple[str]
     #: cache of currently used specialisations to avoid
