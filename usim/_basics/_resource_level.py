@@ -15,7 +15,7 @@ class ResourceLevels(Generic[T]):
     __specialisation_cache__ = WeakValueDictionary()
     #: instance of this specialisation
     #: with all values as zero
-    zero = None  # type: ResourceLevels
+    __zero__ = None  # type: ResourceLevels
 
     def __init__(self, **kwargs: T):
         raise TypeError(
@@ -99,7 +99,7 @@ def __specialise__(zero: T, names: Iterable[str]) -> Type[ResourceLevels[T]]:
         def __ne__(self, other):
             return not self == other
 
-    SpecialisedResourceLevels.zero = SpecialisedResourceLevels(
+    SpecialisedResourceLevels.__zero__ = SpecialisedResourceLevels(
         **dict.fromkeys(fields, zero)
     )
     ResourceLevels.__specialisation_cache__[fields] = SpecialisedResourceLevels
