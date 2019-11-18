@@ -66,3 +66,15 @@ class TestPipe:
             scope.do(pipe.transfer(total=1, throughput=2))
             scope.do(pipe.transfer(total=1, throughput=2))
         assert (time == 8)
+
+    @via_usim
+    async def test_transfer_inexact(self):
+        # Values adapted from MatterMiners/lapis#61
+        # Need to advance the simulation time to have a lower
+        # time resolution. This makes it more likely to round
+        # down the calculated transfer time.
+        await (time + 100)
+        pipe = Pipe(throughput=10)
+        async with Scope() as scope:
+            for _ in range(6):
+                scope.do(pipe.transfer(total=15))
