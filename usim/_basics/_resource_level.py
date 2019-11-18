@@ -74,13 +74,13 @@ class ResourceLevels(Generic[T]):
         Create :py:class:`dict` of ``field: value`` pairs.
     """
     __slots__ = ()
-    __fields__ = ()  # type: Tuple[str]
+    __fields__: Tuple[str] = ()
     #: cache of currently used specialisations to avoid
     #: recreating/duplicating commonly used types
     __specialisation_cache__ = WeakValueDictionary()
     #: instance of this specialisation
     #: with all values as zero
-    __zero__ = None  # type: ResourceLevels
+    __zero__: 'ResourceLevels' = None
 
     def __init__(self, **kwargs: T):
         raise TypeError(

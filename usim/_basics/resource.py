@@ -20,8 +20,8 @@ class BaseResources(Generic[T]):
     """
     Internal base class for resource types
     """
-    _levels_type = None  # type: Type[ResourceLevels[T]]
-    _available = None  # type: Tracked[ResourceLevels[T]]
+    _levels_type: Type[ResourceLevels[T]]
+    _available: Tracked[ResourceLevels[T]]
 
     @property
     def levels(self) -> ResourceLevels[T]:
