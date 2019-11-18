@@ -4,9 +4,33 @@ from typing import Type
 
 from usim import Scope, time, until
 from usim import Resources, Capacities, ResourcesUnavailable
+from usim.typing import ResourceLevels
 from usim._basics.resource import BaseResources
 
 from ..utility import via_usim, assertion_mode
+
+
+class TestResourceLevels:
+    def test_misuse(self):
+        with pytest.raises(TypeError):
+            ResourceLevels()
+        with pytest.raises(TypeError):
+            ResourceLevels(a=3, b=4)
+
+    def test_comparison(self):
+        resource_type = Resources(a=3, b=3).resource_type
+        assert resource_type(a=5, b=10) == resource_type(b=10, a=5)
+        assert resource_type(a=5, b=10) != resource_type(a=6, b=10)
+        assert resource_type(a=5, b=10) < resource_type(a=6, b=11)
+        assert not resource_type(a=5, b=10) < resource_type(a=6, b=10)
+        assert resource_type(a=5, b=10) <= resource_type(a=6, b=10)
+        assert resource_type(a=6, b=11) > resource_type(a=5, b=10)
+        assert not resource_type(a=6, b=10) > resource_type(a=5, b=10)
+        assert resource_type(a=6, b=10) >= resource_type(a=5, b=10)
+        assert resource_type(a=5, b=10) + resource_type(a=10, b=5) ==\
+            resource_type(b=15, a=15)
+        assert resource_type(a=25, b=20) - resource_type(a=10, b=5) ==\
+            resource_type(b=15, a=15)
 
 
 class BaseResourceCase:
