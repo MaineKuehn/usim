@@ -74,8 +74,7 @@ def via_usim(test_case: Callable[..., Coroutine]):
             nonlocal test_completed
             await test_case(*args, **kwargs)
             test_completed = True
-        result = run(complete_test_case())
+        run(complete_test_case())
         if not test_completed:
             raise UnfinishedTest(test_case)
-        return result
     return run_test
