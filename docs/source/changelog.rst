@@ -1,42 +1,36 @@
-.. Created by log.py at 2019-11-17, command
-   'changey log ./docs/source/changes compile --output ./docs/source/changelog.rst'
+.. Created by log.py at 2019-11-27, command
+   'change log docs/source/changes compile --output docs/source/changelog.rst'
    based on the format of 'https://keepachangelog.com/'
 #########
-CHANGELOG
+ChangeLog
 #########
 
-[0.4.2] - 2019-11-13
-====================
+0.4 Series
+==========
 
-Fixed
------
+Version [0.4.3] - 2019-11-27
+++++++++++++++++++++++++++++
 
-* Concurrent exceptions may cascade through nested scopes
+* **[Fixed]** Pipe.transfer reliably terminates
+* **[Added]** Resources allow comparisons to derive conditions for their levels
 
-[0.4.1] - 2019-10-25
-====================
+Version [0.4.2] - 2019-11-13
+++++++++++++++++++++++++++++
 
-Fixed
------
+* **[Fixed]** Concurrent exceptions may cascade through nested scopes
 
-* Scopes clean up all children on exit
+Version [0.4.1] - 2019-10-25
+++++++++++++++++++++++++++++
 
-[0.4.0] - 2019-10-24
-====================
+* **[Fixed]** Scopes clean up all children on exit
 
-Added
------
+Version [0.4.0] - 2019-10-24
+++++++++++++++++++++++++++++
 
-* Pipe resource type to simulate pipes/fluxes of limited throughput
-* full SimPy compatibility layer
+* **[Added]** Pipe resource type to simulate pipes/fluxes of limited throughput
+* **[Added]** full SimPy compatibility layer
 
-Changed
--------
+* **[Changed]** μSim flattened into the ``usim`` namespace
 
-* μSim flattened into the ``usim`` namespace
-
-Fixed
------
-
-* Scopes clean up children after failures
+* **[Fixed]** Scopes clean up children after failures
 

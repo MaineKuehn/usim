@@ -1,0 +1,11 @@
+category: fixed
+summary: "Pipe.transfer reliably terminates"
+description: |
+  The :py:meth:`usim.Pipe.transfer` could previously attempt to sleep
+  for less than the resolution of the time type (usually float). This prevented
+  it from finishing. The logic now has been changed so that an uninterrupted
+  sleep of the desired duration is sufficient; this automatically aligns with
+  the resolution of the time type.
+pull requests:
+- 77
+version: 0.4.3
