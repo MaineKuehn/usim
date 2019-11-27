@@ -1,0 +1,11 @@
+category: added
+summary: "Resources allow comparisons to derive conditions for their levels"
+description: |
+  All Resources types support the boolean comparison operators, such as ``==``, ``>=``,
+  or ``<``. The other operand must be a respective resources type or a compatible dict.
+  This creates a condition that triggers once the resources' levels satisfy
+  the comparison.
+pull requests:
+- 81
+issues:
+- 80
