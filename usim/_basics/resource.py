@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Optional, Type
+from typing import TypeVar, Generic, Optional, Type, Union, Dict
 
 from .._core.loop import __LOOP_STATE__
 from ._resource_level import __specialise__, ResourceLevels
@@ -71,6 +71,36 @@ class BaseResources(Generic[T]):
             f'{key}={item}' for key, item in self._available.value
         )
         return f'{self.__class__.__name__}({content})'
+
+    def __eq__(self, other: Union[ResourceLevels[T], Dict[str, T]]):
+        if isinstance(other, dict):
+            other = self.resource_type(**other)
+        return self._available == other
+
+    def __ne__(self, other: Union[ResourceLevels[T], Dict[str, T]]):
+        if isinstance(other, dict):
+            other = self.resource_type(**other)
+        return self._available != other
+
+    def __gt__(self, other: Union[ResourceLevels[T], Dict[str, T]]):
+        if isinstance(other, dict):
+            other = self.resource_type(**other)
+        return self._available > other
+
+    def __ge__(self, other: Union[ResourceLevels[T], Dict[str, T]]):
+        if isinstance(other, dict):
+            other = self.resource_type(**other)
+        return self._available >= other
+
+    def __le__(self, other: Union[ResourceLevels[T], Dict[str, T]]):
+        if isinstance(other, dict):
+            other = self.resource_type(**other)
+        return self._available <= other
+
+    def __lt__(self, other: Union[ResourceLevels[T], Dict[str, T]]):
+        if isinstance(other, dict):
+            other = self.resource_type(**other)
+        return self._available < other
 
 
 class BorrowedResources(BaseResources[T]):
