@@ -187,6 +187,51 @@ class BaseResourceCase:
         async with resources.borrow(a=10, b=10):
             assert time == 10
 
+    @via_usim
+    async def test_compare(self):
+        resources = self.resource_type(a=10, b=10)
+
+        async def borrow_shortly(resource: BaseResources, **amounts):
+            async with resource.borrow(**amounts):
+                pass
+
+        async with Scope() as scope:
+            await (resources == {'a': 10, 'b': 10})
+            scope.do(borrow_shortly(resources, a=5, b=5), after=10)
+            await (resources == resources.resource_type(a=5, b=5))
+            assert time.now == 10
+        assert time.now == 10
+        async with Scope() as scope:
+            await (resources > {'a': 9, 'b': 9})
+            scope.do(borrow_shortly(resources, a=5, b=5), after=10)
+            await (resources > resources.resource_type(a=5, b=5))
+            assert time.now == 10
+        assert time.now == 20
+        async with Scope() as scope:
+            await (resources >= {'a': 10, 'b': 10})
+            scope.do(borrow_shortly(resources, a=5, b=5), after=10)
+            await (resources >= resources.resource_type(a=5, b=5))
+            assert time.now == 20
+        assert time.now == 30
+        async with Scope() as scope:
+            await (resources <= {'a': 10, 'b': 10})
+            scope.do(borrow_shortly(resources, a=5, b=5), after=10)
+            await (resources <= resources.resource_type(a=5, b=5))
+            assert time.now == 40
+        assert time.now == 40
+        async with Scope() as scope:
+            await (resources < {'a': 11, 'b': 11})
+            scope.do(borrow_shortly(resources, a=5, b=5), after=10)
+            await (resources < resources.resource_type(a=6, b=6))
+            assert time.now == 50
+        assert time.now == 50
+        async with Scope() as scope:
+            await (resources != {'a': 5, 'b': 5})
+            scope.do(borrow_shortly(resources, a=5, b=5), after=10)
+            await (resources != resources.resource_type(a=10, b=10))
+            assert time.now == 60
+        assert time.now == 60
+
 
 class TestCapacity(BaseResourceCase):
     resource_type = Capacities
