@@ -11,7 +11,7 @@ ChangeLog
 Version [0.4.3] - 2019-11-27
 ++++++++++++++++++++++++++++
 
-* **[Added]** Pipe.transfer reliably terminates
+* **[Fixed]** Pipe.transfer reliably terminates
 * **[Added]** Resources allow comparisons to derive conditions for their levels
 
 Version [0.4.2] - 2019-11-13

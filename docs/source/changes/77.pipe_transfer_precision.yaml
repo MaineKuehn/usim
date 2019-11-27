@@ -1,4 +1,4 @@
-category: added
+category: fixed
 summary: "Pipe.transfer reliably terminates"
 description: |
   The :py:meth:`usim.Pipe.transfer` could previously attempt to sleep
