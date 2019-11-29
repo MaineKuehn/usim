@@ -288,8 +288,6 @@ class Scope:
         """
         try:
             await self._await_children()
-            # we must always postpone to receive signals, even if there are no children
-            await postpone()
         except BaseException as err:
             if not self._aexit_forceful(type(err), err):
                 raise
@@ -332,7 +330,7 @@ class Scope:
             # we already have a privileged exception, there is nothing more important
             # propagate it
             return False
-        elif self._is_suppressed(exc_val):
+        elif self._is_suppressed(exc_val) or exc_type is None:
             # we do not have an exception to propagate, take whatever we can get
             privileged, concurrent = self._collect_exceptions()
             if privileged is not None or concurrent is not None:
