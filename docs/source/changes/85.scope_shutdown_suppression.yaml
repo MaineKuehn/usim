@@ -1,0 +1,11 @@
+category: fixed
+summary: "Scopes no longer swallow exceptions during graceful shutdown"
+description: |
+  When a :py:class:`~usim.Scope` received a signal during graceful shutdown,
+  its fast shutdown path attempted to propagate the signal incorrectly.
+  Such late signals as well as concurrent exceptions are now explicitly
+  handled and propagated out of the scope as needed.
+issues:
+- 83
+pull requests:
+- 85

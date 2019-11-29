@@ -1,0 +1,7 @@
+category: fixed
+summary: "Cancelling a Task early no longer cancels its parent scope"
+description: |
+  Cancelling a :py:class:`~usim.Task` was incorrectly flagged as a failure of the task.
+  This caused the parent :py:class:`~usim.Scope` to abort as well.
+pull requests:
+- 85
