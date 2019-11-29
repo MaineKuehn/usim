@@ -243,13 +243,17 @@ class Scope:
                 # inform everyone that we are shutting down
                 # we may receive any shutdown signal here
                 await self._body_done.set()
+                await self._await_children()
             except BaseException as err:
                 exc_type, exc_val = type(err), err
-                if not self._propagate_exceptions(exc_type, exc_val):
+                if not self._aexit_forceful(exc_type, exc_val):
                     raise
                 return True
             else:
-                return await self._aexit_graceful()
+                # everybody is gone - we just handle the cleanup
+                self._disable_interrupts()
+                self._close_volatile()
+                return self._propagate_exceptions(None, None)
         else:
             self._body_done._value = True
             self._body_done.__trigger__()
@@ -274,28 +278,6 @@ class Scope:
         self._close_children()
         self._close_volatile()
         return self._propagate_exceptions(exc_type, exc_val)
-
-    async def _aexit_graceful(self) -> bool:
-        """
-        Exit without exception
-
-        This suspends the scope until all children have finished themselves.
-        If any children encountered an error, they are reraised as
-        :py:exc:`~.Concurrent` errors.
-
-        If an error occurs while waiting for children to stop, a forceful
-        shutdown is performed instead.
-        """
-        try:
-            await self._await_children()
-        except BaseException as err:
-            if not self._aexit_forceful(type(err), err):
-                raise
-        else:
-            # everybody is gone - we just handle the cleanup
-            self._disable_interrupts()
-            self._close_volatile()
-            return self._propagate_exceptions(None, None)
 
     def _collect_exceptions(self)\
             -> Tuple[Optional[BaseException], Optional[Concurrent]]:
