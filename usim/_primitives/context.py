@@ -245,6 +245,8 @@ class Scope:
                 await self._body_done.set()
             except BaseException as err:
                 exc_type, exc_val = type(err), err
+                if not self._propagate_exceptions(exc_type, exc_val):
+                    raise
             else:
                 return await self._aexit_graceful()
         self._body_done._value = True
@@ -287,6 +289,8 @@ class Scope:
             # we must always postpone to receive signals, even if there are no children
             await postpone()
         except BaseException as err:
+            if not self._aexit_forceful(type(err), err):
+                raise
             return self._aexit_forceful(type(err), err)
         else:
             # everybody is gone - we just handle the cleanup
@@ -322,7 +326,7 @@ class Scope:
             return None, exc
         return None, None
 
-    def _propagate_exceptions(self, exc_type, exc_val):
+    def _propagate_exceptions(self, exc_type, exc_val) -> bool:
         if exc_type in self.PROMOTE_CONCURRENT:
             # we already have a privileged exception, there is nothing more important
             # propagate it
