@@ -168,6 +168,7 @@ class TestExceptions:
     async def test_fail_interrupt_shutdown(self):
         """Interrupts during shutdown are not suppressed"""
         async def bare_scope():
+            await instant  # allow the task to postpone before we cancel it
             # a bare Scope postpones twice:
             # 1) signalling body done
             # 2) waiting for children (even if there are none)
@@ -177,7 +178,7 @@ class TestExceptions:
         async with Scope() as scope:
             task_bare = scope.do(bare_scope())
             task_child = scope.do(bare_scope())
-            await instant
+            await instant  # let tasks start; the next postponement is end of scope body
             assert not task_bare.done
             task_bare.cancel()
             await instant
