@@ -181,7 +181,7 @@ class TestExceptions:
             # so that we cover every interrupt point in case the
             # implementation changes
             tasks = [scope.do(bare_scope()) for _ in range(5)]
-            for idx, task in enumerate(tasks):
+            for task in tasks:
                 assert not task.done
                 task.cancel()
                 await instant
