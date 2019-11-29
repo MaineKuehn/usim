@@ -44,6 +44,12 @@ class TestPipe:
         assert (time == 5)
 
     @via_usim
+    async def test_transfer_zero(self):
+        pipe = Pipe(throughput=2)
+        await pipe.transfer(total=0)
+        assert (time == 0)
+
+    @via_usim
     async def test_transfer_congested(self):
         pipe = Pipe(throughput=2)
         await pipe.transfer(total=2, throughput=4)

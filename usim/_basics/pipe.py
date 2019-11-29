@@ -59,7 +59,7 @@ class Pipe:
         If ``throughput`` is not given, it defaults to the Pipe's
         :py:attr:`~.throughput` limit.
         """
-        assert total > 0, 'total must be positive'
+        assert total >= 0, 'total must be positive'
         assert throughput is None or throughput > 0,\
             'throughput must be positive or None'
         transferred = 0
