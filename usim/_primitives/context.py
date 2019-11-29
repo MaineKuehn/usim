@@ -247,12 +247,14 @@ class Scope:
                 exc_type, exc_val = type(err), err
                 if not self._propagate_exceptions(exc_type, exc_val):
                     raise
+                return True
             else:
                 return await self._aexit_graceful()
-        self._body_done._value = True
-        self._body_done.__trigger__()
-        # there was an exception, we have to abandon the scope
-        return self._aexit_forceful(exc_type, exc_val)
+        else:
+            self._body_done._value = True
+            self._body_done.__trigger__()
+            # there was an exception, we have to abandon the scope
+            return self._aexit_forceful(exc_type, exc_val)
 
     def _aexit_forceful(self, exc_type, exc_val) -> bool:
         """
@@ -291,7 +293,6 @@ class Scope:
         except BaseException as err:
             if not self._aexit_forceful(type(err), err):
                 raise
-            return self._aexit_forceful(type(err), err)
         else:
             # everybody is gone - we just handle the cleanup
             self._disable_interrupts()
