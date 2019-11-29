@@ -253,7 +253,7 @@ class Scope:
                 # everybody is gone - we just handle the cleanup
                 self._disable_interrupts()
                 self._close_volatile()
-                return self._propagate_exceptions(None, None)
+                return not self._propagate_exceptions(None, None)
         else:
             self._body_done._value = True
             self._body_done.__trigger__()
@@ -277,7 +277,7 @@ class Scope:
         # reap all children now
         self._close_children()
         self._close_volatile()
-        return self._propagate_exceptions(exc_type, exc_val)
+        return not self._propagate_exceptions(exc_type, exc_val)
 
     def _collect_exceptions(self)\
             -> Tuple[Optional[BaseException], Optional[Concurrent]]:
@@ -311,21 +311,21 @@ class Scope:
         if exc_type in self.PROMOTE_CONCURRENT:
             # we already have a privileged exception, there is nothing more important
             # propagate it
-            return False
+            return True
         elif self._is_suppressed(exc_val) or exc_type is None:
             # we do not have an exception to propagate, take whatever we can get
             privileged, concurrent = self._collect_exceptions()
             if privileged is not None or concurrent is not None:
                 raise privileged or concurrent
             # we handled our own and there was nothing else to propagate
-            return True
+            return False
         else:
             # we already have an exception to propagate, take only important ones
             privileged, _ = self._collect_exceptions()
             if privileged is not None:
                 raise privileged
             # we still have our unhandled exception to propagate
-            return False
+            return True
 
     def _is_suppressed(self, exc_val) -> bool:
         """
