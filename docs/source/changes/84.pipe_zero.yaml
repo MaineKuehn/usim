@@ -1,0 +1,7 @@
+category: changed
+summary: "Pipe transfers support totals of zero"
+description: |
+  Until now ``total``s were asserted to be greater than zero. Now also transfers
+  of ``0`` are supported.
+pull requests:
+- 84
