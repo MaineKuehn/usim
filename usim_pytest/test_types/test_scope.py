@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from usim import Scope, time, instant, Concurrent
+from usim import Scope, time, instant, Concurrent, TaskCancelled
 
 from ..utility import via_usim, assertion_mode
 
@@ -163,6 +163,31 @@ class TestExceptions:
                     scope.do(inner_raise(KeyError()))
             except Concurrent[Concurrent[IndexError]]:
                 assert False
+
+    @via_usim
+    async def test_fail_interrupt_shutdown(self):
+        """Interrupts during shutdown are not suppressed"""
+        async def bare_scope():
+            # a bare Scope postpones twice:
+            # 1) signalling body done
+            # 2) waiting for children (even if there are none)
+            async with Scope():
+                ...
+
+        async with Scope() as scope:
+            task_bare = scope.do(bare_scope())
+            task_child = scope.do(bare_scope())
+            await instant
+            assert not task_bare.done
+            task_bare.cancel()
+            await instant
+            assert not task_child.done
+            task_child.cancel()
+
+        with pytest.raises(TaskCancelled):
+            await task_bare
+        with pytest.raises(TaskCancelled):
+            await task_child
 
 
 class TestScoping:
