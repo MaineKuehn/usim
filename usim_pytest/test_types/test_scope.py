@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from usim import Scope, time, instant, Concurrent, TaskCancelled
+from usim import Scope, time, instant, eternity, Concurrent, TaskCancelled
 
 from ..utility import via_usim, assertion_mode
 
@@ -174,21 +174,21 @@ class TestExceptions:
             # 2) waiting for children (even if there are none)
             async with Scope():
                 ...
+            await eternity  # receive late cancellations
 
         async with Scope() as scope:
-            task_bare = scope.do(bare_scope())
-            task_child = scope.do(bare_scope())
-            await instant  # let tasks start; the next postponement is end of scope body
-            assert not task_bare.done
-            task_bare.cancel()
-            await instant
-            assert not task_child.done
-            task_child.cancel()
+            # create *more* tasks than we expect postponements (3)
+            # so that we cover every interrupt point in case the
+            # implementation changes
+            tasks = [scope.do(bare_scope()) for _ in range(5)]
+            for idx, task in enumerate(tasks):
+                assert not task.done
+                task.cancel()
+                await instant
 
-        with pytest.raises(TaskCancelled):
-            await task_bare
-        with pytest.raises(TaskCancelled):
-            await task_child
+        for task in tasks:
+            with pytest.raises(TaskCancelled):
+                await task
 
 
 class TestScoping:
