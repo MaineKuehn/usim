@@ -118,7 +118,7 @@ class Task(Awaitable[RT]):
             # check for a pre-run cancellation
             if self._result is not None:
                 try_close(self.payload)
-                self.parent.__child_finished__(self, failed=True)
+                self.parent.__child_finished__(self, failed=False)
                 return
             try:
                 # We suspend the Task internally instead of waiting to start

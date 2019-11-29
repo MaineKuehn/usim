@@ -1,7 +1,7 @@
 from typing import Coroutine, List, TypeVar, Any, Optional, Tuple
 
 from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
-from .notification import Notification, postpone
+from .notification import Notification
 from .flag import Flag
 from .task import Task, TaskClosed, TaskCancelled, try_close
 from .concurrent_exception import Concurrent
@@ -238,61 +238,32 @@ class Scope:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
+        # there was no exception, we regularly exited the loop body
+        # we wait for our children to finish or some interrupt to happen
         if exc_type is None:
             try:
                 # inform everyone that we are shutting down
                 # we may receive any shutdown signal here
                 await self._body_done.set()
+                await self._await_children()
             except BaseException as err:
-                exc_type, exc_val = type(err), err
-            else:
-                return await self._aexit_graceful()
-        self._body_done._value = True
-        self._body_done.__trigger__()
-        # there was an exception, we have to abandon the scope
-        return self._aexit_forceful(exc_type, exc_val)
+                self._close_scope()
+                if self._propagate_exceptions(type(err), err):
+                    raise
+                return True
+        # there was an exception, we have to abandon the scope fast
+        # we do not want interrupts that conflict with our current exception
+        else:
+            self._body_done._value = True
+            self._body_done.__trigger__()
+        self._close_scope()
+        return not self._propagate_exceptions(exc_type, exc_val)
 
-    def _aexit_forceful(self, exc_type, exc_val) -> bool:
-        """
-        Exit with exception
-
-        This immediately closes all children without waiting for anything.
-        No further interrupts can occur during shutdown (this is a sync function).
-
-        If a fatal exception occurred in this scope or a child, the fatal
-        exception replaces all other exceptions in flight.
-        If the current exception is suppressed by the scope, any exceptions from
-        children are reraised as :py:exc:`~.Concurrent` errors.
-        """
-        # we already handle an exception, suppress
+    def _close_scope(self):
+        """Ultimately close the scope, its interrupts and all children"""
         self._disable_interrupts()
-        # reap all children now
         self._close_children()
         self._close_volatile()
-        return self._propagate_exceptions(exc_type, exc_val)
-
-    async def _aexit_graceful(self) -> bool:
-        """
-        Exit without exception
-
-        This suspends the scope until all children have finished themselves.
-        If any children encountered an error, they are reraised as
-        :py:exc:`~.Concurrent` errors.
-
-        If an error occurs while waiting for children to stop, a forceful
-        shutdown is performed instead.
-        """
-        try:
-            await self._await_children()
-            # we must always postpone to receive signals, even if there are no children
-            await postpone()
-        except BaseException as err:
-            return self._aexit_forceful(type(err), err)
-        else:
-            # everybody is gone - we just handle the cleanup
-            self._disable_interrupts()
-            self._close_volatile()
-            return self._propagate_exceptions(None, None)
 
     def _collect_exceptions(self)\
             -> Tuple[Optional[BaseException], Optional[Concurrent]]:
@@ -322,25 +293,25 @@ class Scope:
             return None, exc
         return None, None
 
-    def _propagate_exceptions(self, exc_type, exc_val):
+    def _propagate_exceptions(self, exc_type, exc_val) -> bool:
         if exc_type in self.PROMOTE_CONCURRENT:
             # we already have a privileged exception, there is nothing more important
             # propagate it
-            return False
-        elif self._is_suppressed(exc_val):
+            return True
+        elif self._is_suppressed(exc_val) or exc_type is None:
             # we do not have an exception to propagate, take whatever we can get
             privileged, concurrent = self._collect_exceptions()
             if privileged is not None or concurrent is not None:
                 raise privileged or concurrent
             # we handled our own and there was nothing else to propagate
-            return True
+            return False
         else:
             # we already have an exception to propagate, take only important ones
             privileged, _ = self._collect_exceptions()
             if privileged is not None:
                 raise privileged
             # we still have our unhandled exception to propagate
-            return False
+            return True
 
     def _is_suppressed(self, exc_val) -> bool:
         """
