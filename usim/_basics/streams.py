@@ -173,9 +173,11 @@ class Queue(AsyncIterable, Generic[ST]):
     async def __aiter__(self):
         while True:
             try:
-                yield await self
+                result = await self
             except StreamClosed:
                 break
+            else:
+                yield result
 
     async def put(self, item: ST):
         r"""
