@@ -168,7 +168,7 @@ class Queue(AsyncIterable, Generic[ST]):
             try:
                 return self._buffer.popleft()
             except IndexError:
-                assert self._closed  #
+                assert self._closed  # on failure, report this as a usim bug
                 raise StreamClosed(self)
 
     async def __aiter__(self):
