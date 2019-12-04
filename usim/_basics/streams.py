@@ -159,16 +159,17 @@ class Queue(AsyncIterable, Generic[ST]):
 
     async def _await_message(self):
         async with self._read_mutex:
+            if self._buffer:
+                await postpone()
+                return self._buffer.popleft()
+            elif self._closed:
+                raise StreamClosed(self)
+            await self._notification
             try:
                 return self._buffer.popleft()
             except IndexError:
-                pass
-            if self._closed:
+                assert self._closed  #
                 raise StreamClosed(self)
-            await self._notification
-            if not self._buffer and self._closed:
-                raise StreamClosed(self)
-            return self._buffer.popleft()
 
     async def __aiter__(self):
         while True:
