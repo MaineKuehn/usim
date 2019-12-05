@@ -5,7 +5,7 @@ from usim import time, Scope
 from usim import Queue, Channel, StreamClosed
 from usim.typing import Stream
 
-from ..utility import via_usim, turnstamp
+from ..utility import via_usim, turnstamp, assert_postpone
 
 
 class Base1to1Stream:
@@ -24,10 +24,8 @@ class Base1to1Stream:
             await stream.put(None)
         with pytest.raises(StreamClosed):
             await stream
-        start = turnstamp()
-        await stream.close()
-        end = turnstamp()
-        assert end > start
+        with assert_postpone():
+            await stream.close()
 
     @via_usim
     async def test_put_get(self):

@@ -2,6 +2,8 @@ from typing import Callable, Coroutine, TypeVar
 from functools import wraps
 from collections import namedtuple
 
+import pytest
+
 from usim import run
 from usim._core.loop import __LOOP_STATE__
 
@@ -30,6 +32,39 @@ def turnstamp() -> Turnstamp:
     """Get the precise progress as ``time, turn``"""
     loop = __LOOP_STATE__.LOOP
     return Turnstamp(loop.time, loop.turn)
+
+
+def assert_postpone(allow_suspension=False):
+    """
+    Context to check whether its block did postpone
+
+    :param allow_suspension: whether suspension is counted as suspending
+    """
+    return PostponesContext(allow_suspension=allow_suspension)
+
+
+class PostponesContext:
+    __slots__ = 'allow_suspension', 'start'
+
+    def __init__(self, allow_suspension=False):
+        self.allow_suspension = allow_suspension
+        self.start = Turnstamp(0, 0)
+
+    def __enter__(self):
+        self.start = turnstamp()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        __tracebackhide__ = True
+        start = self.start
+        end = turnstamp()
+        if self.allow_suspension:
+            if not end > start:
+                pytest.fail("Block failed to postpone or suspend")
+        else:
+            if end.time > start.time:
+                pytest.fail("Block failed to postpone but suspended instead")
+            elif not end.turn > start.turn:
+                pytest.fail("Block failed to postpone but resumed immediately instead")
 
 
 def assertion_mode(test_case: Callable[..., RT]) -> Callable[..., RT]:
