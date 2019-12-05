@@ -20,12 +20,15 @@ class Base1to1Stream:
     async def test_close(self):
         stream = self.stream_type()
         await stream.close()
+        assert stream.closed
         with pytest.raises(StreamClosed):
             await stream.put(None)
         with pytest.raises(StreamClosed):
             await stream
+        # closing is idempotent
         with assert_postpone():
             await stream.close()
+        assert stream.closed
 
     @via_usim
     async def test_put_get(self):
