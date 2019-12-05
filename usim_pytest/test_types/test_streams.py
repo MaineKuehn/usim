@@ -75,6 +75,20 @@ class Base1to1Stream:
 class Test1to1Queue(Base1to1Stream):
     stream_type = Queue
 
+    # Only applies to Queue since Channel does not buffer items
+    @via_usim
+    async def test_full_get(self):
+        """``await Queue`` on filled queue"""
+        stream = self.stream_type()
+
+        for val in range(20):
+            await stream.put(val)
+        await stream.close()
+        for val in range(20):
+            with assert_postpone():
+                fetched = await stream
+                assert fetched == val
+
 
 class Test1to1Channel(Base1to1Stream):
     stream_type = Channel
