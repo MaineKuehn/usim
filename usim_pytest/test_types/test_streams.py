@@ -29,6 +29,7 @@ class Base1to1Stream:
 
     @via_usim
     async def test_put_get(self):
+        """``Stream.put`` interlocked with ``await Stream``"""
         stream = self.stream_type()
 
         async def fill(*values, delay: float = 5):
@@ -52,6 +53,7 @@ class Base1to1Stream:
 
     @via_usim
     async def test_put_stream(self):
+        """``Stream.put`` interlocked with ``async for ... in Stream``"""
         stream = self.stream_type()
 
         async def fill(*values, delay: float = 5):
