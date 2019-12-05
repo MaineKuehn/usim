@@ -5,7 +5,7 @@ from usim import time, Scope
 from usim import Queue, Channel, StreamClosed
 from usim.typing import Stream
 
-from ..utility import via_usim, turnstamp, assert_postpone
+from ..utility import via_usim, assert_postpone
 
 
 class Base1to1Stream:
