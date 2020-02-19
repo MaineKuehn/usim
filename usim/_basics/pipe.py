@@ -69,10 +69,14 @@ class Pipe:
         while transferred < total:
             window_start = __LOOP_STATE__.LOOP.time
             window_throughput = throughput * self._throughput_scale
+            # Try to delay until we have transferred everything.
+            # Be prepared to get interrupted if throughput changes.
             with self._congested.__subscription__():
-                await suspend(
-                    delay=(total - transferred) / window_throughput, until=None,
-                )
+                delay = (total - transferred) / window_throughput
+                if delay > 0:
+                    await suspend(delay=delay, until=None)
+                else:
+                    await postpone()
                 # At this point, we have been suspended for as long as calculated.
                 # Barring float *imprecision* we have transferred the desired volume.
                 transferred = total

@@ -115,3 +115,10 @@ class TestUnboundedPipe:
                 scope.do(pipe.transfer(total=total))
                 scope.do(pipe.transfer(total=total))
         assert (time == 0)
+
+
+@pytest.mark.parametrize("pipe_type", [Pipe, UnboundedPipe])
+@via_usim
+async def test_infinite_transfers(pipe_type):
+    pipe = pipe_type(throughput=float('inf'))
+    await pipe.transfer(total=20)
