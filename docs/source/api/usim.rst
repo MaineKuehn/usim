@@ -45,7 +45,7 @@ of a simulation.
     A point in time indistinguishable from the current moment.
 
 In addition, recurring actions can be repeated at specific delays or intervals
-in ``async for`` block.
+in ``async for`` blocks.
 
 :py:data:`usim.interval`
     Repeat in fixed intervals, regardless of any time spent in a block.
