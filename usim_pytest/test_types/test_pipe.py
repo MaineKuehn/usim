@@ -1,6 +1,6 @@
 import pytest
 
-from usim import time, Pipe, Scope
+from usim import time, Pipe, UnboundedPipe, Scope
 
 from ..utility import via_usim, assertion_mode
 
@@ -84,3 +84,34 @@ class TestPipe:
         async with Scope() as scope:
             for _ in range(6):
                 scope.do(pipe.transfer(total=15))
+
+
+class TestUnboundedPipe:
+    @assertion_mode
+    @via_usim
+    async def test_debug_misuse(self):
+        with pytest.raises(AssertionError):
+            UnboundedPipe(throughput=0)
+        with pytest.raises(AssertionError):
+            UnboundedPipe(throughput=-10)
+        with pytest.raises(AssertionError):
+            UnboundedPipe(throughput=10)
+        pipe = UnboundedPipe()
+        with pytest.raises(AssertionError):
+            await pipe.transfer(total=-10, throughput=20)
+        with pytest.raises(AssertionError):
+            await pipe.transfer(total=10, throughput=0)
+
+    @via_usim
+    async def test_transfers(self):
+        pipe = UnboundedPipe()
+        for total in (0, 10, float('inf')):
+            await pipe.transfer(total=total)
+        assert (time == 0)
+        async with Scope() as scope:
+            for total in (0, 10, float('inf')):
+                scope.do(pipe.transfer(total=total))
+                scope.do(pipe.transfer(total=total))
+                scope.do(pipe.transfer(total=total))
+                scope.do(pipe.transfer(total=total))
+        assert (time == 0)

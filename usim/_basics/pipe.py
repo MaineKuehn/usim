@@ -1,6 +1,6 @@
 from typing import Optional, Dict
 
-from .._primitives.notification import Notification, suspend
+from .._primitives.notification import Notification, suspend, postpone
 from .._core.loop import __LOOP_STATE__
 
 
@@ -96,3 +96,28 @@ class Pipe:
         elif self._throughput_scale != 1.0:
             self._throughput_scale = 1.0
             self._congested.__awake_all__()
+
+
+class UnboundedPipe(Pipe):
+    """
+    Shared transport for resources with unlimited total throughput
+
+    This is a noop variant of the regular :py:class:`~usim.Pipe`.
+    It serves as a neutral element when a :py:class:`~usim.Pipe`
+    is required but no throttling should take place.
+    """
+    def __init__(self, throughput=float('inf')):
+        assert throughput == float('inf'),\
+            'throughput must be infinite; use Pipe for finite throughput'
+        super().__init__(throughput=throughput)
+
+    async def transfer(
+            self, total: float, throughput: Optional[float] = None
+    ) -> None:
+        # Ensure that the outwards appearance is the same as the base:
+        # * fail on the same inputs
+        # * allow other tasks to run
+        assert total >= 0, 'total must be positive'
+        assert throughput is None or throughput > 0,\
+            'throughput must be positive or None'
+        await postpone()
