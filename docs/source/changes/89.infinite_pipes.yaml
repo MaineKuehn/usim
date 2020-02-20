@@ -1,0 +1,10 @@
+category: changed
+summary: "Pipes allow for infinite throughput"
+description: |
+  For programming simplicity, it is useful to allow a :py:class:`~usim.Pipe` which
+  does not throttle throughput. This allows for a "neutral element" to disable effects
+  of a :py:class:`~usim.Pipe` without changing the design of a simulation. When it is
+  known up-front that unlimited throughput is desired, :py:class:`~usim.UnboundedPipe`
+  provides an optimal implementation for this case as well.
+pull requests:
+- 89

@@ -1,4 +1,4 @@
-.. Created by log.py at 2020-02-17, command
+.. Created by log.py at 2020-02-20, command
    '/Users/mfischer/PycharmProjects/usim/venv/lib/python3.7/site-packages/change/__main__.py log docs/source/changes compile --output docs/source/changelog.rst'
    based on the format of 'https://keepachangelog.com/'
 #########
@@ -8,9 +8,10 @@ ChangeLog
 Upcoming
 ========
 
-Version [Unreleased] - 2020-02-17
+Version [Unreleased] - 2020-02-20
 +++++++++++++++++++++++++++++++++
 
+* **[Changed]** Pipes allow for infinite throughput
 * **[Changed]** Pipe transfers support totals of zero
 
 * **[Fixed]** Scopes no longer swallow exceptions during graceful shutdown

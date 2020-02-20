@@ -25,3 +25,6 @@ Resource Transfer
 
 .. autoclass:: usim.Pipe
     :members:
+
+.. autoclass:: usim.UnboundedPipe
+    :members:
