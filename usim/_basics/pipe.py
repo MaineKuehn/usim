@@ -124,4 +124,11 @@ class UnboundedPipe(Pipe):
         assert total >= 0, 'total must be positive'
         assert throughput is None or throughput > 0,\
             'throughput must be positive or None'
-        await postpone()
+        if throughput is None or throughput == float('inf'):
+            await postpone()
+        else:
+            delay = total / throughput
+            if delay > 0:
+                await suspend(delay=delay, until=None)
+            else:
+                await postpone()
