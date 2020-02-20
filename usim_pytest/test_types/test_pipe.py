@@ -122,3 +122,8 @@ class TestUnboundedPipe:
 async def test_infinite_transfers(pipe_type):
     pipe = pipe_type(throughput=float('inf'))
     await pipe.transfer(total=20)
+    assert (time == 0)
+    await pipe.transfer(total=20, throughput=10)
+    assert (time == 2)
+    await pipe.transfer(total=0, throughput=10)
+    assert (time == 2)
