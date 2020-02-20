@@ -93,13 +93,15 @@ class Channel(AsyncIterable, Generic[ST]):
     async def __aiter__(self):
         sentinel = object()
         self._consumer_buffers[sentinel] = buffer = deque()  # type: Deque[ST]
-        while True:
-            while buffer:
-                yield buffer.popleft()
-            if self._closed:
-                break
-            await self._notification
-        del self._consumer_buffers[sentinel]
+        try:
+            while True:
+                while buffer:
+                    yield buffer.popleft()
+                if self._closed:
+                    break
+                await self._notification
+        finally:
+            del self._consumer_buffers[sentinel]
 
     async def put(self, item: ST):
         r"""
