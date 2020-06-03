@@ -6,6 +6,9 @@
 μSim - Lightweight Concurrent Simulations
 =========================================
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3813587.svg
+   :target: https://doi.org/10.5281/zenodo.3813587
+
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
