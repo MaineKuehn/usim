@@ -6,7 +6,24 @@
 μSim - Lightweight Concurrent Simulations
 =========================================
 
+.. image:: https://readthedocs.org/projects/usim/badge/?version=latest
+    :target: http://usim.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation
+
+.. image:: https://img.shields.io/pypi/v/usim.svg
+    :target: https://pypi.python.org/pypi/usim/
+    :alt: Available on PyPI
+
+.. image:: https://img.shields.io/github/license/MaineKuehn/usim.svg
+    :target: https://github.com/MaineKuehn/usim/blob/master/LICENSE
+    :alt: MIT Licensed
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3813587.svg
+   :target: https://doi.org/10.5281/zenodo.3813587
+   :alt: Cite with DOI
+
 .. toctree::
+   :hidden:
    :maxdepth: 1
    :caption: Contents:
 
