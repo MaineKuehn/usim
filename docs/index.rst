@@ -23,6 +23,7 @@
    :alt: Cite with DOI
 
 .. toctree::
+   :hidden:
    :maxdepth: 1
    :caption: Contents:
 
