@@ -17,6 +17,7 @@
 
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3813587.svg
    :target: https://doi.org/10.5281/zenodo.3813587
+   :alt: Cite with DOI
 
 μSim offers a lightweight and expressive user interface,
 built on top of a powerful and robust simulation framework.
