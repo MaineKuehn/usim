@@ -38,6 +38,4 @@ async def test_collect_failure(count):
         activities = [
             ping_raise(failures[idx % 3], delay=1) for idx in range(count)
         ]
-        [print(failures[idx % 3], idx % 3)
-        for idx in range(count)]
         await collect(*activities)
