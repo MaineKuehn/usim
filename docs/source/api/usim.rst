@@ -159,6 +159,17 @@ blocked or waited for.
     Exception raised when an attempt to :py:meth:`~usim.Resources.claim`
     resources fails.
 
+Common Building Blocks
+----------------------
+
+:py:func:`usim.race`
+    Run several :term:`activities <activity>` concurrently and yield results
+    as they become available.
+
+:py:func:`usim.collect`
+    Run several :term:`activities <activity>` concurrently and return
+    their results in order.
+
 Detailed Topics
 ---------------
 
@@ -170,6 +181,7 @@ Detailed Topics
     usim_synchronising
     usim_sharing
     usim_resources
+    usim_common
     usim.typing
 
 .. _SimPy: https://simpy.readthedocs.io/
