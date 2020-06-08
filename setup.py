@@ -25,7 +25,7 @@ if __name__ == '__main__':
         packages=find_packages(),
         install_requires=[
             'sortedcontainers',
-            'asyncstdlib',
+            'asyncstdlib>=1.1.1',
         ],
         extras_require={
             'docs': ["sphinx", "sphinx_rtd_theme", "sphinxcontrib-trio",
