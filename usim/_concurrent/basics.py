@@ -35,6 +35,7 @@ async def race(
     The initial order of ``activities`` is irrelevant.
     """
     results: Queue[RT] = Queue()
+    winners = winners if winners is not None else len(activities)
     async with Scope() as scope:
         for activity in activities:
             scope.do(
