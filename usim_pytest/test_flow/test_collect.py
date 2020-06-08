@@ -29,11 +29,13 @@ async def test_collect_some(count):
 @via_usim
 async def test_collect_failure(count):
     failures = (KeyError, IndexError, AttributeError)
+    # abort on first failure
     with pytest.raises(Concurrent[KeyError]):
         activities = [
             ping_raise(failures[idx % 3], delay=idx) for idx in range(count)
         ]
         await collect(*activities)
+    # collect concurrent failures
     with pytest.raises(Concurrent[failures[:count]]):
         activities = [
             ping_raise(failures[idx % 3], delay=1) for idx in range(count)
