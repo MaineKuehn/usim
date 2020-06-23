@@ -50,6 +50,9 @@ async def test_less_available(count):
         async for _ in first(*activities, count=3):
             pass
     assert (time == 0)
+    # prevent resource warning from unhandled coroutines
+    for activity in activities:
+        activity.close()
 
 
 @pytest.mark.parametrize('count', (5, 12, 1))
