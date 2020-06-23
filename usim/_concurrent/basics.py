@@ -24,6 +24,7 @@ async def first(
     :param count: maximum number of results
     :return: async iterable of results
     :raises usim.Concurrent: if any of the ``activities`` raise an exception
+    :raises ValueError: if ``count`` is bigger than number of ``activities``
 
     If there are more results than ``count``,
     any remaining ``activities`` are aborted after yielding the last result.
