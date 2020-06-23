@@ -8,14 +8,14 @@ import asyncstdlib as a
 RT = TypeVar('RT')
 
 
-async def _race_monitor(contestant: Awaitable[RT], queue: Queue):
+async def _first_monitor(contestant: Awaitable[RT], queue: Queue):
     result = await contestant
     await queue.put(result)
 
 
 async def first(
     *activities: Coroutine[Any, Any, RT],
-    count: Optional[int] = None,
+    count: Optional[int] = 1,
 ) -> AsyncIterator[RT]:
     """
     Run all ``activities`` concurrently to get the first ``count`` results available
@@ -36,10 +36,12 @@ async def first(
     """
     results: Queue[RT] = Queue()
     count = count if count is not None else len(activities)
+    if count > len(activities):
+        raise ValueError()
     async with Scope() as scope:
         for activity in activities:
             scope.do(
-                _race_monitor(activity, queue=results),
+                _first_monitor(activity, queue=results),
                 volatile=True,
             )
         async for winner in a.islice(results, count):
