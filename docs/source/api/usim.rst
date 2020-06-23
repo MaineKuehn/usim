@@ -162,7 +162,7 @@ blocked or waited for.
 Common Building Blocks
 ----------------------
 
-:py:func:`usim.race`
+:py:func:`usim.first`
     Run several :term:`activities <activity>` concurrently and yield results
     as they become available.
 

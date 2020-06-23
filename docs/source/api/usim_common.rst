@@ -1,7 +1,7 @@
 Concurrency Utilities and Patterns
 ==================================
 
-.. autofunction:: usim.race
+.. autofunction:: usim.first
     :async-for:
 
 
