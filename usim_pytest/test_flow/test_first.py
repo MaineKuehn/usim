@@ -2,7 +2,7 @@ import pytest
 
 import asyncstdlib as a
 
-from usim import race, time, Concurrent
+from usim import first, time, Concurrent
 
 from ..utility import via_usim
 
@@ -23,7 +23,7 @@ async def test_collect_all(count):
     activities = [
         ping_pong(idx, delay=count-idx) for idx in range(count)
     ]
-    async for winner, expected in a.zip(race(*activities), reversed(range(count))):
+    async for winner, expected in a.zip(first(*activities), reversed(range(count))):
         assert winner == expected
     assert (time == count)
 
@@ -37,10 +37,10 @@ async def test_collect_failure(count):
         activities = [
             ping_raise(failures[idx % 3], delay=idx) for idx in range(count)
         ]
-        await a.list(race(*activities))
+        await a.list(first(*activities))
     # collect concurrent failures
     with pytest.raises(Concurrent[failures[:count]]):
         activities = [
             ping_raise(failures[idx % 3], delay=1) for idx in range(count)
         ]
-        await a.list(race(*activities))
+        await a.list(first(*activities))

@@ -13,36 +13,36 @@ async def _race_monitor(contestant: Awaitable[RT], queue: Queue):
     await queue.put(result)
 
 
-async def race(
+async def first(
     *activities: Coroutine[Any, Any, RT],
-    winners: Optional[int] = None,
+    count: Optional[int] = None,
 ) -> AsyncIterator[RT]:
     """
-    Run all ``activities`` concurrently to get the first ``winners`` results available
+    Run all ``activities`` concurrently to get the first ``count`` results available
 
     :param activities: activities to run concurrently
-    :param winners: maximum number of results
+    :param count: maximum number of results
     :return: async iterable of results
     :raises usim.Concurrent: if any of the ``activities`` raise an exception
 
-    If there are more results than ``winners``,
+    If there are more results than ``count``,
     any remaining ``activities`` are aborted after yielding the last result.
-    If there are less results than ``winners``,
+    If there are less results than ``count``,
     the iterator finishes after yielding the last result.
-    If ``winners`` is :py:data:`None`, the iterator provides all results.
+    If ``count`` is :py:data:`None`, the iterator provides all results.
 
     Results are always yielded in the order of becoming available.
     The initial order of ``activities`` is irrelevant.
     """
     results: Queue[RT] = Queue()
-    winners = winners if winners is not None else len(activities)
+    count = count if count is not None else len(activities)
     async with Scope() as scope:
         for activity in activities:
             scope.do(
                 _race_monitor(activity, queue=results),
                 volatile=True,
             )
-        async for winner in a.islice(results, winners):
+        async for winner in a.islice(results, count):
             yield winner
 
 
