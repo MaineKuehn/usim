@@ -1,0 +1,9 @@
+category: added
+summary: "Basic controlflow primitives"
+description: |
+  A collection of efficient, reusable primitives to compose `async` operations
+  including :py:func:`~usim.collect` as well as :py:func:`~usim.first` is supported.
+issues:
+- 75
+pull requests:
+- 93
