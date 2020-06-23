@@ -1,5 +1,5 @@
-.. Created by log.py at 2020-02-20, command
-   '/Users/mfischer/PycharmProjects/usim/venv/lib/python3.7/site-packages/change/__main__.py log docs/source/changes compile --output docs/source/changelog.rst'
+.. Created by log.py at 2020-06-23, command
+   '/usr/local/lib/python3.7/site-packages/change/__main__.py log docs/source/changes compile --output docs/source/changelog.rst'
    based on the format of 'https://keepachangelog.com/'
 #########
 ChangeLog
@@ -8,8 +8,10 @@ ChangeLog
 Upcoming
 ========
 
-Version [Unreleased] - 2020-02-20
+Version [Unreleased] - 2020-06-23
 +++++++++++++++++++++++++++++++++
+
+* **[Added]** Basic controlflow primitives
 
 * **[Changed]** Pipes allow for infinite throughput
 * **[Changed]** Pipe transfers support totals of zero
