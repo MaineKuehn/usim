@@ -19,7 +19,7 @@ async def ping_raise(exception, delay: float = 0.0):
 @via_usim
 async def test_collect_some(count):
     activities = [
-        ping_pong(idx, delay=count-idx) for idx in range(count)
+        ping_pong(idx, delay=count - idx) for idx in range(count)
     ]
     assert await collect(*activities) == list(range(count))
     assert (time == count)

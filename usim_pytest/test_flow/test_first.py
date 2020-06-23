@@ -21,7 +21,7 @@ async def ping_raise(exception, delay: float = 0.0):
 @via_usim
 async def test_collect_all(count):
     activities = [
-        ping_pong(idx, delay=count-idx) for idx in range(count)
+        ping_pong(idx, delay=count - idx) for idx in range(count)
     ]
     async for winner, expected in a.zip(first(*activities), reversed(range(count))):
         assert winner == expected
