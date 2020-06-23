@@ -38,7 +38,9 @@ async def first(
     results: Queue[RT] = Queue()
     count = count if count is not None else len(activities)
     if count > len(activities):
-        raise ValueError()
+        raise ValueError(
+            f"cannot provide {count} results from {len(activities)} activities"
+        )
     async with Scope() as scope:
         for activity in activities:
             scope.do(
