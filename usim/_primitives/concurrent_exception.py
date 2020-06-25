@@ -143,8 +143,8 @@ class MetaConcurrent(type):
             Union[
                 Type[Exception],
                 'Type[Concurrent]',
-                'ellipsis',
-                'Tuple[Union[Type[Concurrent], Type[Exception], "ellipsis"], ...]',
+                'ellipsis',  # noqa
+                'Tuple[Union[Type[Concurrent], Type[Exception], "ellipsis"], ...]',  # noqa
             ]
     ):
         """``cls[item]`` - used to specialise ``cls`` with ``item``"""
