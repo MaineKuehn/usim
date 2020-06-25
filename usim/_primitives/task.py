@@ -174,7 +174,7 @@ class Task(Awaitable[RT]):
     def __exception__(self) -> Optional[BaseException]:
         """Get the exception of this task"""
         assert self._result is not None,\
-            f'Task.__exception__ may only be queried for finished tasks'
+            'Task.__exception__ may only be queried for finished tasks'
         return self._result[1]
 
     @property
