@@ -15,7 +15,7 @@ before_script:
   - python -m pip list
   - export PYTHONHASHSEED=${PYTHONHASHSEED:-${RANDOM}}
   - echo "export PYTHONHASHSEED=${PYTHONHASHSEED}"
-  - pip install .[contrib]
+  - pip install .[test]
   - pip install codecov
   - export COVERAGE_PROCESS_START=$(pwd)/.coveragerc
   - export PYTEST_ADDOPTS=-v

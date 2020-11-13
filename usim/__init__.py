@@ -1,3 +1,4 @@
+"""Lightweight Simulation Framework"""
 from typing import Coroutine
 
 from .__about__ import __version__  # noqa: F401
