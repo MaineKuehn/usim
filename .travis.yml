@@ -21,6 +21,6 @@ before_script:
   - export PYTEST_ADDOPTS=-v
 script:
   - python -m flake8
-  - python $DEBUG -m coverage run pytest
+  - python $DEBUG -m coverage run -m pytest
 after_success:
   - coverage report && codecov
