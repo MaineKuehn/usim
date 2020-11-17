@@ -15,12 +15,12 @@ before_script:
   - python -m pip list
   - export PYTHONHASHSEED=${PYTHONHASHSEED:-${RANDOM}}
   - echo "export PYTHONHASHSEED=${PYTHONHASHSEED}"
-  - pip install .[contrib]
+  - pip install .[test]
   - pip install codecov
   - export COVERAGE_PROCESS_START=$(pwd)/.coveragerc
   - export PYTEST_ADDOPTS=-v
 script:
   - python -m flake8
-  - python $DEBUG -m coverage run setup.py test
+  - python $DEBUG -m coverage run -m pytest
 after_success:
   - coverage report && codecov
