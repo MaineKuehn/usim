@@ -10,7 +10,7 @@ by simulation code directly.
 import collections
 from typing import Coroutine, TypeVar, Optional, Generator
 
-from .handler import __LOOP_STATE__
+from .handler import __USIM_STATE__ as __LOOP_STATE__
 from .waitq import WaitQueue
 
 

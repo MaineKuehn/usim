@@ -86,4 +86,7 @@ class StateHandler(threading.local):
             self.loop = outer_loop
 
 
-__LOOP_STATE__ = StateHandler()
+#: Current state of the usim simulation
+#: This is a global, thread-aware object representing the state
+#: of all threads using usim.
+__USIM_STATE__ = StateHandler()
