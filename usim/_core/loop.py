@@ -8,7 +8,7 @@ The entirety of this module is for internal use only, and should not be used
 by simulation code directly.
 """
 import collections
-from typing import Coroutine, TypeVar, Optional, Union, Generator
+from typing import Coroutine, TypeVar, Optional, Generator
 
 from .handler import __LOOP_STATE__
 from .waitq import WaitQueue
