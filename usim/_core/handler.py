@@ -50,8 +50,18 @@ class MissingLoop:
         )
 
 
-class LoopState(threading.local):
-    """State of the current simulation"""
+class StateHandler(threading.local):
+    """
+    State of the current simulation
+
+    This class implements a basic effect handler for interactions
+    with the event loop: A single instance provides access to the
+    "current" event loop and simulation state from inside activities.
+
+    This class is thread-aware and always represents the simulation
+    active in the current thread, if any. Multiple simulations may
+    be nested.
+    """
     loop: AbstractLoop
 
     @property
@@ -68,6 +78,7 @@ class LoopState(threading.local):
 
     @contextlib.contextmanager
     def assign(self, loop: AbstractLoop):
+        """Temporarily set a ``loop`` as the "current" loop of this thread"""
         outer_loop, self.loop = self.loop, loop
         try:
             yield
@@ -75,4 +86,4 @@ class LoopState(threading.local):
             self.loop = outer_loop
 
 
-__LOOP_STATE__ = LoopState()
+__LOOP_STATE__ = StateHandler()
