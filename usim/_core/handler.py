@@ -25,6 +25,8 @@ class MissingLoop:
     see 'https://usim.readthedocs.io' for usage details.
     """
     __slots__ = ("_entry_point",)
+    activity: Coroutine
+    time: float
 
     def __init__(self, entry_point: str = "usim.run"):
         self._entry_point = entry_point
@@ -55,8 +57,8 @@ class LoopState(threading.local):
     def LOOP(self):
         return self.loop
 
-    def __init__(self, loop: AbstractLoop = MissingLoop()):
-        self.loop = loop
+    def __init__(self):
+        self.loop = MissingLoop()
 
     @contextlib.contextmanager
     def assign(self, loop: AbstractLoop):
