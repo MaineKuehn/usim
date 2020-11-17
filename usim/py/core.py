@@ -24,16 +24,6 @@ class EnvironmentScope(Scope):
     PROMOTE_CONCURRENT = Scope.PROMOTE_CONCURRENT + (StopSimulation,)
 
 
-def _inside_usim():
-    """Whether the current stack is run by ``usim``"""
-    try:
-        __LOOP_STATE__.LOOP.time
-    except RuntimeError:
-        return False
-    else:
-        return True
-
-
 V = TypeVar('V')
 
 
@@ -166,7 +156,7 @@ class Environment:
         otherwise
             The sub-simulation lasts until simulation time equals ``until``.
         """
-        if not _inside_usim():
+        if not __LOOP_STATE__.is_active:
             usim_run(self.until(until))
             if isinstance(until, Event):
                 if until.triggered:

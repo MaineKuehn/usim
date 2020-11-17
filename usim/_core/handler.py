@@ -51,11 +51,17 @@ class MissingLoop:
 
 
 class LoopState(threading.local):
+    """State of the current simulation"""
     loop: AbstractLoop
 
     @property
     def LOOP(self):
         return self.loop
+
+    @property
+    def is_active(self) -> bool:
+        """Whether there is an active simulation going on"""
+        return type(self.loop) is not MissingLoop
 
     def __init__(self):
         self.loop = MissingLoop()
