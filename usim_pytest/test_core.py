@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from usim import time, run
@@ -24,3 +26,10 @@ class TestCore:
         with pytest.raises(ActivityLeak) as exc_info:
             run(returning(1138))
         assert exc_info.value.result == 1138
+
+    def test_threaded(self):
+        """Test that behaviour is consistent in threads"""
+        with ThreadPoolExecutor() as executor:
+            for test_case in (self.test_no_sim, self.test_after_sim, self.test_exception):
+                threaded_test = executor.submit(test_case)
+                threaded_test.result()

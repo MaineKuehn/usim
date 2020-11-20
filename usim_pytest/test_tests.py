@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from usim import Scope, eternity, Concurrent
@@ -39,3 +41,12 @@ class TestTests:
     @via_usim
     async def test_hanging(self):
         await eternity
+
+    @pytest.mark.xfail(raises=AssertionError, strict=True)
+    def test_threaded(self):
+        def fail_assert():
+            assert False
+
+        with ThreadPoolExecutor() as executor:
+            fail_thread = executor.submit(fail_assert)
+            fail_thread.result()
