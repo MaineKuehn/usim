@@ -5,7 +5,7 @@ from collections import namedtuple
 import pytest
 
 from usim import run
-from usim._core.loop import __LOOP_STATE__
+from usim._core.handler import __USIM_STATE__
 
 
 RT = TypeVar('RT')
@@ -30,7 +30,7 @@ def noop(*args, **kwargs):
 
 def turnstamp() -> Turnstamp:
     """Get the precise progress as ``time, turn``"""
-    loop = __LOOP_STATE__.LOOP
+    loop = __USIM_STATE__.loop
     return Turnstamp(loop.time, loop.turn)
 
 

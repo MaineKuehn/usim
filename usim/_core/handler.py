@@ -62,11 +62,8 @@ class StateHandler(threading.local):
     active in the current thread, if any. Multiple simulations may
     be nested.
     """
-    loop: AbstractLoop
 
-    @property
-    def LOOP(self):
-        return self.loop
+    loop: AbstractLoop
 
     @property
     def is_active(self) -> bool:

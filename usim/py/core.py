@@ -9,7 +9,7 @@ The latter allows interactions between the μSim and SimPy components.
 """
 from typing import Optional, List, Tuple, Coroutine, Generator, TypeVar, Iterable,\
     Union
-from .._core.loop import __LOOP_STATE__, Loop
+from .._core.handler import __USIM_STATE__, AbstractLoop
 from .. import time, run as usim_run, Concurrent
 from .. import Scope
 
@@ -101,7 +101,7 @@ class Environment:
     def __init__(self, initial_time=0):
         self._initial_time = initial_time
         self._startup = []  # type: List[Tuple[Coroutine, float]]
-        self._loop = None  # type: Optional[Loop]
+        self._loop = None  # type: Optional[AbstractLoop]
         self._scope = EnvironmentScope()
         #: The currently active process
         self.active_process = None  # type: Optional[Process]
@@ -109,7 +109,7 @@ class Environment:
     async def __aenter__(self):
         if self._loop is not None:
             raise RuntimeError('%r is not re-entrant' % self.__class__.__name__)
-        self._loop = __LOOP_STATE__.LOOP
+        self._loop = __USIM_STATE__.loop
         await self._scope.__aenter__()
         if self._loop.time < self._initial_time:
             await (time == self._initial_time)
@@ -156,7 +156,7 @@ class Environment:
         otherwise
             The sub-simulation lasts until simulation time equals ``until``.
         """
-        if not __LOOP_STATE__.is_active:
+        if not __USIM_STATE__.is_active:
             usim_run(self.until(until))
             if isinstance(until, Event):
                 if until.triggered:

@@ -1,7 +1,8 @@
 from typing import List, Tuple, Coroutine, Optional
 from contextlib import contextmanager
 
-from .._core.loop import Interrupt, __LOOP_STATE__, __HIBERNATE__
+from .._core.loop import Interrupt, __HIBERNATE__
+from .._core.handler import __USIM_STATE__
 
 
 # TODO: add protocol for destroying a notification
@@ -18,15 +19,16 @@ async def postpone():
     This will safely requeue the current task,
     allowing other tasks to run and interrupts to occur.
     """
-    task = __LOOP_STATE__.LOOP.activity
+    loop = __USIM_STATE__.loop
+    task = loop.activity
     wake_up = Interrupt('postpone', task)
-    __LOOP_STATE__.LOOP.schedule(task, signal=wake_up)
+    loop.schedule(task, signal=wake_up)
     try:
         await __HIBERNATE__
     except Interrupt as err:
         if err is not wake_up:
             assert (
-                task is __LOOP_STATE__.LOOP.activity
+                task is loop.activity
             ), 'Break points cannot be passed to other coroutines'
             raise
     finally:
@@ -42,15 +44,16 @@ async def suspend(*, delay: Optional[float], until: Optional[float]):
     Time will pass as if ``time == until`` or ``time + delay``
     were used, but there is no ``Condition`` interface on top.
     """
-    task = __LOOP_STATE__.LOOP.activity
+    loop = __USIM_STATE__.loop
+    task = loop.activity
     wake_up = Interrupt('postpone', task)
-    __LOOP_STATE__.LOOP.schedule(task, signal=wake_up, delay=delay, at=until)
+    loop.schedule(task, signal=wake_up, delay=delay, at=until)
     try:
         await __HIBERNATE__
     except Interrupt as err:
         if err is not wake_up:
             assert (
-                task is __LOOP_STATE__.LOOP.activity
+                task is loop.activity
             ), 'Break points cannot be passed to other coroutines'
             raise
     finally:
@@ -84,7 +87,7 @@ class Notification:
         except IndexError:
             raise NoSubscribers
         else:
-            __LOOP_STATE__.LOOP.schedule(waiter, signal=interrupt)
+            __USIM_STATE__.loop.schedule(waiter, signal=interrupt)
             return waiter, interrupt
 
     def __awake_all__(self) -> List[Tuple[Coroutine, Interrupt]]:
@@ -92,7 +95,7 @@ class Notification:
         awoken = self._waiting.copy()
         self._waiting.clear()
         for waiter, interrupt in awoken:
-            __LOOP_STATE__.LOOP.schedule(waiter, signal=interrupt)
+            __USIM_STATE__.loop.schedule(waiter, signal=interrupt)
         return awoken
 
     # Subscribe/Unsubscribe
@@ -109,7 +112,8 @@ class Notification:
 
     @contextmanager
     def __subscription__(self):
-        task = __LOOP_STATE__.LOOP.activity
+        loop = __USIM_STATE__.loop
+        task = loop.activity
         wake_up = Interrupt(self, task)
         self.__subscribe__(task, wake_up)
         try:
@@ -117,7 +121,7 @@ class Notification:
         except Interrupt as err:
             if err is not wake_up:
                 assert (
-                    task is __LOOP_STATE__.LOOP.activity
+                    task is loop.activity
                 ), 'Break points cannot be passed to other coroutines'
                 raise
         finally:

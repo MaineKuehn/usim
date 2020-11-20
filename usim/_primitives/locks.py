@@ -1,6 +1,6 @@
 from typing import Coroutine
 
-from .._core.loop import __LOOP_STATE__
+from .._core.handler import __USIM_STATE__
 from .notification import Notification, NoSubscribers
 
 
@@ -53,10 +53,10 @@ class Lock:
         if self._owner is None:
             return True
         else:
-            return self._owner is __LOOP_STATE__.LOOP.activity
+            return self._owner is __USIM_STATE__.loop.activity
 
     async def __aenter__(self):
-        current_activity = __LOOP_STATE__.LOOP.activity
+        current_activity = __USIM_STATE__.loop.activity
         if self._owner is None:
             self._owner = current_activity
         elif self._owner is not current_activity:
@@ -71,7 +71,7 @@ class Lock:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        assert exc_type is GeneratorExit or self._owner == __LOOP_STATE__.LOOP.activity
+        assert exc_type is GeneratorExit or self._owner == __USIM_STATE__.loop.activity
         self._depth -= 1
         if self._depth == 0:
             self.__release__()

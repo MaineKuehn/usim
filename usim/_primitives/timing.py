@@ -14,7 +14,8 @@ time can represent more than 285 million years of time accurately.
 """
 from typing import Coroutine, Generator, Any, AsyncIterable, Union
 
-from .._core.loop import __LOOP_STATE__, __HIBERNATE__, Interrupt as CoreInterrupt
+from .._core.loop import __HIBERNATE__, Interrupt as CoreInterrupt
+from .._core.handler import __USIM_STATE__
 from .notification import postpone, suspend, Notification
 from .condition import Condition
 
@@ -41,7 +42,7 @@ class After(Condition):
         self._scheduled = None
 
     def __bool__(self):
-        return __LOOP_STATE__.LOOP.time >= self.date
+        return __USIM_STATE__.loop.time >= self.date
 
     def __invert__(self):
         return Before(self.date)
@@ -49,7 +50,7 @@ class After(Condition):
     def _ensure_trigger(self):
         if not self._scheduled:
             self._scheduled = True
-            __LOOP_STATE__.LOOP.schedule(self._async_trigger(), at=self.date)
+            __USIM_STATE__.loop.schedule(self._async_trigger(), at=self.date)
 
     # we cannot schedule __trigger__ directly, since it is not async
     async def _async_trigger(self):
@@ -98,7 +99,7 @@ class Before(Condition):
         self.date = date
 
     def __bool__(self):
-        return __LOOP_STATE__.LOOP.time < self.date
+        return __USIM_STATE__.loop.time < self.date
 
     def __invert__(self):
         return After(self.date)
@@ -144,7 +145,7 @@ class Moment(Condition):
         self._transition = After(date)
 
     def __bool__(self):
-        return __LOOP_STATE__.LOOP.time == self.date
+        return __USIM_STATE__.loop.time == self.date
 
     def __invert__(self):
         raise NotImplementedError(
@@ -158,7 +159,7 @@ class Moment(Condition):
         # we will *never* wake up once the target has passed
         # either we wake up in the same time frame,
         # or just hibernate indefinitely
-        if __LOOP_STATE__.LOOP.time == self.date:
+        if __USIM_STATE__.loop.time == self.date:
             yield from postpone().__await__()
         elif not self._transition:
             yield from self._transition.__await__()
@@ -277,7 +278,7 @@ class Delay(Notification):
 
     def __subscribe__(self, waiter: Coroutine, interrupt: CoreInterrupt):
         interrupt.scheduled = True
-        __LOOP_STATE__.LOOP.schedule(waiter, interrupt, delay=self.duration)
+        __USIM_STATE__.loop.schedule(waiter, interrupt, delay=self.duration)
 
     def __repr__(self):
         return f'{self.__class__.__name__}(duration={self.duration})'
@@ -385,7 +386,7 @@ class Time:
     @property
     def now(self) -> float:
         """The current simulation time"""
-        return __LOOP_STATE__.LOOP.time
+        return __USIM_STATE__.loop.time
 
     def __add__(self, other: float) -> Union[Delay, Instant]:
         assert other >= 0, "delay must point at the future"
@@ -491,8 +492,7 @@ async def interval(period) -> AsyncIterable[float]:
     """
     if period < 0:
         raise ValueError('period must not be negative')
-    loop = __LOOP_STATE__.LOOP
-    last_time = loop.time
+    last_time = time.now
     while True:
         remaining_delay = last_time + period - time.now
         if remaining_delay < 0:
@@ -501,7 +501,7 @@ async def interval(period) -> AsyncIterable[float]:
             await suspend(delay=remaining_delay, until=None)
         else:
             await postpone()
-        last_time = loop.time
+        last_time = time.now
         yield last_time
 
 
@@ -530,12 +530,11 @@ async def delay(period) -> AsyncIterable[float]:
     """
     if period < 0:
         raise ValueError('period must not be negative')
-    loop = __LOOP_STATE__.LOOP
     if period > 0:
         while True:
             await suspend(delay=period, until=None)
-            yield loop.time
+            yield time.now
     else:
         while True:
             await postpone()
-            yield loop.time
+            yield time.now

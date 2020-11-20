@@ -1,7 +1,7 @@
 from typing import Optional, Dict
 
 from .._primitives.notification import Notification, suspend, postpone
-from .._core.loop import __LOOP_STATE__
+from .._primitives.timing import time
 
 
 class Pipe:
@@ -67,7 +67,7 @@ class Pipe:
         throughput = throughput if throughput is not None else self.throughput
         self._add_subscriber(identifier, throughput)
         while transferred < total:
-            window_start = __LOOP_STATE__.LOOP.time
+            window_start = time.now
             window_throughput = throughput * self._throughput_scale
             # Try to delay until we have transferred everything.
             # Be prepared to get interrupted if throughput changes.
@@ -80,7 +80,7 @@ class Pipe:
                 # At this point, we have been suspended for as long as calculated.
                 # Barring float *imprecision* we have transferred the desired volume.
                 transferred = total
-            window_end = __LOOP_STATE__.LOOP.time
+            window_end = time.now
             transferred += (window_end - window_start) * window_throughput
         self._del_subscriber(identifier)
 

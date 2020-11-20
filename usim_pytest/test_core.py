@@ -1,7 +1,8 @@
 import pytest
 
 from usim import time, run
-from usim._core.loop import __LOOP_STATE__, Loop, ActivityLeak
+from usim._core.loop import Loop, ActivityLeak
+from usim._core.handler import __USIM_STATE__
 
 
 class TestCore:
@@ -10,7 +11,7 @@ class TestCore:
             time.now
         for field in Loop.__slots__:
             with pytest.raises(RuntimeError):
-                getattr(__LOOP_STATE__.LOOP, field)
+                getattr(__USIM_STATE__.loop, field)
 
     def test_after_sim(self):
         run()
