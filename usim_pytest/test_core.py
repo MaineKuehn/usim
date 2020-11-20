@@ -30,6 +30,10 @@ class TestCore:
     def test_threaded(self):
         """Test that behaviour is consistent in threads"""
         with ThreadPoolExecutor() as executor:
-            for test_case in (self.test_no_sim, self.test_after_sim, self.test_exception):
+            for test_case in (
+                self.test_no_sim,
+                self.test_after_sim,
+                self.test_exception,
+            ):
                 threaded_test = executor.submit(test_case)
                 threaded_test.result()
