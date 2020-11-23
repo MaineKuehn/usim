@@ -1,5 +1,5 @@
 r"""
-event handling core facilities
+Single-threaded event loop
 
 This is the core scheduling/synchronization implementation.
 It defines a basic event loop with simulated time, as well as the signals
@@ -8,9 +8,9 @@ The entirety of this module is for internal use only, and should not be used
 by simulation code directly.
 """
 import collections
-import threading
-from typing import Coroutine, TypeVar, Optional, Union, Generator
+from typing import Coroutine, TypeVar, Optional, Generator
 
+from .handler import __USIM_STATE__ as __LOOP_STATE__
 from .waitq import WaitQueue
 
 
@@ -30,39 +30,6 @@ class ActivityLeak(RuntimeError):
 
 # Coroutine Return Type
 RT = TypeVar('RT')
-
-
-class MissingLoop:
-    r"""
-    Placeholder for the :py:class:`~.Loop` expected in an active simulation
-
-    This class exists to provide helpful error messages if usim is used
-    without starting its event loop. If you encounter this class unexpectedly,
-    see 'https://usim.readthedocs.io' for details.
-    """
-    __slots__ = ('_entry_point',)
-
-    def __init__(self, entry_point: str = 'usim.run'):
-        self._entry_point = entry_point
-
-    def __getattr__(self, field: str):
-        raise RuntimeError((
-            "field '%s' can only be accessed with an active usim event loop\n\n"
-            "You have attempted to use an async feature of usim outside of\n"
-            "a usim simulation. This likely means that you used a different\n"
-            "async framework. You must run usim's async features as part of\n"
-            "an active usim simulation.\n\n"
-            "Use '%s' to start an appropriate simulation."
-        ) % (field, self._entry_point))
-
-    def __repr__(self):
-        return '{self.__class__.__name__}(entry_point={self._entry_point})'.format(
-            self=self,
-        )
-
-
-__LOOP_STATE__ = threading.local()
-__LOOP_STATE__.LOOP = MissingLoop()  # type: Union[MissingLoop, Loop]
 
 
 # Commands
@@ -181,12 +148,8 @@ class Loop:
 
     def run(self):
         r"""Run the event loop in the current thread"""
-        outer_loop = __LOOP_STATE__.LOOP
-        __LOOP_STATE__.LOOP = self
-        try:
+        with __LOOP_STATE__.assign(self):
             self._run_events()
-        finally:
-            __LOOP_STATE__.LOOP = outer_loop
 
     def _run_events(self):
         r"""event loop core, processing all scheduled coroutines"""

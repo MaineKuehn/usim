@@ -1,6 +1,7 @@
 from typing import Coroutine, List, TypeVar, Any, Optional, Tuple
 
-from .._core.loop import __LOOP_STATE__, Interrupt as CoreInterrupt
+from .._core.loop import Interrupt as CoreInterrupt
+from .._core.handler import __USIM_STATE__
 from .notification import Notification
 from .flag import Flag
 from .task import Task, TaskClosed, TaskCancelled, try_close
@@ -179,14 +180,14 @@ class Scope:
         # resolve "now" to what the event loop expects
         if after == 0:
             after = None
-        elif at == __LOOP_STATE__.LOOP.time:
+        elif at == __USIM_STATE__.loop.time:
             at = None
         assert after is None or after > 0,\
             "start date must not be in the past"
-        assert at is None or at > __LOOP_STATE__.LOOP.time,\
+        assert at is None or at > __USIM_STATE__.loop.time,\
             "start date must not be in the past"
         child_task = Task(payload, self, delay=after, at=at, volatile=volatile)
-        __LOOP_STATE__.LOOP.schedule(
+        __USIM_STATE__.loop.schedule(
             child_task.__runner__,
         )
         if not volatile:
@@ -198,7 +199,7 @@ class Scope:
     def __cancel__(self):
         """Cancel this scope"""
         if self._interruptable:
-            __LOOP_STATE__.LOOP.schedule(self._activity, self._cancel_self)
+            __USIM_STATE__.loop.schedule(self._activity, self._cancel_self)
 
     def __child_finished__(self, child: Task, failed: bool):
         assert child.parent is self
@@ -234,7 +235,7 @@ class Scope:
     async def __aenter__(self):
         if self._activity is not None:
             raise RuntimeError('%r is not re-entrant' % self.__class__.__name__)
-        self._activity = __LOOP_STATE__.LOOP.activity
+        self._activity = __USIM_STATE__.loop.activity
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:

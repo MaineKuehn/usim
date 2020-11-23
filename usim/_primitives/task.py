@@ -4,7 +4,8 @@ import enum
 from typing import Coroutine, TypeVar, Awaitable, Optional, Tuple, Any, List,\
     TYPE_CHECKING
 
-from .._core.loop import __LOOP_STATE__, Interrupt
+from .._core.loop import Interrupt
+from .._core.handler import __USIM_STATE__
 from .notification import suspend
 from .condition import Condition
 if TYPE_CHECKING:
@@ -253,7 +254,7 @@ class Task(Awaitable[RT]):
                 cancellation = CancelTask(self, *token)
                 self._cancellations.append(cancellation)
                 cancellation.scheduled = True
-                __LOOP_STATE__.LOOP.schedule(self.__runner__, signal=cancellation)
+                __USIM_STATE__.loop.schedule(self.__runner__, signal=cancellation)
 
     @reprlib.recursive_repr()
     def __repr__(self):

@@ -1,6 +1,6 @@
 from typing import TypeVar, Generic, Optional, Type, Union, Dict
 
-from .._core.loop import __LOOP_STATE__
+from .._core.handler import __USIM_STATE__
 from ._resource_level import __specialise__, ResourceLevels
 from .tracked import Tracked
 
@@ -134,10 +134,10 @@ class BorrowedResources(BaseResources[T]):
         if exc_type is GeneratorExit:
             # we are killed forcefully and cannot perform async operations
             # dispatch a new activity to release our resources eventually
-            __LOOP_STATE__.LOOP.schedule(
+            __USIM_STATE__.loop.schedule(
                 self.__remove_resources__(self._debits)
             )
-            __LOOP_STATE__.LOOP.schedule(
+            __USIM_STATE__.loop.schedule(
                 self._resources.__insert_resources__(self._debits)
             )
         else:

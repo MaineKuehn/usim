@@ -5,7 +5,7 @@ from typing import Coroutine, Generator, Any as AnyT
 from .._core.loop import Hibernate, Interrupt as CoreInterrupt
 
 from .notification import Notification, postpone
-from .._core.loop import __LOOP_STATE__
+from .._core.handler import __USIM_STATE__
 
 
 class Condition(Notification):
@@ -88,7 +88,7 @@ class Condition(Notification):
         # triggering will interrupt on the next async operation
         if self:
             interrupt.scheduled = True
-            __LOOP_STATE__.LOOP.schedule(waiter, signal=interrupt)
+            __USIM_STATE__.loop.schedule(waiter, signal=interrupt)
         else:
             super().__subscribe__(waiter, interrupt)
 
