@@ -188,15 +188,6 @@ class TestProcess:
         assert not process.is_alive
         assert env.active_process is not process
 
-    def test_env_exit(self, env):
-        def proc(env):
-            yield env.timeout(1)
-            env.exit(42)
-
-        process = env.process(proc(env))
-        env.run(5)
-        assert process.value == 42
-
     def test_error_raised(self, env):
         def proc(env):
             yield env.timeout(1)
