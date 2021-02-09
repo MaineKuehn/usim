@@ -1,0 +1,10 @@
+category: changed
+summary: "SimPy4 compatibility layer"
+description: |
+  The :py:mod:`usim.py` compatibility layer matches version 4 of the
+  :py:mod:`simpy` package. In specific, :py:meth:`usim.py.Environment.exit`
+  is deprecated and has been removed.
+issues:
+- 97
+pull requests:
+- 102
