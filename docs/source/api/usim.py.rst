@@ -3,7 +3,7 @@ SimPy compatibility API Reference
 
 .. container:: left-col
 
-    The :py:mod:`usim.py` package recreates the API of the :py:mod:`simpy` package.
+    The :py:mod:`usim.py` package recreates the v4 API of the :py:mod:`simpy` package.
     It serves as a drop-in replacement for SimPy in order to gradually integrate
     and migrate simulations to μSim. For use in an existing SimPy simulation,
     it is sufficient to import :py:mod:`usim.py` in place of :py:mod:`simpy`.
