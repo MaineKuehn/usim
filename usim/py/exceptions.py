@@ -20,20 +20,6 @@ class SimPyException(Exception):
     """Base case for exceptions that can safely be handled in a simulation"""
 
 
-class StopProcess(SimPyException):
-    """
-    Signal to stop a process
-
-    .. warning::
-
-        This exception exists for historical compatibility only.
-        See :py:meth:`usim.py.Environment.exit` for details.
-    """
-    def __init__(self, value):
-        super().__init__(value)
-        self.value = value
-
-
 class Interrupt(SimPyException):
     """Exception used to :py:meth:`~usim.py.events.Process.interrupt` a process"""
     @property

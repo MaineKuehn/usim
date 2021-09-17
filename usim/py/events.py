@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, TypeVar, Generic, Union, Tuple, Optional, Gene
 from .. import Flag, time
 from .._primitives.condition import Any as AnyFlag
 
-from .exceptions import NotCompatibleError, Interrupt, StopProcess
+from .exceptions import NotCompatibleError, Interrupt
 from ._awaitable import AwaitableEvent
 if TYPE_CHECKING:
     from .core import Environment
@@ -446,7 +446,7 @@ class Process(Event[V]):
                     env.active_process = self
                     self.target = event = generator.throw(event.value)
                     env.active_process = None
-            except (StopIteration, StopProcess) as err:
+            except StopIteration as err:
                 value = err.args[0] if err.args else None
                 self.succeed(value)
                 break

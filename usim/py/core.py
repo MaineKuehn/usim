@@ -14,7 +14,7 @@ from .. import time, run as usim_run, Concurrent
 from .. import Scope
 
 from .events import Event
-from .exceptions import NotCompatibleError, StopSimulation, StopProcess
+from .exceptions import NotCompatibleError, StopSimulation
 
 
 class EnvironmentScope(Scope):
@@ -172,17 +172,6 @@ class Environment:
                 "\n"
                 "You may 'env.run' outside of a 'usim' simulation"
             )
-
-    def exit(self, value=None):
-        """
-        Stop the current process, optionally providing a ``value``
-
-        .. warning::
-
-            This method exists for historical compatibility only.
-            Use ``return value`` instead.
-        """
-        raise StopProcess(value)
 
     def step(self):
         """
